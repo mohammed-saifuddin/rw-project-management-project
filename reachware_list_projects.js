@@ -37,15 +37,16 @@ var empSearch = search.create({
     filters: [
         ['isinactive','is','F']
     ],
-    columns: ['internalid','entityid']
+    columns: ['internalid','firstname','lastname']
 });
 
 empSearch.run().each(function(result){
 
     var id = result.getValue('internalid');
-    var name = result.getValue('entityid');
+    var firstname = result.getValue('firstname');
+    var lastname = result.getValue('lastname');
 
-    empOptions += '<option value="'+id+'">'+name+'</option>';
+    empOptions += '<option value="'+id+'">'+firstname+' '+lastname+'</option>';
 
     return true;
 });
@@ -251,18 +252,18 @@ cursor:pointer;
 <div class="form-grid">
 
 <label>Customer Name</label>
-<input type="text" name="customername">
+<input type="text" name="customername" required>
 
 <label>Proforma Invoice</label>
-<input type="text" name="invoice">
+<input type="text" name="invoice" required>
 
 <label>Account Manager</label>
-<select name="accountmanager">
+<select name="accountmanager" required>
 ${empOptions}
 </select>
 
 <label>Scheduled UAT Date</label>
-<input type="date" name="uatdate">
+<input type="date" name="uatdate" required>
 
 <label>Project Manager</label>
 <select name="projectmanager">
@@ -270,10 +271,10 @@ ${empOptions}
 </select>
 
 <label>Scheduled Go Live Date</label>
-<input type="date" name="golivedate">
+<input type="date" name="golivedate" required>
 
 <label>ERP</label>
-<select name="erp">
+<select name="erp" required>
 <option value="">Select</option>
 <option value="1">Netsuite</option>
 <option value="2">Odoo</option>
@@ -282,7 +283,7 @@ ${empOptions}
 </select>
 
 <label>Direct Project</label>
-<select name="directproject" id="directproject">
+<select name="directproject" id="directproject" required>
 ${dpOptions}
 </select>
 
@@ -295,7 +296,7 @@ ${dpOptions}
 </select>
 
 <label>Status</label>
-<select name="status">
+<select name="status" required>
 <option value="">Select</option>
 <option value="1">To Do</option>
 <option value="2">In Progress</option>
@@ -320,19 +321,19 @@ ${dpOptions}
 
 <tr>
 <td>
-<select name="rwproduct">
+<select name="rwproduct" required>
 ${rwOptions}
 </select>
 </td>
 <td><input type="text" name="comments">
 </td>
 <td>
-<select name="rwpm">
+<select name="rwpm" required>
 ${empOptions}
 </select>
 </td>
 <td>
-<select name="functional">
+<select name="functional" required>
 ${empOptions}
 </select>
 </td>
@@ -341,7 +342,7 @@ ${empOptions}
 ${empOptions}
 </select>
 </td>
-<td><input type="date" name="expuat"></td>
+<td><input type="date" name="expuat" required></td>
 <td><input type="date" name="expgolive"></td>
 </tr>
 

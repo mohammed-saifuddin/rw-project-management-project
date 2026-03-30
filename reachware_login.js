@@ -9,7 +9,8 @@ define(['N/ui/serverWidget','N/url','N/search','N/redirect','N/email','N/runtime
 const onRequest = (context) => {
 
     if(context.request.method === 'GET'){
-
+        var empId = context.request.parameters.empid || '';
+        var email = context.request.parameters.email || '';
         const form = serverWidget.createForm({
             title: ' ',
             hideNavBar:true
@@ -30,6 +31,9 @@ const onRequest = (context) => {
         });
 
         let html = `
+        <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
         <style>
         body,html{font-family: Arial;
         margin-top:-18px !important;
@@ -43,6 +47,7 @@ width:1436px !important;
             display:flex;
             align-items:center;
             border:1px solid #2d6fa3;
+            
         }
 
         .portal{
@@ -51,9 +56,11 @@ width:1436px !important;
             color:white;
             display:flex;
             justify-content:center;
+            align-items:center;
             text-align:center;
             padding:12px;
-            font-size:18px;
+            height:50px;
+            font-size:16px;
         }
 
         .login-box{
@@ -68,27 +75,47 @@ width:1436px !important;
 
         .row label{
             width:120px;
+            font-size:16px;
+         font-family:bold;
         }
 
         .row input{
             width:200px;
             padding:6px;
         }
-
+         
         .btn{
+        
             background:#1c6ea4;
             color:white;
             padding:8px 20px;
             border:none;
+            
+           
+          
+            
+           
             cursor:pointer;
             margin-right:10px;
         }
+            .btn-row{
+            display:flex;
+           justify-content:center;
+           align-items:center;
+           flex-direction:row;
+           gap:10px;
+           margin-left:60px;
+           }
+           .btn:hover{
+           background:#155d8a;
+           text-decoration:justify;
+           }
         </style>
 
         <div class="header">
 
             <div class="logo">
-                <img width="250" height="20" src="https://2771600.app.netsuite.com/core/media/media.nl?id=5690&c=2771600&h=kIUCEpH0C_eyrUBVYGJn7nEHV_vSoKDhpdzpaPF7vFesdytX">
+                <img  height="45px" width="270px" src="https://2771600.app.netsuite.com/core/media/media.nl?id=5690&c=2771600&h=kIUCEpH0C_eyrUBVYGJn7nEHV_vSoKDhpdzpaPF7vFesdytX">
             </div>
 
             <div class="portal">
@@ -111,12 +138,15 @@ width:1436px !important;
                 <input type="password" name="password" id="password">
             </div>
 
+            <div class="btn-row">
             <button type="submit" class="btn" onclick="retur login()">Login</button>
+           <button type="button" class="btn" onclick="forgot()">Update Password</button>
+            </div>
+            
 
             </form>
 
-            <button type="button" class="btn" onclick="forgot()">Update Password</button>
-
+            
         </div>
 
         <script>

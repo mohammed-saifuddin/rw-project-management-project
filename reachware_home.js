@@ -3,12 +3,36 @@
  * @NScriptType Suitelet
  */
 
-define(['N/ui/serverWidget','N/url'], (serverWidget,url) => {
+define(['N/ui/serverWidget','N/url','N/search'], (serverWidget,url,search) => {
 
 const onRequest = (context) => {
 var logout = context.request.parameters.logout || '';
 var empId = context.request.parameters.empid;
 var email = context.request.parameters.email;
+function getTotalCount(){
+    var projectSearch = search.create({
+        type:'customrecord_rw_portal_access',
+        filters:[],
+        columns:[],
+        
+    })
+    var count =projectSearch.runPaged().count;
+    log.debug("Total project",count);
+    return count;
+}
+function getInProgressCount(){
+    var projectSearch = search.create({
+        type:'customrecord_rw_portal_access',
+        filters:[
+            ['custrecord_rw_portal_status','anyof','2']
+        ],
+        columns:[],
+        
+    })
+    var count =projectSearch.runPaged().count;
+    log.debug("Total project in progress",count);
+    return count;
+}
 if(logout === 'T'){
     // user logged out
     // just show login page and stop any redirect
@@ -21,6 +45,7 @@ returnExternalUrl: true,
         email: email
     }
 });
+
 log.debug("Logout", "User returned to login page");
 context.response.write(
 "<html><script>alert('Employee not found');window.location.href='" + loginUrl + "';</script></html>"
@@ -52,7 +77,8 @@ scriptId: 'customscript2876',
 deploymentId: 'customdeploy5',
 returnExternalUrl: true
 });
-
+var projectCount=getTotalCount();
+var inProgressCount=getInProgressCount();
 let html = `
 
 <style>
@@ -116,6 +142,11 @@ border:1px solid white;
 padding:6px 15px;
 color:white;
 cursor:pointer;
+}
+.logout:hover{
+background:white;
+color:#6b3fa0;
+
 }
 #div__body,
 .uir-page-wrapper,
@@ -215,7 +246,9 @@ font-size:20px;
 }
 
 </style>
-
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <div class="header">
 
 <div class="menu-icon" onmouseover="openMenu()">☰</div>
@@ -256,11 +289,11 @@ Logout
 </div>
 
 <div class="stats-values">
-<div>6</div>
+<div>${projectCount}</div>
 <div>2</div>
 <div>24</div>
 <div>6</div>
-<div>3</div>
+<div>${inProgressCount}</div>
 <div>1</div>
 </div>
 
@@ -274,6 +307,36 @@ Logout
     <p>Loading Projects...</p>
 </div>
 <script>
+if (!localStorage.getItem("isLoggedIn")) {
+   // window.location.replace("https://2771600.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=2872&deploy=1");
+window.location.replace('${loginUrl}');
+   }
+    // Prevent back button completely
+window.history.pushState(null, null, window.location.href);
+
+window.onpopstate = function () {
+   // window.location.replace("https://2771600.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=2872&deploy=1&empid=&email=");
+window.location.replace('${loginUrl}');
+   };
+function storeSession(email, empId, password) {
+    localStorage.setItem("email", email);
+    localStorage.setItem("empId", empId);
+
+   
+    
+
+    
+  localStorage.setItem("isLoggedIn", "true");
+}
+    var emailFromSuitelet = "${email}";
+var empIdFromSuitelet = "${empId}";
+storeSession(emailFromSuitelet, empIdFromSuitelet);
+   console.log("Stored Email:", localStorage.getItem("email"));
+console.log("Stored EmpId:", localStorage.getItem("empId"));
+ if (localStorage.getItem("isLoggedIn") !== "true") {
+    window.location.href = "https://2771600.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=2872&deploy=1&compid=2771600&ns-at=AAEJ7tMQLCBxkbOlhRyShbsZSNh6QPuKL2rt00NN091SJ6hEFho";
+}
+
 
 function openMenu(){
 document.getElementById("sidebar").style.width="180px";
@@ -291,7 +354,7 @@ function openProjects(){
 
  document.getElementById("homeContent").style.display = "none";
 document.getElementById("loader").style.display = "block"; 
-document.getElementById("mainFrame").src = projectUrl;
+document.getElementById("mainFrame").src = projectUrl  ;
 document.getElementById("projectContent").style.display = "block";
 
 
@@ -314,11 +377,12 @@ window.onload = function(){
     window.history.pushState(null, null, window.location.href);
 
     window.onpopstate = function () {
-       window.location.href = "https://2771600.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=2872&deploy=1&compid=2771600&ns-at=AAEJ7tMQLCBxkbOlhRyShbsZSNh6QPuKL2rt00NN091SJ6hEFho";
-
+      // window.location.href = "https://2771600.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=2872&deploy=1&compid=2771600&ns-at=AAEJ7tMQLCBxkbOlhRyShbsZSNh6QPuKL2rt00NN091SJ6hEFho";
+      window.location.replace('${loginUrl}');
     };
 
 }
+   
 /* LOGOUT FUNCTION */
 
  function logout(){
@@ -326,10 +390,19 @@ window.onload = function(){
 if(confirm("Are you sure you want to logout?")){
 
 
-sessionStorage.clear();
+  localStorage.clear();
 
     
-    window.location.href = "https://2771600.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=2872&deploy=1&compid=2771600&ns-at=AAEJ7tMQLCBxkbOlhRyShbsZSNh6QPuKL2rt00NN091SJ6hEFho";
+
+    localStorage.removeItem("email");
+    localStorage.removeItem("empId");
+    
+    localStorage.removeItem("isLoggedIn");
+    
+    
+window.location.replace('${loginUrl}');
+    
+   // window.location.href = "https://2771600.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=2872&deploy=1&compid=2771600&ns-at=AAEJ7tMQLCBxkbOlhRyShbsZSNh6QPuKL2rt00NN091SJ6hEFho";
 
 }
 

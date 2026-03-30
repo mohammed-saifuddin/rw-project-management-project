@@ -99,7 +99,7 @@ margin-bottom:15px;
 
 .row label{
 width:120px;
-font-size:14px;
+font-size:12px;
 }
 
 .row input{
@@ -115,6 +115,19 @@ padding:8px 20px;
 border:none;
 cursor:pointer;
 }
+.btn-row{
+            display:flex;
+           justify-content:center;
+           align-items:center;
+           flex-direction:row;
+           gap:10px;
+           margin-left:60px;
+           }
+           .btn:hover{
+           background:#155d8a;
+           text-decoration:justify;
+           }
+           
 </style>
 </head>
 <body>
@@ -151,6 +164,7 @@ Reachware Portal Password Setup
 <label>Enter OTP</label>
 <input type="text" name="otp" id="otp">
 </div>
+<div class="btn-row">
 <button class="btn" type="button" onclick="confirmReset()">
 Confirm
 </button>
@@ -158,6 +172,8 @@ Confirm
 <button class="btn" id="otpBtn" type="button" onclick="handleGenerateOtp()">
 Generate OTP
 </button>
+</div>
+
 
 <span id="timer" style="margin-left:10px;color:green;"></span>
 <span id="msg" style="color:red;"></span>

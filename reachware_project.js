@@ -187,7 +187,7 @@ padding:0;
 
 <div class="content">
 
-<iframe id="mainFrame" style="width:100%;height:500px;border:none;display:none;margin-top:-10px;"></iframe>
+<iframe id="mainFrame" style="width:100%;height:1000px;border:none;display:none;"></iframe>
 
 <div id="homeContent">
 
