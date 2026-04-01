@@ -50,7 +50,12 @@ empSearch.run().each(function(result){
 
     return true;
 });
+var loginUrl = url.resolveScript({
+scriptId: 'customscript2872',
+deploymentId: 'customdeploy1',
+returnExternalUrl: true,
 
+});
 var html = form.addField({
     id: 'custpage_html',
     type: serverWidget.FieldType.INLINEHTML,
@@ -539,6 +544,18 @@ document.addEventListener("DOMContentLoaded", function () {
             showLoader();
         });
     }
+});
+window.addEventListener('storage', function(event) {
+
+    if (event.key === 'logout-event') {
+
+        // Clear everything again (safety)
+        localStorage.clear();
+
+        // Redirect to login
+        window.location.replace('${loginUrl}');
+    }
+
 });
 </script>
 `;

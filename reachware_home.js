@@ -77,6 +77,11 @@ scriptId: 'customscript2876',
 deploymentId: 'customdeploy5',
 returnExternalUrl: true
 });
+const ticketUrl = url.resolveScript({
+scriptId: 'customscript2889',
+deploymentId: 'customdeploy6',
+returnExternalUrl: true
+});
 var projectCount=getTotalCount();
 var inProgressCount=getInProgressCount();
 let html = `
@@ -267,7 +272,7 @@ Logout
 
 <div class="menu" onclick="openHome()">Home</div>
 <div class="menu" onclick="openProjects()">Projects</div>
-<div class="menu">Tickets</div>
+<div class="menu" onclick="openTickets()">Tickets</div>
 
 </div>
 
@@ -307,15 +312,19 @@ Logout
     <p>Loading Projects...</p>
 </div>
 <script>
+
+if (localStorage.getItem("isLoggedIn") !== "true") {
+    window.location.replace('${loginUrl}');
+}
 if (!localStorage.getItem("isLoggedIn")) {
-   // window.location.replace("https://2771600.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=2872&deploy=1");
+   
 window.location.replace('${loginUrl}');
    }
     // Prevent back button completely
 window.history.pushState(null, null, window.location.href);
 
 window.onpopstate = function () {
-   // window.location.replace("https://2771600.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=2872&deploy=1&empid=&email=");
+  
 window.location.replace('${loginUrl}');
    };
 function storeSession(email, empId, password) {
@@ -349,7 +358,7 @@ document.getElementById("sidebar").style.width="0";
 }
 
 var projectUrl = '${projectUrl}';
-
+var ticketUrl ='${ticketUrl}';
 function openProjects(){
 
  document.getElementById("homeContent").style.display = "none";
@@ -358,6 +367,12 @@ document.getElementById("mainFrame").src = projectUrl  ;
 document.getElementById("projectContent").style.display = "block";
 
 
+}
+function openTickets(){
+ document.getElementById("homeContent").style.display = "none";
+document.getElementById("loader").style.display = "block"; 
+document.getElementById("mainFrame").src = ticketUrl  ;
+document.getElementById("projectContent").style.display = "block";
 }
 function hideLoader(){
     document.getElementById("loader").style.display = "none";
@@ -382,6 +397,7 @@ window.onload = function(){
     };
 
 }
+    
    
 /* LOGOUT FUNCTION */
 
@@ -398,16 +414,28 @@ if(confirm("Are you sure you want to logout?")){
     localStorage.removeItem("empId");
     
     localStorage.removeItem("isLoggedIn");
-    
+    localStorage.setItem("logout-event", Date.now());
     
 window.location.replace('${loginUrl}');
     
-   // window.location.href = "https://2771600.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=2872&deploy=1&compid=2771600&ns-at=AAEJ7tMQLCBxkbOlhRyShbsZSNh6QPuKL2rt00NN091SJ6hEFho";
+   
 
 }
 
  }
 document.title="Reachware Project Management Portal";
+window.addEventListener('storage', function(event) {
+
+    if (event.key === 'logout-event') {
+
+        // Clear everything again (safety)
+        localStorage.clear();
+
+        // Redirect to login
+        window.location.replace('${loginUrl}');
+    }
+
+});
 </script>
 
 `;

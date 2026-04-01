@@ -8,13 +8,23 @@ define(['N/ui/serverWidget','N/url','N/search','N/record','N/runtime'], (serverW
 const onRequest = (context) => {
 
 var form = serverWidget.createForm({ title:' ' });
-var pageParam = context.request.parameters.page;
-var page = pageParam ? parseInt(pageParam, 10) : 0;
+var request = context.request;
+
+var pageParam = request.parameters.page;
+var page = parseInt(pageParam, 10) || 0;
+
+if (isNaN(page) || page < 0) page = 0;
 var pageSize = 10;
 var baseUrl = url.resolveScript({
     scriptId: runtime.getCurrentScript().id,
     deploymentId: runtime.getCurrentScript().deploymentId,
-    returnExternalUrl: false
+    returnExternalUrl: true
+});
+ var loginUrl = url.resolveScript({
+scriptId: 'customscript2872',
+deploymentId: 'customdeploy1',
+returnExternalUrl: true,
+
 });
 var projectSearch = search.create({
     type: 'customrecord_rw_portal_access2',
@@ -53,17 +63,19 @@ var projectCounts = {};
 
 //     return true;
 // });
-var pagedData = projectSearch.runPaged({
-    pageSize: pageSize
+var start = page * pageSize;
+var end = start + pageSize;
+
+var searchResult = projectSearch.run();  // RUN ONLY ONCE
+
+var results = searchResult.getRange({
+    start: start,
+    end: end
 });
 
-var totalPages = pagedData.pageRanges.length;
-
-var results = [];
-
-if (page < totalPages) {
-    results = pagedData.fetch({ index: page }).data;
-}
+// total count
+var totalCount = projectSearch.runPaged().count;
+var totalPages = Math.ceil(totalCount / pageSize);
 results.forEach(function(result){
 
     var parentId = result.getValue('custrecord1513');
@@ -192,32 +204,26 @@ var prevPage = page - 1;
 log.debug("current page is ",page)
 
 
+var nextPage = page + 1;
+var prevPage = page - 1;
+
+if (page < 0) page = 0;
+if (page >= totalPages) page = totalPages - 1;
+
 var paginationHtml = `
 <div style="text-align:center; margin-top:20px;">
 
     ${page > 0 ? `
-        <a href="${baseUrl}&page=${prevPage}">
-    <button>Previous</button>
-</a>
+        <button onclick="goToPage(${prevPage})" style="padding:8px 15px; background:#6f3ba2; color:white; border:none; border-radius:5px; cursor:pointer;">Previous</button>
     ` : ''}
 
     <span style="margin:0 15px; font-weight:bold;">
         Page ${page + 1} of ${totalPages}
     </span>
 
-   ${page < totalPages - 1 ? `
-       <a href="${baseUrl}&page=${nextPage}">
-    <button style="
-        padding:8px 15px;
-        background:#6f3ba2;
-        color:white;
-        border:none;
-        border-radius:5px;
-        cursor:pointer;
-    ">
-        Next
-    </button>
-</a>
+    ${page < totalPages - 1 ? `
+        
+        <button type="button" onclick="goToPage(${nextPage})" style="padding:8px 15px; background:#6f3ba2; color:white; border:none; border-radius:5px; cursor:pointer;">Next</button>
     ` : ''}
 
 </div>
@@ -333,7 +339,8 @@ padding:0;
 }
 
 </style>
-
+<form method="GET">
+<input type="hidden" id="pageInput" name="page" value="${page}">
 <div class="content">
 
 <iframe id="mainFrame"
@@ -357,13 +364,13 @@ padding:0;
 <table>
 
 <tr>
-<th style="border:1px solid #ccc;">Project ID</th>
-<th style="border:1px solid #ccc;">Customer</th>
-<th style="border:1px solid #ccc;">RW Product</th>
-<th style="border:1px solid #ccc;">Status</th>
-<th style="border:1px solid #ccc;">Total Tickets</th>
-<th style="border:1px solid #ccc;">Open</th>
-<th style="border:1px solid #ccc;">Closed</th>
+<th style="border:1px solid black;">Project ID</th>
+<th style="border:1px solid black;">Customer</th>
+<th style="border:1px solid black;">RW Product</th>
+<th style="border:1px solid black;">Status</th>
+<th style="border:1px solid black;">Total Tickets</th>
+<th style="border:1px solid black;">Open</th>
+<th style="border:1px solid black;">Closed</th>
 </tr>
 
 
@@ -378,6 +385,7 @@ ${paginationHtml}
     <div class="spinner"></div>
     <p>Opening........</p>
 </div>
+</form>
 <script>
 document.title="Projects"
 var projectUrl = '${projectUrl}';
@@ -409,8 +417,26 @@ function hideLoader(){
     loader.style.display = "none";
 }
     
+function goToPage(page){
+    var loader = document.getElementById("loader");
+    loader.style.display = "block";
 
+    document.getElementById("pageInput").value = page;
 
+    document.forms[0].submit();
+}
+    window.addEventListener('storage', function(event) {
+
+    if (event.key === 'logout-event') {
+
+        // Clear everything again (safety)
+        localStorage.clear();
+
+        // Redirect to login
+        window.location.replace('${loginUrl}');
+    }
+
+});
 </script>
 `;
 
