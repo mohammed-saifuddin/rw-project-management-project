@@ -19,20 +19,7 @@ const onRequest = (context) => {
             label: 'HTML'
         });
 
-        // 🔹 Load projects for dropdown
-        var options = `<option value="">Select Project</option>`;
-
-        var projectSearch = search.create({
-            type: 'customrecord_rw_portal_access',
-            columns: ['internalid','custrecord_rw_portal_customername']
-        });
-
-        projectSearch.run().each(function(res){
-            options += `<option value="${res.getValue('internalid')}">
-                        ${res.getValue('custrecord_rw_portal_customername')}
-                        </option>`;
-            return true;
-        });
+        
 
         htmlField.defaultValue = `
 
@@ -42,123 +29,227 @@ body {
     background:white;
 }
 
-.container {
-    width: 500px;
-    margin: 40px auto;
-    background: white;
-    padding: 25px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+html, body {
+    overflow: hidden !important;   
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
-h2 {
-    text-align:center;
-    margin-bottom:20px;
-}
+// /* Title */
+// .main-title {
+//     text-align:center;
+//     background:#6b3fa0;
+//     color:white;
+//     padding:10px;
+//     font-weight:bold;
+//     margin-bottom:10px;
+//     display:flex;
+//     justify-content:center;
+//     align-items:center;
+// }
 
-.field {
-    margin-bottom:15px;
-}
-
-label {
-    display:block;
-    margin-bottom:5px;
+/* Section */
+.section {
+    background:#6f3ba2;
+    color:white;
+    padding:8px;
     font-weight:bold;
+    
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    margin-bottom:10px;
 }
 
-input, select, textarea {
-    width:100%;
-    padding:10px;
+/* Row (label + input) */
+.form-row {
+    display:flex;
+    align-items:center;
+    margin-bottom:12px;
+}
+
+/* Label */
+.form-row label {
+    width:220px;
+    font-weight:bold;
+    
+    padding:8px;
+    
+}
+
+/* Input */
+.form-row input,
+.form-row select,
+.form-row textarea {
+    flex:1;
+    
     border:1px solid #ccc;
-    border-radius:5px;
     font-size:14px;
 }
 
-textarea {
-    resize:none;
-    height:100px;
-}
-
+/* Two column layout */
 .row {
     display:flex;
-    gap:10px;
+    gap:20px;
 }
 
-.row .field {
-    flex:1;
-}
+/* Special colors */
+.green { background:#c6e0b4; }
+.red { background:#ff0000; color:white; }
 
+/* Textarea */
+textarea {
+    height:40px;
+    resize:none;
+}
+.attach{
+height:30px;
+
+
+}
+/* Button */
 button {
-    width:100%;
-    padding:12px;
-    background:#6b3fa0;
-    color:white;
-    border:none;
-    border-radius:5px;
-    font-size:16px;
-    cursor:pointer;
-}
-
-button:hover {
-    background:#5a2e8a;
+   margin-top:20px;
+padding:10px 20px;
+background:#6f3ba2;
+color:white;
+border:none;
+cursor:pointer;
 }
 </style>
 
 <div class="container">
 
-<h2>Create Ticket</h2>
+
 
 <form onsubmit="return false;">
 
-    <!-- Project -->
-    <div class="field">
-        <label>Project</label>
-        <select>
-            <option>Select Project</option>
+<!-- Requestor Info -->
+<div class="section">Requestor Information</div>
+
+<div class="row">
+
+<div style="flex:1;">
+    <div class="form-row">
+        <label>Name</label>
+        <input type="text">
+    </div>
+
+    <div class="form-row">
+        <label>Date</label>
+        <input type="date">
+    </div>
+
+    <div class="form-row">
+        <label>Ticket No</label>
+        <input type="text">
+    </div>
+</div>
+
+<div style="flex:1;">
+    <div class="form-row">
+        <label>Email</label>
+        <input type="email">
+    </div>
+
+    <div class="form-row">
+        <label>Request Type</label>
+        <select class="">
+            <option>Issue</option>
+            <option>Bug</option>
         </select>
     </div>
 
-    <!-- Product -->
-    <div class="field">
-        <label>RW Product</label>
-        <input type="text" placeholder="Enter product name">
+    <div class="form-row">
+        <label>Assigned To</label>
+        <input type="text">
+    </div>
+</div>
+
+</div>
+
+<!-- Project Info -->
+<div class="section">Project Information</div>
+
+<div class="row">
+
+<div style="flex:1;">
+    <div class="form-row">
+        <label>Project Name</label>
+        <input class="" type="text">
     </div>
 
-    <!-- Status + Priority -->
-    <div class="row">
-        <div class="field">
-            <label>Status</label>
-            <select>
-                <option>Open</option>
-                <option>In Progress</option>
-                <option>Closed</option>
-            </select>
-        </div>
+    <div class="form-row">
+        <label>Reachware Suite APP</label>
+        <input class="" type="text">
+    </div>
+</div>
 
-        <div class="field">
-            <label>Priority</label>
-            <select>
-                <option>Low</option>
-                <option>Medium</option>
-                <option>High</option>
-            </select>
-        </div>
+<div style="flex:1;">
+    <div class="form-row">
+        <label>Environment</label>
+        <input type="text">
+    </div>
+</div>
+
+</div>
+
+<!-- Issue Details -->
+<div class="section">Issue Details</div>
+
+<div class="row">
+
+<div style="flex:1;">
+    <div class="form-row">
+        <label>Priority</label>
+        <select class="">
+            <option class="red">High</option>
+            <option>Medium</option>
+            <option>Low</option>
+        </select>
     </div>
 
-    <!-- Assigned To -->
-    <div class="field">
-        <label>Assign To</label>
-        <input type="text" placeholder="Enter employee name">
+    <div class="form-row">
+        <label>Issue Details</label>
+        <textarea></textarea>
     </div>
 
-    <!-- Comments -->
-    <div class="field">
-        <label>Comments</label>
-        <textarea placeholder="Describe the issue..."></textarea>
+    <div class="form-row">
+        <label >Attachment</label>
+        <input type="file" class="attach">
     </div>
 
-    <!-- Button -->
-    <button>Create Ticket</button>
+    <div class="form-row">
+        <label>Status</label>
+        <select class="">
+            <option>In Progress</option>
+            <option>Open</option>
+            <option>Closed</option>
+        </select>
+    </div>
+</div>
+
+<div style="flex:1;">
+    <div class="form-row">
+        <label>Issue Occurred on</label>
+        <input type="date">
+    </div>
+
+    <div class="form-row">
+        <label>Role Of User</label>
+        <input class="" type="text">
+    </div>
+
+    <div class="form-row">
+        <label>Deadline</label>
+        <input type="date">
+    </div>
+</div>
+
+</div>
+
+<button>Submit Ticket</button>
 
 </form>
 

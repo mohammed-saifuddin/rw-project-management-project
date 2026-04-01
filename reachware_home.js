@@ -258,7 +258,7 @@ font-size:20px;
 
 <div class="menu-icon" onmouseover="openMenu()">☰</div>
 
-Reachware Project Management Portal
+<span id="headerTitle">Reachware Project Management Portal</span>
 
 <button class="logout" onclick="logout()">
 Logout
@@ -309,7 +309,7 @@ Logout
 </div>
 <div id="loader">
     <div class="spinner"></div>
-    <p>Loading Projects...</p>
+    <p>Opening...</p>
 </div>
 <script>
 
@@ -360,7 +360,7 @@ document.getElementById("sidebar").style.width="0";
 var projectUrl = '${projectUrl}';
 var ticketUrl ='${ticketUrl}';
 function openProjects(){
-
+document.getElementById("headerTitle").innerText = "Reachware Project Management Portal";
  document.getElementById("homeContent").style.display = "none";
 document.getElementById("loader").style.display = "block"; 
 document.getElementById("mainFrame").src = projectUrl  ;
@@ -369,6 +369,7 @@ document.getElementById("projectContent").style.display = "block";
 
 }
 function openTickets(){
+document.getElementById("headerTitle").innerText = "Reachware Ticketing APP - ISSUE";
  document.getElementById("homeContent").style.display = "none";
 document.getElementById("loader").style.display = "block"; 
 document.getElementById("mainFrame").src = ticketUrl  ;
@@ -379,7 +380,7 @@ function hideLoader(){
      document.getElementById("mainFrame").style.display = "block";
 }
 function openHome(){
-
+document.getElementById("headerTitle").innerText = "Reachware Project Management Portal";
  document.getElementById("projectContent").style.display = "none";
 
 document.getElementById("loader").style.display = "none"; 
