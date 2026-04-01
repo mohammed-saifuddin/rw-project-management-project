@@ -175,7 +175,7 @@ Generate OTP
 </div>
 
 
-<span id="timer" style="margin-left:10px;color:green;"></span>
+<span id="timer" style="margin-left:10px;color:green;"></span><br>
 <span id="msg" style="color:red;"></span>
 
 
@@ -460,15 +460,31 @@ ignoreMandatoryFields:true
 });
 
 
+try {
 
+    log.debug("Before Email Send", {
+        author: 1535,
+        recipients: emailId
+    });
 
-email.send({
-    author: 1535,   
-    recipients: emailId,             
-    subject: "Reachware Portal OTP",
-    body: "Your OTP for password reset is : " + generatedOtp
-});
+    email.send({
+        author: 1535,
+        recipients: emailId,
+        subject: "Reachware Portal OTP",
+        body: "Your OTP is: " + generatedOtp
+    });
 
+    log.debug("Email Status", "Email sent successfully");
+
+} catch (e) {
+
+    log.error("Email Error", {
+        message: e.message,
+        name: e.name,
+        stack: e.stack
+    });
+
+}
 
 var resetUrl = url.resolveScript({
 scriptId:'customscript2873',

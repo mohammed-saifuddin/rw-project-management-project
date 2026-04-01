@@ -3,18 +3,31 @@
  * @NScriptType Suitelet
  */
 
-define(['N/ui/serverWidget','N/url','N/search','N/record'], (serverWidget,url,search,record) => {
+define(['N/ui/serverWidget','N/url','N/search','N/record','N/runtime'], (serverWidget,url,search,record,runtime) => {
 
 const onRequest = (context) => {
 
 var form = serverWidget.createForm({ title:' ' });
-
+var pageParam = context.request.parameters.page;
+var page = pageParam ? parseInt(pageParam, 10) : 0;
+var pageSize = 10;
+var baseUrl = url.resolveScript({
+    scriptId: runtime.getCurrentScript().id,
+    deploymentId: runtime.getCurrentScript().deploymentId,
+    returnExternalUrl: false
+});
 var projectSearch = search.create({
     type: 'customrecord_rw_portal_access2',
      filters: [
         ['custrecord1513','noneof','@NONE@'] 
     ],
     columns: [
+      
+search.createColumn({
+    name: 'internalid',
+    sort: search.Sort.DESC 
+}),
+       
         'custrecord_rw_portal_rwproduct', 
         'custrecord_rw_portal_additionalcomments',
         'custrecord1513'
@@ -27,7 +40,31 @@ var projectSearch = search.create({
 
 var tableRows = '';
 var projectCounts = {};
-projectSearch.run().each(function(result){
+// projectSearch.run().each(function(result){
+
+//     var parentId = result.getValue('custrecord1513');
+
+//     if(parentId){
+//         if(!projectCounts[parentId]){
+//             projectCounts[parentId] = 0;
+//         }
+//         projectCounts[parentId]++;
+//     }
+
+//     return true;
+// });
+var pagedData = projectSearch.runPaged({
+    pageSize: pageSize
+});
+
+var totalPages = pagedData.pageRanges.length;
+
+var results = [];
+
+if (page < totalPages) {
+    results = pagedData.fetch({ index: page }).data;
+}
+results.forEach(function(result){
 
     var parentId = result.getValue('custrecord1513');
 
@@ -37,38 +74,82 @@ projectSearch.run().each(function(result){
         }
         projectCounts[parentId]++;
     }
-
-    return true;
 });
-projectSearch.run().each(function(result){
+// projectSearch.run().each(function(result){
 
-   var parentId = result.getValue('custrecord1513');
+//    var parentId = result.getValue('custrecord1513');
 
-var customer = '';
-var projectId = '';
-var status = '';
-var total=0;
-if(parentId){
+// var customer = '';
+// var projectId = '';
+// var status = '';
+// var total=0;
+// if(parentId){
 
-    var parentData = record.load({
-    type: 'customrecord_rw_portal_access',
-    id: parentId
-});
+//     var parentData = record.load({
+//     type: 'customrecord_rw_portal_access',
+//     id: parentId
+// });
 
-customer = parentData.getValue('custrecord_rw_portal_customername') || '';
-projectId = parentData.id;
-status = parentData.getText('custrecord_rw_portal_status') || '';
-total = projectCounts[parentId] || 0;
+// customer = parentData.getValue('custrecord_rw_portal_customername') || '';
+// projectId = parentData.id;
+// status = parentData.getText('custrecord_rw_portal_status') || '';
+// total = projectCounts[parentId] || 0;
     
-}
+// }
 
  
     
+//     var rwProduct = result.getText('custrecord_rw_portal_rwproduct');
+
+//     var comments = result.getValue('custrecord_rw_portal_additionalcomments');
+
+//     tableRows += `
+//     <tr>
+    
+//     <td  style="border:1px solid black;">${projectId}</td>
+//         <td style="border:1px solid black;">${customer}</td>
+        
+//         <td style="border:1px solid black;">${rwProduct}</td>
+//         <td style="border:1px solid black;">${status}</td>
+//         <td style="border:1px solid black;">${total}</td>
+//         <td style="border:1px solid black;">${total}</td>
+//         <td style="border:1px solid black;">${total}</td>
+//     </tr>
+//     `;
+// log.debug("Customer", customer);
+// log.debug("PM", projectId);
+// log.debug("Status", status);
+// log.debug(rwProduct)
+// log.debug("Parent Data FULL", JSON.stringify(parentData));
+// log.debug("parent id is ",parentId);
+//     return true;
+// });
+    log.debug("page", page);
+log.debug("start", page * pageSize);
+results.forEach(function(result){
+
+    var parentId = result.getValue('custrecord1513');
+
+    var customer = '';
+    var projectId = '';
+    var status = '';
+    var total = 0;
+
+    if(parentId){
+        var parentData = record.load({
+            type: 'customrecord_rw_portal_access',
+            id: parentId
+        });
+
+        customer = parentData.getValue('custrecord_rw_portal_customername') || '';
+        projectId = parentData.id;
+        status = parentData.getText('custrecord_rw_portal_status') || '';
+        total = projectCounts[parentId] || 0;
+    }
+
     var rwProduct = result.getText('custrecord_rw_portal_rwproduct');
 
-    var comments = result.getValue('custrecord_rw_portal_additionalcomments');
-
-    tableRows += `
+      tableRows += `
     <tr>
     
     <td  style="border:1px solid black;">${projectId}</td>
@@ -81,6 +162,7 @@ total = projectCounts[parentId] || 0;
         <td style="border:1px solid black;">${total}</td>
     </tr>
     `;
+    
 log.debug("Customer", customer);
 log.debug("PM", projectId);
 log.debug("Status", status);
@@ -89,7 +171,6 @@ log.debug("Parent Data FULL", JSON.stringify(parentData));
 log.debug("parent id is ",parentId);
     return true;
 });
-    
 
 
 
@@ -99,13 +180,48 @@ var htmlField = form.addField({
     type:serverWidget.FieldType.INLINEHTML,
     label:'HTML'
 });
-
+// var totalCount = projectSearch.runPaged().count;
+// var totalPages = Math.ceil(totalCount / pageSize);
 const projectUrl = url.resolveScript({
 scriptId: 'customscript2877',
 deploymentId: 'customdeploy1',
 returnExternalUrl: true
 });
+var nextPage = page + 1;
+var prevPage = page - 1;
+log.debug("current page is ",page)
 
+
+var paginationHtml = `
+<div style="text-align:center; margin-top:20px;">
+
+    ${page > 0 ? `
+        <a href="${baseUrl}&page=${prevPage}">
+    <button>Previous</button>
+</a>
+    ` : ''}
+
+    <span style="margin:0 15px; font-weight:bold;">
+        Page ${page + 1} of ${totalPages}
+    </span>
+
+   ${page < totalPages - 1 ? `
+       <a href="${baseUrl}&page=${nextPage}">
+    <button style="
+        padding:8px 15px;
+        background:#6f3ba2;
+        color:white;
+        border:none;
+        border-radius:5px;
+        cursor:pointer;
+    ">
+        Next
+    </button>
+</a>
+    ` : ''}
+
+</div>
+`;
 htmlField.defaultValue = `
 
 <style>
@@ -168,7 +284,40 @@ padding:10px;
 border:0px solid #ccc;
 text-align:center;
 }
+#loader {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height:100%;
+  background: rgba(255,255,255,0.7); /* light overlay */
+  z-index: 9999;     /* above everything */
+  text-align: center;
+  padding-top: 200px;
 
+ 
+}
+.spinner {
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+
+
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #6b3fa0;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+//   margin: auto;
+}
+
+@keyframes spin {
+  0% { transform: translate(-50%,-50%) rotate(0deg); }
+  100% { transform: translate(-50%,-50%) rotate(360deg); }
+}
 /* plus button */
 
 .addBtn{
@@ -187,8 +336,20 @@ padding:0;
 
 <div class="content">
 
-<iframe id="mainFrame" style="width:100%;height:1000px;border:none;display:none;"></iframe>
-
+<iframe id="mainFrame"
+        style="
+        width:100%;
+        height:100%;
+        border:none;
+        display:none;
+        position:absolute;
+        top:0;
+        left:0;
+        background:white;
+        
+        "
+        onload="hideLoader()">
+</iframe>
 <div id="homeContent">
 
 <button class="addBtn" type="button" onclick="listProjects()">+</button>
@@ -208,24 +369,47 @@ padding:0;
 
 
 ${tableRows}
+
 </table>
-
+${paginationHtml}
 </div>
 </div>
-
+<div id="loader">
+    <div class="spinner"></div>
+    <p>Opening........</p>
+</div>
 <script>
 document.title="Projects"
 var projectUrl = '${projectUrl}';
 
+// function listProjects(){
+// /*alert("list of projects");*/
+// document.getElementById("homeContent").style.display = "none";
+
+// document.getElementById("mainFrame").style.display = "block";
+
+// document.getElementById("mainFrame").src = projectUrl;
+
+// }
+
 function listProjects(){
-/*alert("list of projects");*/
-document.getElementById("homeContent").style.display = "none";
+    var loader = document.getElementById("loader");
+    var frame = document.getElementById("mainFrame");
 
-document.getElementById("mainFrame").style.display = "block";
-
-document.getElementById("mainFrame").src = projectUrl;
-
+    loader.style.display = "block";   // spinner
+    frame.style.display = "block";    // overlay iframe
+    frame.src = projectUrl;
 }
+// function hideLoader(){
+//     document.getElementById("loader").style.display = "none";
+//      document.getElementById("mainFrame").style.display = "block";
+// }
+function hideLoader(){
+    var loader = document.getElementById("loader");
+    loader.style.display = "none";
+}
+    
+
 
 </script>
 `;

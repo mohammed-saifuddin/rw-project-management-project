@@ -212,7 +212,7 @@ text-align:center;
   left: 0;
   width: 100%;
   height:100%;
-  background: rgba(255,255,255,0.7); /* light overlay */
+  background:white /* light overlay */
   z-index: 9999;     /* above everything */
   text-align: center;
   padding-top: 200px;
