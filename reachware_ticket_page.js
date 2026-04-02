@@ -8,7 +8,7 @@ define(['N/ui/serverWidget','N/record','N/search','N/url'],
 
 const onRequest = (context) => {
 
-    // ===================== GET =====================
+    
     if (context.request.method === 'GET') {
 
         var form = serverWidget.createForm({ title: ' ' });
@@ -52,6 +52,7 @@ html, body {
 /* Section */
 .section {
     background:#6f3ba2;
+    // background:#5d8db8;
     color:white;
     padding:8px;
     font-weight:bold;
@@ -195,7 +196,7 @@ cursor:pointer;
 
 </div>
 
-<!-- Issue Details -->
+
 <div class="section">Issue Details</div>
 
 <div class="row">
@@ -249,7 +250,7 @@ cursor:pointer;
 
 </div>
 
-<button>Submit Ticket</button>
+<button type="submit">Submit Ticket</button>
 
 </form>
 
@@ -259,34 +260,110 @@ cursor:pointer;
         context.response.writePage(form);
     }
 
-    // ===================== POST =====================
+    
     else {
 
         var req = context.request;
 
-        var project = req.parameters.project;
-        var product = req.parameters.product;
-        var comments = req.parameters.comments;
+        var name = req.parameters.name;
+        var email = req.parameters.email;
+        var date = req.parameters.date;
+        var requestType = req.parameters.requestType;
+        var assignedTo = req.parameters.assignedTo;
+        var projectName = req.parameters.projectName;
+        var suiteApp = req.parameters.suiteApp;
+        var environment = req.parameters.envronment;
+        var priority = req.parameters.priority;
+        var issueDetails = req.parameters.issueDetails;
         var status = req.parameters.status;
+        var isssueOccurredOn =req.parameters.isssueOccurredOn;
+        var roleOfUser = req.parameters.roleOfUser;
+        var deadline = req.parameters.deadline;
+        var attachment = req.parameters.attachment;
+        var ticketNo =req.parameters.ticketNo;
 
         var rec = record.create({
             type: 'customrecord_rw_portal_access2',
             isDynamic: true
         });
 
-        rec.setValue({ fieldId: 'custrecord1513', value: project });
-        rec.setValue({ fieldId: 'custrecord_rw_portal_rwproduct', value: product });
-        rec.setValue({ fieldId: 'custrecord_rw_portal_additionalcomments', value: comments });
-        rec.setValue({ fieldId: 'custrecord_rw_portal_status', value: status });
-
+        rec.setValue({ 
+            fieldId: 'custrecord1513', 
+            value: name 
+        });
+        rec.setValue({ 
+            fieldId: 'custrecord_rw_portal_email', 
+            value: email
+         });
+        rec.setValue({ 
+            fieldId: 'custrecord_rw_portal_priority',
+             value: priority
+            });
+        rec.setValue({ 
+            fieldId: 'custrecord_rw_portal_status',
+             value: status 
+            });
+         rec.setValue({
+             fieldId: 'custrecord_rw_portal_assignedto', 
+             value: assignedTo 
+            });
+        rec.setValue({ 
+            fieldId: 'custrecord_rw_portal_issuedetails',
+             value: issueDetails 
+            });
+        rec.setValue({ 
+            fieldId: 'custrecord_rw_portal_requesttype', 
+            value: requestType
+         });
+        rec.setValue({ 
+            fieldId: 'custrecord_rw_portal_ticketno', 
+            value: ticketNo
+         });
+        
+        rec.setValue({ 
+            fieldId: 'custrecord_rw_portal_attachment', 
+            value: attachment 
+        });
+        rec.setValue({ 
+            fieldId: 'custrecord_rw_portal_deadline', 
+            value: deadline
+         });
+        rec.setValue({
+             fieldId: 'custrecord_rw_portal_roleofuser',
+              value: roleOfUser
+             });
+          rec.setValue({ 
+            fieldId: 'custrecord_rw_portal_projectname',
+            value: projectName 
+        });
+        rec.setValue({ 
+            fieldId: 'custrecord_rw_portal_environment',
+             value: environment
+             });
+        rec.setValue({ 
+            fieldId: 'custrecord_rw_portal_suiteapp',
+             value: suiteApp 
+            });
+        
+          rec.setValue({
+             fieldId: 'custrecord_rw_portal_issueoccuredon', 
+             value: isssueOccurredOn 
+            });
+        rec.setValue({ 
+            fieldId: 'custrecord_rw_portal_date', 
+            value: date 
+        });
+        
+        
+        
         var id = rec.save();
 
         // redirect back
         var redirectUrl = url.resolveScript({
-scriptId: 'customscript2876',
-deploymentId: 'customdeploy5',
-returnExternalUrl: true
-});
+                scriptId: 'customscript2876',
+                deploymentId: 'customdeploy5',
+                returnExternalUrl: true
+                });
 
         context.response.write(`
         <html>

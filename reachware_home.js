@@ -356,10 +356,13 @@ document.getElementById("sidebar").style.height="700px";
 function closeMenu(){
 document.getElementById("sidebar").style.width="0";
 }
-
+function setPageTitle(title){
+    document.title = title + " | Reachware";
+}
 var projectUrl = '${projectUrl}';
 var ticketUrl ='${ticketUrl}';
 function openProjects(){
+setPageTitle("Projects | Reachware");
 document.getElementById("headerTitle").innerText = "Reachware Project Management Portal";
  document.getElementById("homeContent").style.display = "none";
 document.getElementById("loader").style.display = "block"; 
@@ -369,6 +372,7 @@ document.getElementById("projectContent").style.display = "block";
 
 }
 function openTickets(){
+setPageTitle("Tickets | Reachware");
 document.getElementById("headerTitle").innerText = "Reachware Ticketing APP - ISSUE";
  document.getElementById("homeContent").style.display = "none";
 document.getElementById("loader").style.display = "block"; 
@@ -380,6 +384,7 @@ function hideLoader(){
      document.getElementById("mainFrame").style.display = "block";
 }
 function openHome(){
+setPageTitle("Home | Reachware");
 document.getElementById("headerTitle").innerText = "Reachware Project Management Portal";
  document.getElementById("projectContent").style.display = "none";
 
@@ -387,6 +392,7 @@ document.getElementById("loader").style.display = "none";
 document.getElementById("homeContent").style.display = "block";
 
 }
+
 window.onload = function(){
 
     
