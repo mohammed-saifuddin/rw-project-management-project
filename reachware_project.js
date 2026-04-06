@@ -337,7 +337,12 @@ display:flex;
 align-item:left;
 padding:0;
 }
+.addBtn:hover{
+color:#6f3ba2;
+text-shadow:0 0 5px #6f3ba2;
+text-decoration: none;
 
+}
 </style>
 <form method="GET">
 <input type="hidden" id="pageInput" name="page" value="${page}">

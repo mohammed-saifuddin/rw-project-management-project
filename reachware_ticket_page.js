@@ -3,8 +3,8 @@
  * @NScriptType Suitelet
  */
 
-define(['N/ui/serverWidget','N/record','N/search','N/url'], 
-(serverWidget, record, search, url) => {
+define(['N/ui/serverWidget','N/record','N/search','N/url','N/file','N/format'], 
+(serverWidget, record, search, url, file, format) => {
 
 const onRequest = (context) => {
 
@@ -12,15 +12,104 @@ const onRequest = (context) => {
     if (context.request.method === 'GET') {
 
         var form = serverWidget.createForm({ title: ' ' });
-
+          var email = context.request.parameters.email || '';
+    var empId = context.request.parameters.empid || '';
         var htmlField = form.addField({
             id: 'custpage_html',
             type: serverWidget.FieldType.INLINEHTML,
             label: 'HTML'
         });
+        var roleOptions = '<option value="">Select</option>';
+if (context.request.parameters.action === 'getTicket') {
 
-        
+    var projectId = context.request.parameters.projectId;
 
+    log.debug("Project ID", projectId); // DEBUG
+
+    var ticketSearch = search.create({
+        type: 'customrecord_rw_ticket',
+        filters: [
+            ['custrecord_rw_ticket_projectname', 'anyof', projectId]
+        ],
+        columns: [
+            'custrecord_rw_ticket_ticketno'
+        ]
+    });
+
+    var result = ticketSearch.run().getRange({ start: 0, end: 1000 });
+
+    log.debug("Results Found", result.length); // DEBUG
+
+    var maxNumber = 0;
+
+    result.forEach(function(rec) {
+
+        var ticket = rec.getValue('custrecord_rw_ticket_ticketno');
+
+        if (ticket) {
+            var num = parseInt(ticket.split('-').pop()) || 0;
+
+            if (num > maxNumber) {
+                maxNumber = num;
+            }
+        }
+    });
+
+    var nextNumber = maxNumber + 1;
+
+    log.debug("Next Number", nextNumber); // DEBUG
+
+    context.response.write(JSON.stringify({ count: nextNumber }));
+    return;
+}
+var roleSearch = search.create({
+    type: 'role',
+    columns: ['internalid', 'name']
+});
+
+roleSearch.run().each(function(result){
+
+    var id = result.getValue('internalid');
+    var name = result.getValue('name');
+
+    roleOptions += '<option value="'+id+'">'+name+'</option>';
+
+    return true;
+});
+var empOptions = '<option value="">Select</option>';
+        var empSearch = search.create({
+    type: 'employee',
+    filters: [
+        ['isinactive','is','F']
+    ],
+    columns: ['internalid','firstname','lastname']
+});
+
+empSearch.run().each(function(result){
+
+    var id = result.getValue('internalid');
+    var firstname = result.getValue('firstname');
+    var lastname = result.getValue('lastname');
+
+    empOptions += '<option value="'+id+'">'+firstname+' '+lastname+'</option>';
+
+    return true;
+});
+var projectOptions = '<option value="">Select</option>';
+
+var projectSearch = search.create({
+    type: 'customlist_rw_ticket_projectnamelist',
+    filters: [['isinactive','is','F']],
+    columns: ['internalid','name']
+});
+
+projectSearch.run().each(function(result){
+    var id = result.getValue('internalid');
+    var name = result.getValue('name');
+
+    projectOptions += '<option value="'+id+'">'+name+'</option>';
+    return true;
+});
         htmlField.defaultValue = `
 
 <style>
@@ -35,7 +124,11 @@ html, body {
     margin: 0 !important;
     padding: 0 !important;
 }
-
+label.required::after {
+    content: " *";
+    color: red;
+    font-weight: bold;
+}
 // /* Title */
 // .main-title {
 //     text-align:center;
@@ -102,7 +195,7 @@ html, body {
 /* Textarea */
 textarea {
     height:40px;
-    resize:none;
+    resize:both;
 }
 .attach{
 height:30px;
@@ -124,7 +217,7 @@ cursor:pointer;
 
 
 
-<form onsubmit="return false;">
+<form method="POST" action="" enctype="multipart/form-data">
 
 <!-- Requestor Info -->
 <div class="section">Requestor Information</div>
@@ -133,39 +226,54 @@ cursor:pointer;
 
 <div style="flex:1;">
     <div class="form-row">
-        <label>Name</label>
-        <input type="text">
+        <label class="required">Name</label>
+        <input type="text" name="name" required>
     </div>
 
     <div class="form-row">
-        <label>Date</label>
-        <input type="date">
+        <label class="required">Date</label>
+         <span id="dateText" style="padding:8px;font-size:14px;"></span>
+    
+    <!-- Hidden field -->
+    <input type="hidden" id="dateField" name="date">
     </div>
 
     <div class="form-row">
         <label>Ticket No</label>
-        <input type="text">
+        
+        <span id="ticketNoText" style="padding:8px;font-size:14px;"></span>
+
+<input type="hidden" id="ticketNoField" name="ticketNo">
     </div>
 </div>
 
 <div style="flex:1;">
     <div class="form-row">
-        <label>Email</label>
-        <input type="email">
+        <label class="required">Email</label>
+        
+    <span id="emailText" style="padding:8px;font-size:14px;"></span>
+    
+    <!-- Hidden field (for saving) -->
+    <input type="hidden" id="emailField" name="email">
     </div>
 
     <div class="form-row">
-        <label>Request Type</label>
-        <select class="">
-            <option>Issue</option>
-            <option>Bug</option>
+        <label class="required">Request Type</label>
+        <select class="" name="requestType" required>
+        <option value="">Select</option>
+        <option value="1">New Request</option>
+            <option value="2">Issue/bug</option>
+            <option value="3">Enhancement</option>
+            <option value="4">Training/UAT</option>
         </select>
     </div>
-
-    <div class="form-row">
-        <label>Assigned To</label>
-        <input type="text">
+  <div class="form-row">
+        <label class="required">Role Of User</label>
+        <select name="roleOfUser" required>
+    ${roleOptions}
+</select>
     </div>
+    
 </div>
 
 </div>
@@ -177,20 +285,34 @@ cursor:pointer;
 
 <div style="flex:1;">
     <div class="form-row">
-        <label>Project Name</label>
-        <input class="" type="text">
+        <label class="required">Client Name</label>
+       <select name="projectName" id="projectName" required>
+    ${projectOptions}
+</select>
     </div>
 
     <div class="form-row">
-        <label>Reachware Suite APP</label>
-        <input class="" type="text">
+        <label class="required">Reachware Product</label>
+        
+        <select class="" name="suiteApp" required>
+        <option value="">Select</option>
+             <option value="1">Payment Completion on A/R</option>
+            <option value="2">Payment Completion on A/P</option>
+            <option value="3">Material Request</option>
+            <option value="4">Advanced Budgeting</option>
+        </select>
     </div>
 </div>
 
 <div style="flex:1;">
     <div class="form-row">
-        <label>Environment</label>
-        <input type="text">
+        <label class="required">Environment</label>
+        <select class="" name="environment" required>
+            <option value="">Select</option>
+            <option  value="1">Production</option>
+            <option value="2">Sandbox</option>
+            
+        </select>
     </div>
 </div>
 
@@ -203,48 +325,57 @@ cursor:pointer;
 
 <div style="flex:1;">
     <div class="form-row">
-        <label>Priority</label>
-        <select class="">
-            <option class="red">High</option>
-            <option>Medium</option>
-            <option>Low</option>
+        <label class="required">Priority</label>
+        <select class="" name="priority" required>
+            <option value="">Select</option>
+            <option  value="1">High</option>
+            <option value="2">Medium</option>
+            <option value="3">Low</option>
         </select>
     </div>
 
     <div class="form-row">
-        <label>Issue Details</label>
-        <textarea></textarea>
+        <label class="required">Issue Details</label>
+        <textarea name="issueDetails" required></textarea>
     </div>
 
     <div class="form-row">
-        <label >Attachment</label>
-        <input type="file" class="attach">
+        <label>Attachment</label>
+        
+        <input type="file" id="attachment" name="attachment" >
+<input type="hidden" name="fileId" id="fileId">
     </div>
 
     <div class="form-row">
-        <label>Status</label>
-        <select class="">
-            <option>In Progress</option>
-            <option>Open</option>
-            <option>Closed</option>
-        </select>
+        <label class="required">Status</label>
+        <select name="status" required>
+<option value="">Select</option>
+<option value="1">To Do</option>
+<option value="2">In Progress</option>
+<option value="3">UAT</option>
+<option value="4">Code Review</option>
+<option value="5">Done</option>
+</select>
     </div>
 </div>
 
 <div style="flex:1;">
     <div class="form-row">
-        <label>Issue Occurred on</label>
-        <input type="date">
+        <label class="required">Issue Occurred on</label>
+        <input type="date" name="issueOccurredOn" required>
     </div>
 
     <div class="form-row">
-        <label>Role Of User</label>
-        <input class="" type="text">
+        <label class="required">Assigned To</label>
+        
+        <select class="" name="assignedTo" required>
+            ${empOptions}
+        </select>
     </div>
 
     <div class="form-row">
-        <label>Deadline</label>
-        <input type="date">
+        <label class="required">Deadline</label>
+        <input type="date" name="deadline" required>
     </div>
 </div>
 
@@ -255,6 +386,102 @@ cursor:pointer;
 </form>
 
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    setTimeout(function () {
+
+        var today = new Date();
+
+        var year = today.getFullYear();
+        var month = String(today.getMonth() + 1).padStart(2, '0');
+        var day = String(today.getDate()).padStart(2, '0');
+
+        var formattedDate = year + "-" + month + "-" + day;
+
+        // Display
+        var dateText = document.getElementById("dateText");
+
+        // Hidden field
+        var dateField = document.getElementById("dateField");
+
+        if (dateText) dateText.innerText = formattedDate;
+        if (dateField) dateField.value = formattedDate;
+
+    }, 300);
+
+});
+document.addEventListener("DOMContentLoaded", function () {
+
+    setTimeout(function () {
+
+        var email = localStorage.getItem("email");
+
+        console.log("Email:", email);
+
+        // Show as text
+        var emailText = document.getElementById("emailText");
+
+        // Hidden field
+        var emailField = document.getElementById("emailField");
+
+        if (email) {
+            if (emailText) emailText.innerText = email;
+            if (emailField) emailField.value = email;
+        } else {
+            if (emailText) emailText.innerText = "Not Available";
+        }
+
+    }, 300);
+
+});
+document.getElementById('projectName').addEventListener('change', function () {
+
+    var projectId = this.value;
+    var projectText = this.options[this.selectedIndex].text;
+
+    if (!projectId) return;
+
+    var prefix = projectText.replace(/\s/g, '').substring(0, 2).toUpperCase();
+
+    fetch(window.location.href + "&action=getTicket&projectId=" + projectId)
+    .then(res => res.json())
+    .then(data => {
+
+        console.log("Next Number:", data.count); // 🔍 DEBUG
+
+        var ticketNo = prefix + "-ISSU-" + ('000' + data.count).slice(-3);
+
+        var ticketInput = document.getElementById('ticketNoField');
+var ticketText = document.getElementById('ticketNoText');
+
+if (ticketInput) ticketInput.value = ticketNo;
+if (ticketText) ticketText.innerText = ticketNo;
+    });
+
+});
+
+document.getElementById('attachment').addEventListener('change', function(){
+
+    var file = this.files[0];
+    var formData = new FormData();
+    formData.append("file", file);
+
+    fetch("https://2771600.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=2890&deploy=1&compid=2771600&ns-at=AAEJ7tMQRHG8OQo6ARWBSPkf8htuXBSiRp_GEKmie7jHHMP-uJ0", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log(data);
+        document.getElementById('fileId').value = data.fileId;
+        //alert("File uploaded successfully!");
+    });
+});
+
+//console.log(file);
+</script>
 `;
 
         context.response.writePage(form);
@@ -264,6 +491,24 @@ cursor:pointer;
     else {
 
         var req = context.request;
+        var fileId = req.parameters.fileId;
+        
+
+log.debug("Received File ID", fileId);
+function convertToNetSuiteDate(dateStr) {
+    if (!dateStr || dateStr.trim() === '') return null;
+
+    var parts = dateStr.split('-'); // YYYY-MM-DD
+
+    if (parts.length !== 3) return null;
+
+    var formatted = parts[2] + '/' + parts[1] + '/' + parts[0]; // DD/MM/YYYY
+
+    return format.parse({
+        value: formatted,
+        type: format.Type.DATE
+    });
+}
 
         var name = req.parameters.name;
         var email = req.parameters.email;
@@ -272,93 +517,123 @@ cursor:pointer;
         var assignedTo = req.parameters.assignedTo;
         var projectName = req.parameters.projectName;
         var suiteApp = req.parameters.suiteApp;
-        var environment = req.parameters.envronment;
+        var environment = req.parameters.environment;
         var priority = req.parameters.priority;
         var issueDetails = req.parameters.issueDetails;
         var status = req.parameters.status;
-        var isssueOccurredOn =req.parameters.isssueOccurredOn;
+        var issueOccurredOn = req.parameters.issueOccurredOn;
         var roleOfUser = req.parameters.roleOfUser;
         var deadline = req.parameters.deadline;
-        var attachment = req.parameters.attachment;
+      var formattedDate = convertToNetSuiteDate(date);
+var formattedDeadline = convertToNetSuiteDate(deadline);
+var formattedIssueDate = convertToNetSuiteDate(issueOccurredOn);
         var ticketNo =req.parameters.ticketNo;
 
         var rec = record.create({
-            type: 'customrecord_rw_portal_access2',
+            type: 'customrecord_rw_ticket',
             isDynamic: true
         });
 
         rec.setValue({ 
-            fieldId: 'custrecord1513', 
+            fieldId: 'custrecord_rw_ticket_name', 
             value: name 
         });
         rec.setValue({ 
-            fieldId: 'custrecord_rw_portal_email', 
+            fieldId: 'custrecord_rw_ticket_email', 
             value: email
          });
         rec.setValue({ 
-            fieldId: 'custrecord_rw_portal_priority',
+            fieldId: 'custrecord_rw_ticket_priority',
              value: priority
             });
         rec.setValue({ 
-            fieldId: 'custrecord_rw_portal_status',
+            fieldId: 'custrecord_rw_ticket_ticketstatus',
              value: status 
             });
          rec.setValue({
-             fieldId: 'custrecord_rw_portal_assignedto', 
+             fieldId: 'custrecord_rw_ticket_assignedto', 
              value: assignedTo 
             });
         rec.setValue({ 
-            fieldId: 'custrecord_rw_portal_issuedetails',
+            fieldId: 'custrecord_rw_ticket_issuedetails',
              value: issueDetails 
             });
         rec.setValue({ 
-            fieldId: 'custrecord_rw_portal_requesttype', 
+            fieldId: 'custrecord_rw_ticket_requesttype', 
             value: requestType
          });
         rec.setValue({ 
-            fieldId: 'custrecord_rw_portal_ticketno', 
+            fieldId: 'custrecord_rw_ticket_ticketno', 
             value: ticketNo
          });
+//         var fileId = null;
+
+// if (fileObj) {
+//     try {
+//         fileObj.folder = 456;  
+//         fileId = fileObj.save(); 
+
+//         log.debug("File Saved", fileId);
+
+//     } catch (e) {
+//         log.error("File Upload Error", e.message);
+//     }
+// }
+// log.debug("File ID", fileId);
+// log.debug('File Uploaded', 'File ID:',fileId);
+       if (fileId) {
+    rec.setValue({
+        fieldId: 'custrecord_rw_ticket_attachment',
+        value: fileId   
+    });
+}
         
-        rec.setValue({ 
-            fieldId: 'custrecord_rw_portal_attachment', 
-            value: attachment 
-        });
-        rec.setValue({ 
-            fieldId: 'custrecord_rw_portal_deadline', 
-            value: deadline
-         });
+       
         rec.setValue({
-             fieldId: 'custrecord_rw_portal_roleofuser',
+             fieldId: 'custrecord_rw_ticket_userrole',
               value: roleOfUser
              });
           rec.setValue({ 
-            fieldId: 'custrecord_rw_portal_projectname',
+            fieldId: 'custrecord_rw_ticket_projectname',
             value: projectName 
         });
         rec.setValue({ 
-            fieldId: 'custrecord_rw_portal_environment',
+            fieldId: 'custrecord_rw_ticket_environment',
              value: environment
              });
         rec.setValue({ 
-            fieldId: 'custrecord_rw_portal_suiteapp',
+            fieldId: 'custrecord_rw_ticket_rwsuiteapp',
              value: suiteApp 
             });
+       
+          
+            if (formattedDate) {
+    rec.setValue({
+        fieldId: 'custrecord_rw_ticket_date',
+        value: formattedDate
+    });
+}
+
+if (formattedDeadline) {
+    rec.setValue({
+        fieldId: 'custrecord_rw_ticket_deadline',
+        value: formattedDeadline
+    });
+}
+
+if (formattedIssueDate) {
+    rec.setValue({
+        fieldId: 'custrecord_rw_ticket_issueoccuredon',
+        value: formattedIssueDate
+    });
+}
         
-          rec.setValue({
-             fieldId: 'custrecord_rw_portal_issueoccuredon', 
-             value: isssueOccurredOn 
-            });
-        rec.setValue({ 
-            fieldId: 'custrecord_rw_portal_date', 
-            value: date 
-        });
-        
+        log.debug("FILES OBJECT", context.request.files);
         
         
         var id = rec.save();
 
-        // redirect back
+        
         var redirectUrl = url.resolveScript({
                 scriptId: 'customscript2876',
                 deploymentId: 'customdeploy5',
@@ -366,14 +641,204 @@ cursor:pointer;
                 });
 
         context.response.write(`
-        <html>
-        <script>
-            alert("Ticket Created Successfully (ID: ${id})");
-            window.location.href = "${redirectUrl}";
-        </script>
-        </html>
-        `);
-    }
+<html>
+<head>
+<style>
+/* FORCE FULL SCREEN OVERRIDE */
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+}
+
+/* REMOVE ALL NETSUITE WRAPPER SPACE */
+body > div,
+.uir-page-container,
+.uir-page-wrapper,
+.uir-page-body,
+.uir-page-main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    left: 0 !important;
+}
+
+/* VERY IMPORTANT (fix side gap) */
+body {
+    position: fixed;
+    width: 100vw;
+}
+#loader {
+    display: none;
+    position: fixed;
+    inset: 0;
+    left:0px;
+    right:0px;
+    //background: rgba(0,0,0,0.4);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+.loader-box {
+    background: white;
+    padding: 25px 30px;
+    border-radius: 12px;
+    text-align: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #ddd;
+    border-top: 4px solid #6f3ba2;
+    border-radius: 50%;
+    margin: auto;
+    animation: spin 1s linear infinite;
+}
+
+#dialog {
+    display: none;
+    position: fixed;
+    inset: 0;
+    
+    width:100%;
+    height:100%;
+    justify-content:center;
+    align-items:center;
+    background: white;
+    backdrop-filter: blur(6px);
+    z-index: 9999;
+    
+}
+
+/* MODAL */
+.dialog-box {
+    width: 360px;
+    background: linear-gradient(135deg, #f8f6f6, #f8f6fc);
+    border-radius: 20px;
+    padding: 30px 25px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    animation: modalEnter 0.4s cubic-bezier(.25,.8,.25,1);
+    position: relative;
+}
+
+/* ICON CIRCLE */
+.success-circle {
+    width: 70px;
+    height: 70px;
+    background: #6f3ba2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: -60px auto 15px;
+    box-shadow: 0 8px 20px rgba(111,59,162,0.4);
+    animation: popIcon 0.5s ease;
+}
+
+.success-circle span {
+    color: white;
+    font-size: 32px;
+    font-weight: bold;
+}
+
+/* TEXT */
+.dialog-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #333;
+}
+
+.dialog-text {
+    font-size: 14px;
+    color: #666;
+    margin: 10px 0 25px;
+}
+
+/* BUTTON */
+.dialog-btn {
+    background: linear-gradient(135deg, #6f3ba2, #8a4dd1);
+    border: none;
+    color: white;
+    padding: 10px 30px;
+    border-radius: 25px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.3s ease;
+    box-shadow: 0 5px 15px rgba(111,59,162,0.3);
+}
+
+.dialog-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(111,59,162,0.5);
+}
+
+/* ANIMATIONS */
+@keyframes modalEnter {
+    0% { transform: translateY(40px) scale(0.9); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes popIcon {
+    0% { transform: scale(0); }
+    80% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+</style>
+<script>
+window.redirectUrl = "${redirectUrl}";
+</script>
+</head>
+
+<body onload="showDialog()">
+
+<!-- Loader -->
+<div id="loader" style="display:flex;">
+    <div class="loader-box">
+        <div class="spinner"></div>
+        <p style="margin-top:10px;">Saving your project...</p>
+    </div>
+</div>
+
+<div id="dialog">
+    <div class="dialog-box">
+
+        <div class="success-circle">
+            <span>✓</span>
+        </div>
+
+        <div class="dialog-title">Success!</div>
+        <div class="dialog-text">
+            Ticket has been created successfully.
+        </div>
+
+        <button class="dialog-btn" onclick="redirectPage()">
+            Continue
+        </button>
+
+    </div>
+</div>
+
+<script>
+function showDialog(){
+    document.getElementById("loader").style.display = "none";
+    document.getElementById("dialog").style.display = "flex";
+}
+function redirectPage(){
+    window.location.href = window.redirectUrl;
+}
+</script>
+
+</body>
+</html>
+`);
+}
 };
 
 return { onRequest };

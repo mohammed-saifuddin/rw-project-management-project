@@ -35,20 +35,85 @@ const onRequest = (context) => {
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
         <style>
-        body,html{font-family: Arial;
-        margin-top:-18px !important;
-padding-right:-10px !important;
-margin-left:-10px !important;
-margin-right:-10px !important;
-width:1436px !important;
-        }
+        
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    margin-top:-10px !impoertant;
+/* Remove ALL parent spacing */
+body * {
+    margin: 0;
+    margin-top:10px;
+}
+.full-header {
+    
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    width: 100vw;
+    height:30px;
+    position: fixed;   
+    top: 0;
+    margin-top:-10px;
+    
+    z-index: 9999;
+}
 
-        .header{
-            display:flex;
+.header {
+    display: flex;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+
+
+            
+            left:0;
+            top:0;
+        
             align-items:center;
             border:1px solid #2d6fa3;
             
         }
+.uir-page-container,
+.uir-page-wrapper,
+body > div,
+body > form {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100vw !important;
+}
+
+
+body {
+    overflow-x: hidden;
+}
+        
+body, html {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden;
+}
+* {
+    box-sizing: border-box;
+}
+
+body > div {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+}
+
+
+div[data-container], 
+div.uir-page-container, 
+div.uir-page-wrapper {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+}
+
+        
 
         .portal{
             flex:1;
@@ -59,13 +124,14 @@ width:1436px !important;
             align-items:center;
             text-align:center;
             padding:12px;
-            height:50px;
+            height:60px;
             font-size:16px;
         }
 
         .login-box{
             width:350px;
             margin:80px auto;
+            margin-top:0px;
         }
 
         .row{
@@ -112,18 +178,18 @@ width:1436px !important;
            }
         </style>
 
-        <div class="header">
-
-            <div class="logo">
+       
+<div class="full-header">
+    <div class="header">
+        <div class="logo">
                 <img  height="45px" width="270px" src="https://2771600.app.netsuite.com/core/media/media.nl?id=5690&c=2771600&h=kIUCEpH0C_eyrUBVYGJn7nEHV_vSoKDhpdzpaPF7vFesdytX">
             </div>
 
-            <div class="portal">
-                Reachware Login Portal
-            </div>
-
+        <div class="portal">
+            Reachware Login Portal
         </div>
-
+    </div>
+</div>
         <div class="login-box">
 
             <form method="POST">

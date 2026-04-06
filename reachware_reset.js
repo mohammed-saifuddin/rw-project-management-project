@@ -70,7 +70,7 @@ margin-top:-18px !important;
 padding-right:-10px !important;
 margin-left:-10px !important;
 margin-right:-10px !important;
-width:1436px !important;
+width:1580px !important;
 }
 
 .header{

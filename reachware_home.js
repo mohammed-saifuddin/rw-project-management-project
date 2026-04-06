@@ -20,6 +20,16 @@ function getTotalCount(){
     log.debug("Total project",count);
     return count;
 }
+function getTotalTicketCount(){
+    var ticketSearch =search.create({
+        type:'customrecord_rw_ticket',
+        filters:[],
+        columns:[],
+    })
+    var count=ticketSearch.runPaged().count;
+    log.debug("Total tickets",count);
+    return count;
+}
 function getInProgressCount(){
     var projectSearch = search.create({
         type:'customrecord_rw_portal_access',
@@ -31,6 +41,28 @@ function getInProgressCount(){
     })
     var count =projectSearch.runPaged().count;
     log.debug("Total project in progress",count);
+    return count;
+}
+function getOpenProjectCount(){
+    var projectSearch=search.create({
+        type:'customrecord_rw_portal_access',
+        filters:[
+            ['custrecord_rw_portal_status','noneof','5']
+        ]
+    })
+    var count=projectSearch.runPaged().count;
+    log.debug("Total open projects",count);
+    return count;
+}
+function getOpenTicketCount(){
+    var ticketSearch=search.create({
+        type:'customrecord_rw_ticket',
+        filters:[
+            ['custrecord_rw_ticket_ticketstatus','noneof','5']
+        ]
+    })
+    var count=ticketSearch.runPaged().count;
+    log.debug("Total open tickets",count);
     return count;
 }
 if(logout === 'T'){
@@ -80,24 +112,35 @@ returnExternalUrl: true
 const ticketUrl = url.resolveScript({
 scriptId: 'customscript2889',
 deploymentId: 'customdeploy6',
-returnExternalUrl: true
+returnExternalUrl: true,
+params: {
+        empid: empId,
+        email: email
+    }
 });
 var projectCount=getTotalCount();
 var inProgressCount=getInProgressCount();
+var totalTickets=getTotalTicketCount();
+var openProjects=getOpenProjectCount();
+var openTickets=getOpenTicketCount();
 let html = `
 
 <style>
 
-html, body {
-
-
-margin-top:-18px !important;
-padding-right:-10px !important;
-margin-left:-10px !important;
-margin-right:-10px !important;
-width:1436px !important;
+* {
+    box-sizing: border-box;
 }
 
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    
+    
+    overflow-x: hidden;   /* removes right scroll */
+}
+
+/* Remove NetSuite spacing */
 #main_form,
 .uir-page-body-content,
 .uir-page-body,
@@ -107,15 +150,23 @@ width:1436px !important;
 #div__body {
     margin: 0 !important;
     padding: 0 !important;
-}
-.uir-page-body-content {
-padding:0 !important;
-}
-
-.uir-page-body {
-padding:0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
+/* Fix container */
+.container {
+    display: flex;
+    width: 100%;
+    
+}
+
+/* Fix content overflow */
+.content {
+    
+      
+    overflow-x: hidden;
+}
 body{
 font-family: Arial;
 margin:0;
@@ -191,7 +242,14 @@ flex:1;
 padding: 0 20px;
 
 }
+.con{
 
+
+margin-top:-36px;
+margin-left:-20px;
+margin-right:-20px;
+padding-right:-20px;
+}
 .stats-header{
 display:grid;
 grid-template-columns: repeat(6,1fr);
@@ -254,6 +312,7 @@ font-size:20px;
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<div class="con" sytle="width:100%;margin:0;padding:0;background:pink;">
 <div class="header">
 
 <div class="menu-icon" onmouseover="openMenu()">☰</div>
@@ -276,7 +335,7 @@ Logout
 
 </div>
 
-<div class="content">
+<div class="content" style="margin-top:-20px;">
 
 <div id="projectContent" style="display: none;width:100%;height:100%;">
 <iframe id="mainFrame" style="width:100%;height:100%;border:none;display:none;" onload="hideLoader()"></iframe>
@@ -295,11 +354,11 @@ Logout
 
 <div class="stats-values">
 <div>${projectCount}</div>
-<div>2</div>
-<div>24</div>
-<div>6</div>
+<div>${openProjects}</div>
+<div>${totalTickets}</div>
+<div>${openTickets}</div>
 <div>${inProgressCount}</div>
-<div>1</div>
+<div>${totalTickets}</div>
 </div>
 
 </div>
@@ -307,6 +366,8 @@ Logout
 </div>
 
 </div>
+</div>
+
 <div id="loader">
     <div class="spinner"></div>
     <p>Opening...</p>
