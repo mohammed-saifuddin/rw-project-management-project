@@ -149,7 +149,9 @@ label.required::after {
     color:white;
     padding:8px;
     font-weight:bold;
+    text-transform:uppercase;
     
+    shadow: 0 4px 8px rgba(111,59,162,0.3);
     display:flex;
     justify-content:center;
     align-items:center;
@@ -241,7 +243,7 @@ cursor:pointer;
     <div class="form-row">
         <label>Ticket No</label>
         
-        <span id="ticketNoText" style="padding:8px;font-size:14px;"></span>
+        <span id="ticketNoText" style="padding:8px;font-size:14px;font-style:italic;">Generated automatically after client selection</span>
 
 <input type="hidden" id="ticketNoField" name="ticketNo">
     </div>

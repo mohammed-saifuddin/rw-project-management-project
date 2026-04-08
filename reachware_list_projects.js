@@ -209,6 +209,7 @@ body {
     width: 100%;
     max-width: 100%;
     margin: 0;
+    margin-top:30px;
 }
 
 
@@ -453,48 +454,43 @@ ${dpOptions}
 </select>
 
 </div>
-
+<button type="button" onclick="addRow()" style="margin-top:10px;">
+➕ 
+</button>
 <table class="product-table">
 
+<thead>
 <tr>
-<th style="width:15%;font-size:10px;" class="required">RW Product</th>
-<th style="width:15%;font-size:10px;" class="required">Additional Comments</th>
-<th style="width:15%;font-size:10px;" class="required">RW Project Manager</th>
-<th style="width:15%;font-size:10px;" class="required">Functional Consultant</th>
-<th style="width:15%;font-size:10px;" class="required">Technical Consultant</th>
-<th style="width:14%;font-size:10px;" class="required">Expected UAT Date</th>
-<th style="width:11%;font-size:10px;" class="required">Expected Go Live Date</th>
+<th>RW Product</th>
+<th>Additional Comments</th>
+<th>RW Project Manager</th>
+<th>Functional Consultant</th>
+<th>Technical Consultant</th>
+<th>Expected UAT Date</th>
+<th>Expected Go Live Date</th>
+<th>Action</th>
 </tr>
+</thead>
 
+<tbody id="lineItems">
 <tr>
 <td>
-<select name="rwproduct" required>
+<select name="rwproduct[]">
 ${rwOptions}
 </select>
 </td>
-<td><input type="text" name="comments">
-</td>
-<td>
-<select name="rwpm" required>
-${empOptions}
-</select>
-</td>
-<td>
-<select name="functional" required>
-${empOptions}
-</select>
-</td>
-<td>
-<select name="technical">
-${empOptions}
-</select>
-</td>
-<td><input type="date" name="expuat" required></td>
-<td><input type="date" name="expgolive"></td>
+<td><input type="text" name="comments[]" /></td>
+<td><select name="rwpm[]">${empOptions}</select></td>
+<td><select name="functional[]">${empOptions}</select></td>
+<td><select name="technical[]">${empOptions}</select></td>
+<td><input type="date" name="expuat[]" /></td>
+<td><input type="date" name="expgolive[]" /></td>
+<td><button type="button" onclick="removeRow(this)">❌</button></td>
 </tr>
+</tbody>
 
 </table>
-
+<input type="hidden" name="lineitems" id="lineitems">
 <button type="submit" class="savebtn">Save</button>
 <div id="loader">
     <div class="loader-box">
@@ -524,6 +520,51 @@ ${empOptions}
 
 </form>
 <script>
+
+function addRow() {
+    var table = document.getElementById("lineItems");
+
+    var newRow = \`
+<tr>
+    <td><select name="rwproduct[]">${rwOptions}</select></td>
+    <td><input type="text" name="comments[]"></td>
+    <td><select name="rwpm[]">${empOptions}</select></td>
+    <td><select name="functional[]">${empOptions}</select></td>
+    <td><select name="technical[]">${empOptions}</select></td>
+    <td><input type="date" name="expuat[]"></td>
+    <td><input type="date" name="expgolive[]"></td>
+    <td><button type="button" onclick="removeRow(this)">❌</button></td>
+</tr>
+\`;
+
+    table.insertAdjacentHTML("beforeend", newRow);
+}
+document.querySelector("form").addEventListener("submit", function () {
+
+    var rows = document.querySelectorAll("#lineItems tr");
+    var data = [];
+
+    rows.forEach(function(row){
+
+        var obj = {
+            rwproduct: row.querySelector('[name="rwproduct[]"]').value,
+            comments: row.querySelector('[name="comments[]"]').value,
+            rwpm: row.querySelector('[name="rwpm[]"]').value,
+            functional: row.querySelector('[name="functional[]"]').value,
+            technical: row.querySelector('[name="technical[]"]').value,
+            expuat: row.querySelector('[name="expuat[]"]').value,
+            expgolive: row.querySelector('[name="expgolive[]"]').value
+        };
+
+        data.push(obj);
+    });
+
+    document.getElementById("lineitems").value = JSON.stringify(data);
+});
+function removeRow(btn) {
+    btn.closest("tr").remove();
+}
+
 function showLoader() {
     document.getElementById("loader").style.display = "flex";
 }
@@ -581,16 +622,82 @@ var directproject = req.parameters.directproject;
 var projecttype = req.parameters.projecttype;
 var status = req.parameters.status;
 
-var rwproduct = req.parameters.rwproduct;
-var comments = req.parameters.comments;
-var rwpm = req.parameters.rwpm;
-var functional = req.parameters.functional;
-var technical = req.parameters.technical;
-var expuat = req.parameters.expuat;
-var expgolive = req.parameters.expgolive;
+function normalizeArray(val) {
+    if (!val) return [];
+
+    if (Array.isArray(val)) return val;
+
+    if (typeof val === 'string') {
+        if (val.indexOf('\u0005') !== -1) {
+            return val.split('\u0005'); // NetSuite delimiter
+        }
+        return [val];
+    }
+
+    return [];
+}
+
+var rwproduct = normalizeArray(req.parameters['rwproduct[]']);
+var comments = normalizeArray(req.parameters['comments[]']);
+var rwpm = normalizeArray(req.parameters['rwpm[]']);
+var functional = normalizeArray(req.parameters['functional[]']);
+var technical = normalizeArray(req.parameters['technical[]']);
+var expuat = normalizeArray(req.parameters['expuat[]']);
+var expgolive = normalizeArray(req.parameters['expgolive[]']);
 
 /* Create a custom record */
+log.debug('rwproduct raw', req.parameters['rwproduct[]']);
+log.debug('rwpm raw', req.parameters['rwpm[]']);
+log.debug('comments raw', req.parameters['comments[]']);
+log.debug('functional raw', req.parameters['functional[]']);
+log.debug('technical raw', req.parameters['technical[]']);
+log.debug('expuat raw', req.parameters['expuat[]']);
+log.debug('expgolive raw', req.parameters['expgolive[]']);
+// 🔍 Check if customer already exists
+var customerSearch = search.create({
+    type: search.Type.CUSTOMER,
+    filters: [
+        ['entityid', 'is', customername]
+    ],
+    columns: ['internalid']
+});
 
+var existingCustomer = customerSearch.run().getRange({ start: 0, end: 1 });
+
+var customerId;
+
+// If exists → use existing
+if (existingCustomer.length > 0) {
+
+    customerId = existingCustomer[0].getValue('internalid');
+    log.debug('Customer already exists', customerId);
+
+} else {
+
+    
+    var customerRec = record.create({
+        type: record.Type.CUSTOMER,
+        isDynamic: true
+    });
+
+    customerRec.setValue({
+        fieldId: 'entityid',
+        value: customername
+    });
+    
+    customerRec.setValue({
+        fieldId: 'companyname',
+        value: customername
+    });
+    customerRec.setValue({
+    fieldId: 'subsidiary',
+    value: 1 // 
+});
+
+    customerId = customerRec.save();
+
+    log.debug('Customer Created', customerId);
+}
 var rec = record.create({
 type:'customrecord_rw_portal_access'
 });
@@ -657,56 +764,178 @@ fieldId:'custrecord_rw_portal_projecttype',
 value:projecttype
 });
 var parentId = rec.save();
+// Link customer to project (IMPORTANT)
+record.submitFields({
+    type: 'customrecord_rw_portal_access',
+    id: parentId,
+    values: {
+        custrecord_rw_customer_link: customerId // ⚠️ change field ID
+    }
+});
 /* Product details */
-rec1.setValue({
-fieldId:'custrecord1513',
-value:parentId
-});
-rec1.setValue({
-fieldId:'custrecord_rw_portal_rwproduct',
-value:rwproduct
-});
-
-rec1.setValue({
-fieldId:'custrecord_rw_portal_additionalcomments',
-value:comments
-});
-rec1.setValue({
-fieldId:'custrecord_rw_rwprojectmanager',
-value:rwpm
-});
-rec1.setValue({
-fieldId:'custrecord_rw_portal_funcconsultant',
-value:functional
-});
-
-rec1.setValue({
-fieldId:'custrecord_rw_portal_techconsultant',
-value:technical
-});
-
-// rec1.setValue({
-//     fieldId:'custrecord_rw_portal_lineexpecteduatdate',
-//     value:expuat
-// });
-if(expuat){
-rec1.setValue({
-    fieldId:'custrecord_rw_portal_lineexpecteduatdate',
-    value:new Date(expuat)
-});
+if (!Array.isArray(rwproduct)) {
+    rwproduct = [rwproduct];
 }
-// rec1.setValue({
-//     fieldId:'custrecord_rw_portal_lineexptgolivedate',
-//     value:expgolive
-// });
-if(expgolive){
-rec1.setValue({
-    fieldId:'custrecord_rw_portal_lineexptgolivedate',
-    value:new Date(expgolive)
-});
+if (!Array.isArray(rwpm)) {
+    rwpm = [rwpm];
 }
+if (!Array.isArray(functional)) {
+    functional = [functional];
+}
+if (!Array.isArray(technical)) {
+    technical = [technical];
+}
+if (!Array.isArray(comments)) {
+    comments = [comments];
+}
+if (!Array.isArray(expuat)) {
+    expuat = [expuat];
+}
+if (!Array.isArray(expgolive)) {
+    expgolive = [expgolive];
+}
+var lineItems = JSON.parse(req.parameters.lineitems || '[]');
 
-rec1.save();
+for (var i = 0; i < lineItems.length; i++) {
+
+    var item = lineItems[i];
+
+    if (!item.rwproduct) continue;
+
+    var rec1 = record.create({
+        type: 'customrecord_rw_portal_access2'
+    });
+
+    rec1.setValue({
+        fieldId: 'custrecord1513',
+        value: parentId
+    });
+
+    rec1.setValue({
+        fieldId: 'custrecord_rw_portal_rwproduct',
+        value: parseInt(item.rwproduct)
+    });
+
+    if (item.comments) {
+        rec1.setValue({
+            fieldId: 'custrecord_rw_portal_additionalcomments',
+            value: item.comments
+        });
+    }
+
+    if (item.rwpm) {
+        rec1.setValue({
+            fieldId: 'custrecord_rw_rwprojectmanager',
+            value: parseInt(item.rwpm)
+        });
+    }
+        if (item.functional) {
+        rec1.setValue({
+            fieldId: 'custrecord_rw_portal_funcconsultant',
+            value: parseInt(item.functional)
+        });
+    }
+
+    if (item.technical) {
+        rec1.setValue({
+            fieldId: 'custrecord_rw_portal_techconsultant',
+            value: parseInt(item.technical)
+        });
+    }
+
+    if (item.expuat) {
+        rec1.setValue({
+            fieldId: 'custrecord_rw_portal_lineexpecteduatdate',
+            value: new Date(item.expuat)
+        });
+    }
+
+    if (item.expgolive) {
+        rec1.setValue({
+            fieldId: 'custrecord_rw_portal_lineexptgolivedate',
+            value: new Date(item.expgolive)
+        });
+    }
+
+    rec1.save();
+}
+// var maxLength = Math.max(
+//     rwproduct.length,
+//     comments.length,
+//     rwpm.length,
+//     functional.length,
+//     technical.length,
+//     expuat.length,
+//     expgolive.length
+// );
+
+// for (var i = 0; i < maxLength; i++) {
+
+//     if (rwproduct[i] === '' || rwproduct[i] == null) continue;
+
+//     var rec1 = record.create({
+//         type: 'customrecord_rw_portal_access2'
+//     });
+
+//     rec1.setValue({
+//         fieldId: 'custrecord1513',
+//         value: parentId
+//     });
+
+//     rec1.setValue({
+//         fieldId: 'custrecord_rw_portal_rwproduct',
+//         value: parseInt(rwproduct[i])
+//     });
+
+//     if (comments[i]) {
+//         rec1.setValue({
+//             fieldId: 'custrecord_rw_portal_additionalcomments',
+//             value: comments[i]
+//         });
+//     }
+
+//     if (rwpm[i]) {
+//         rec1.setValue({
+//             fieldId: 'custrecord_rw_rwprojectmanager',
+//             value: parseInt(rwpm[i])
+//         });
+//     }
+
+//     if (functional[i]) {
+//         rec1.setValue({
+//             fieldId: 'custrecord_rw_portal_funcconsultant',
+//             value: parseInt(functional[i])
+//         });
+//     }
+
+//     if (technical[i]) {
+//         rec1.setValue({
+//             fieldId: 'custrecord_rw_portal_techconsultant',
+//             value: parseInt(technical[i])
+//         });
+//     }
+
+//     if (expuat[i]) {
+//         rec1.setValue({
+//             fieldId: 'custrecord_rw_portal_lineexpecteduatdate',
+//             value: new Date(expuat[i])
+//         });
+//     }
+
+//     if (expgolive[i]) {
+//         rec1.setValue({
+//             fieldId: 'custrecord_rw_portal_lineexptgolivedate',
+//             value: new Date(expgolive[i])
+//         });
+//     }
+
+//     rec1.save();
+// }
+
+
+
+
+
 var projectListUrl = url.resolveScript({
     scriptId: 'customscript2876',  
     deploymentId: 'customdeploy5',

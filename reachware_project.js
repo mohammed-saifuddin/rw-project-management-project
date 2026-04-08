@@ -26,6 +26,11 @@ deploymentId: 'customdeploy1',
 returnExternalUrl: true,
 
 });
+var viewProjectUrl = url.resolveScript({
+scriptId: 'customscript2892',
+deploymentId: 'customdeploy1',
+returnExternalUrl: true
+});
 var projectSearch = search.create({
     type: 'customrecord_rw_portal_access2',
      filters: [
@@ -46,7 +51,6 @@ search.createColumn({
     
     ]
 });
-
 
 var tableRows = '';
 var projectCounts = {};
@@ -87,59 +91,45 @@ results.forEach(function(result){
         projectCounts[parentId]++;
     }
 });
-// projectSearch.run().each(function(result){
 
-//    var parentId = result.getValue('custrecord1513');
-
-// var customer = '';
-// var projectId = '';
-// var status = '';
-// var total=0;
-// if(parentId){
-
-//     var parentData = record.load({
-//     type: 'customrecord_rw_portal_access',
-//     id: parentId
-// });
-
-// customer = parentData.getValue('custrecord_rw_portal_customername') || '';
-// projectId = parentData.id;
-// status = parentData.getText('custrecord_rw_portal_status') || '';
-// total = projectCounts[parentId] || 0;
-    
-// }
-
- 
-    
-//     var rwProduct = result.getText('custrecord_rw_portal_rwproduct');
-
-//     var comments = result.getValue('custrecord_rw_portal_additionalcomments');
-
-//     tableRows += `
-//     <tr>
-    
-//     <td  style="border:1px solid black;">${projectId}</td>
-//         <td style="border:1px solid black;">${customer}</td>
-        
-//         <td style="border:1px solid black;">${rwProduct}</td>
-//         <td style="border:1px solid black;">${status}</td>
-//         <td style="border:1px solid black;">${total}</td>
-//         <td style="border:1px solid black;">${total}</td>
-//         <td style="border:1px solid black;">${total}</td>
-//     </tr>
-//     `;
-// log.debug("Customer", customer);
-// log.debug("PM", projectId);
-// log.debug("Status", status);
-// log.debug(rwProduct)
-// log.debug("Parent Data FULL", JSON.stringify(parentData));
-// log.debug("parent id is ",parentId);
-//     return true;
-// });
     log.debug("page", page);
 log.debug("start", page * pageSize);
 results.forEach(function(result){
-
+function getTotalTicketCount(){
+    var ticketSearch =search.create({
+        type:'customrecord_rw_ticket',
+        filters:[],
+        columns:[],
+    })
+    var count=ticketSearch.runPaged().count;
+    log.debug("Total tickets",count);
+    return count;
+}
+var totalTickets=getTotalTicketCount();
+function getOpenTicketCount(){
+    var ticketSearch=search.create({
+        type:'customrecord_rw_ticket',
+        filters:[
+            ['custrecord_rw_ticket_ticketstatus','noneof','5']
+        ]
+    })
+    var count=ticketSearch.runPaged().count;
+    log.debug("Total open tickets",count);
+    return count;
+}
+var totalOpenTickets=getOpenTicketCount();
+function getClosedTicketCount(){
+    var ticketSearch=search.create({
+        type:'customrecord_rw_ticket',
+        filters:[
+            ['custrecord_rw_ticket_ticketstatus','anyof','5']
+        ]
+    })
+    var count=ticketSearch.runPaged().count;
+    log.debug("Total open tickets",count);
+    return count;
+}
+var totalClosedTickets=getClosedTicketCount();
     var parentId = result.getValue('custrecord1513');
 
     var customer = '';
@@ -162,16 +152,16 @@ results.forEach(function(result){
     var rwProduct = result.getText('custrecord_rw_portal_rwproduct');
 
       tableRows += `
-    <tr>
+    <tr onclick="openProject('${projectId}')" style="cursor:pointer;">
     
     <td  style="border:1px solid black;">${projectId}</td>
         <td style="border:1px solid black;">${customer}</td>
         
         <td style="border:1px solid black;">${rwProduct}</td>
         <td style="border:1px solid black;">${status}</td>
-        <td style="border:1px solid black;">${total}</td>
-        <td style="border:1px solid black;">${total}</td>
-        <td style="border:1px solid black;">${total}</td>
+        <td style="border:1px solid black;">${totalTickets}</td>
+        <td style="border:1px solid black;">${totalOpenTickets}</td>
+        <td style="border:1px solid black;">${totalClosedTickets}</td>
     </tr>
     `;
     
@@ -199,6 +189,7 @@ scriptId: 'customscript2877',
 deploymentId: 'customdeploy1',
 returnExternalUrl: true
 });
+
 var nextPage = page + 1;
 var prevPage = page - 1;
 log.debug("current page is ",page)
@@ -209,6 +200,8 @@ var prevPage = page - 1;
 
 if (page < 0) page = 0;
 if (page >= totalPages) page = totalPages - 1;
+var projectId = context.request.parameters.projectId;
+
 
 var paginationHtml = `
 <div style="text-align:center; margin-top:20px;">
@@ -394,7 +387,7 @@ ${paginationHtml}
 <script>
 document.title="Projects"
 var projectUrl = '${projectUrl}';
-
+var viewProjectUrl='${viewProjectUrl}';
 // function listProjects(){
 // /*alert("list of projects");*/
 // document.getElementById("homeContent").style.display = "none";
@@ -421,7 +414,18 @@ function hideLoader(){
     var loader = document.getElementById("loader");
     loader.style.display = "none";
 }
-    
+   function openProject(projectId){
+    var loader = document.getElementById("loader");
+    var frame = document.getElementById("mainFrame");
+
+    loader.style.display = "block";
+    frame.style.display = "block";
+
+    // Pass projectId to Suitelet
+    var urlWithParam = viewProjectUrl + '&projectId=' + projectId;
+
+    frame.src = urlWithParam;
+}
 function goToPage(page){
     var loader = document.getElementById("loader");
     loader.style.display = "block";

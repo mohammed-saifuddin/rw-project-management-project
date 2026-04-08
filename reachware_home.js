@@ -65,25 +65,25 @@ function getOpenTicketCount(){
     log.debug("Total open tickets",count);
     return count;
 }
-if(logout === 'T'){
-    // user logged out
-    // just show login page and stop any redirect
-    const loginUrl = url.resolveScript({
-scriptId: 'customscript2872',
-deploymentId: 'customdeploy1',
-returnExternalUrl: true,
- params: {
-        empid: empId,
-        email: email
-    }
-});
+// if(logout === 'T'){
+//     // user logged out
+//     // just show login page and stop any redirect
+//     const loginUrl = url.resolveScript({
+// scriptId: 'customscript2872',
+// deploymentId: 'customdeploy1',
+// returnExternalUrl: true,
+//  params: {
+//         empid: empId,
+//         email: email
+//     }
+// });
 
-log.debug("Logout", "User returned to login page");
-context.response.write(
-"<html><script>alert('Employee not found');window.location.href='" + loginUrl + "';</script></html>"
-);
-return;
-}
+// log.debug("Logout", "User returned to login page");
+// context.response.write(
+// "<html><script>alert('Employee not found');window.location.href='" + loginUrl + "';</script></html>"
+// );
+// return;
+// }
 const form = serverWidget.createForm({ title: ' ' });
 
 const htmlField = form.addField({
@@ -390,12 +390,7 @@ window.location.replace('${loginUrl}');
    };
 function storeSession(email, empId, password) {
     localStorage.setItem("email", email);
-    localStorage.setItem("empId", empId);
-
-   
-    
-
-    
+    localStorage.setItem("empId", empId); 
   localStorage.setItem("isLoggedIn", "true");
 }
     var emailFromSuitelet = "${email}";
@@ -429,6 +424,7 @@ document.getElementById("headerTitle").innerText = "Reachware Project Management
 document.getElementById("loader").style.display = "block"; 
 document.getElementById("mainFrame").src = projectUrl  ;
 document.getElementById("projectContent").style.display = "block";
+
 
 
 }

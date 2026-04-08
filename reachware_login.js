@@ -52,7 +52,7 @@ body * {
     margin-left: -50vw;
     margin-right: -50vw;
     width: 100vw;
-    height:30px;
+    height:25px;
     position: fixed;   
     top: 0;
     margin-top:-10px;
@@ -164,6 +164,8 @@ div.uir-page-wrapper {
             cursor:pointer;
             margin-right:10px;
         }
+            .logo{
+            margin-left:12px;}
             .btn-row{
             display:flex;
            justify-content:center;
@@ -182,7 +184,7 @@ div.uir-page-wrapper {
 <div class="full-header">
     <div class="header">
         <div class="logo">
-                <img  height="45px" width="270px" src="https://2771600.app.netsuite.com/core/media/media.nl?id=5690&c=2771600&h=kIUCEpH0C_eyrUBVYGJn7nEHV_vSoKDhpdzpaPF7vFesdytX">
+                <img  height="45px" width="250px"  src="https://2771600.app.netsuite.com/core/media/media.nl?id=5690&c=2771600&h=kIUCEpH0C_eyrUBVYGJn7nEHV_vSoKDhpdzpaPF7vFesdytX">
             </div>
 
         <div class="portal">
