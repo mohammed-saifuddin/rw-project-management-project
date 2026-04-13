@@ -6,7 +6,7 @@
 define(['N/ui/serverWidget','N/url','N/search'], (serverWidget,url,search) => {
 
 const onRequest = (context) => {
-var logout = context.request.parameters.logout || '';
+
 var empId = context.request.parameters.empid;
 var email = context.request.parameters.email;
 function getTotalCount(){
@@ -29,6 +29,38 @@ function getTotalTicketCount(){
     var count=ticketSearch.runPaged().count;
     log.debug("Total tickets",count);
     return count;
+}
+function getEmployeeInternalId(email){
+
+    var empSearch = search.create({
+        type: search.Type.EMPLOYEE,
+       
+            filters: email ? [['email','is', email]] : []
+            
+        ,
+        columns: ['internalid']
+    });
+
+    var res = empSearch.run().getRange({ start: 0, end: 1 });
+
+    if(res.length > 0){
+        return res[0].getValue('internalid');
+    }
+
+    return null;
+}
+function getAssignedTicketCount(empInternalId){
+
+    if(!empInternalId) return 0;
+
+    var ticketSearch = search.create({
+        type: 'customrecord_rw_ticket',
+        filters: [
+            ['custrecord_rw_ticket_assignedto','anyof', empInternalId] // ⚠️ change field if needed
+        ]
+    });
+
+    return ticketSearch.runPaged().count;
 }
 function getInProgressCount(){
     var projectSearch = search.create({
@@ -65,25 +97,7 @@ function getOpenTicketCount(){
     log.debug("Total open tickets",count);
     return count;
 }
-// if(logout === 'T'){
-//     // user logged out
-//     // just show login page and stop any redirect
-//     const loginUrl = url.resolveScript({
-// scriptId: 'customscript2872',
-// deploymentId: 'customdeploy1',
-// returnExternalUrl: true,
-//  params: {
-//         empid: empId,
-//         email: email
-//     }
-// });
 
-// log.debug("Logout", "User returned to login page");
-// context.response.write(
-// "<html><script>alert('Employee not found');window.location.href='" + loginUrl + "';</script></html>"
-// );
-// return;
-// }
 const form = serverWidget.createForm({ title: ' ' });
 
 const htmlField = form.addField({
@@ -110,8 +124,8 @@ deploymentId: 'customdeploy5',
 returnExternalUrl: true
 });
 const ticketUrl = url.resolveScript({
-scriptId: 'customscript2889',
-deploymentId: 'customdeploy6',
+scriptId: 'customscript2894',
+deploymentId: 'customdeploy1',
 returnExternalUrl: true,
 params: {
         empid: empId,
@@ -123,6 +137,8 @@ var inProgressCount=getInProgressCount();
 var totalTickets=getTotalTicketCount();
 var openProjects=getOpenProjectCount();
 var openTickets=getOpenTicketCount();
+var empInternalId = getEmployeeInternalId(email);
+var assignedTickets = getAssignedTicketCount(empInternalId);
 let html = `
 
 <style>
@@ -358,7 +374,7 @@ Logout
 <div>${totalTickets}</div>
 <div>${openTickets}</div>
 <div>${inProgressCount}</div>
-<div>${totalTickets}</div>
+<div>${assignedTickets}</div>
 </div>
 
 </div>

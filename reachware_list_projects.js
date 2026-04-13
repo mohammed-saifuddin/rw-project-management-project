@@ -12,9 +12,19 @@ if(context.request.method === 'GET'){
 var form = serverWidget.createForm({ title: ' ' });
 
 form.hideNavBar = true;
-var empOptions = '<option value="">Select</option>';
-var dpOptions = '<option value="">Select</option>';
-var rwOptions ='<option value="">Select</option>';
+var empOptions = '<option value="">--Select--</option>';
+var dpOptions = '<option value="">--Select--</option>';
+var rwOptions ='<option value="">--Select--</option>';
+var statOptions ='<option value="">--Select--</option>';
+var statSearch = search.create({
+    type: 'customlist_rw_portal_access_pjstlist',
+    columns: ['internalid','name']
+});
+
+statSearch.run().each(function(result){
+    statOptions += '<option value="'+result.getValue('internalid')+'">'+result.getValue('name')+'</option>';
+    return true;
+});
 var rwSearch=search.create({
     type:'customlist2261',
     columns:['internalid','name']
@@ -23,6 +33,21 @@ rwSearch.run().each(function(result){
     rwOptions +='<option value="'+result.getValue('internalid')+'">'+result.getValue('name')+'</option>';
     return true;
 })
+var customerOptions = '<option value="">--Select--</option>';
+
+var customerSearch = search.create({
+    type: 'customer',
+    filters: [
+    ['isinactive','is','F'],
+    'AND',
+    ['custentity_rw_emp_port_access','is','T']
+],
+    columns: ['internalid','altname']
+});
+customerSearch.run().each(function(result){
+    customerOptions += '<option value="' + result.getValue('internalid') + '">' + result.getValue('altname') + '</option>';
+     return true;
+});
 var dpSearch = search.create({
     type: 'customlist_rw_portal_directprojectlist',
     columns: ['internalid','name']
@@ -72,14 +97,18 @@ overflow-y:hidden !important;
 width:100%;
 }
 /* FORCE FULL SCREEN OVERRIDE */
+#customerModal{
+    backdrop-filter: blur(4px);
+    padding-left:-30px;
+    padding-right:-10px;
+}
 html, body {
+    width:100%;
+    height:100%;
     margin: 0 !important;
     padding: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
     overflow: hidden !important;
 }
-
 /* REMOVE ALL NETSUITE WRAPPER SPACE */
 body > div,
 .uir-page-container,
@@ -278,7 +307,7 @@ cursor:pointer;
     display: none;
     position: fixed;
     inset: 0;
-    background: transparent;
+    background: white;
     z-index: 9999;
     justify-content: center;
     align-items: center;
@@ -391,6 +420,108 @@ label.required::after {
     80% { transform: scale(1.2); }
     100% { transform: scale(1); }
 }
+    .customer-wrapper{
+    display:flex;
+    flex-direction:row;
+    gap:8px;
+    }
+    .customer-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+/* dropdown full width */
+.customer-wrapper select {
+    width: 100%;
+    padding-right: 35px; /* space for + */
+}
+
+/* + button hidden by default */
+.add-customer-btn {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+   
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    display: none;
+    font-size: 14px;
+}
+.add-customer-btn {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.customer-wrapper:hover .add-customer-btn {
+    opacity: 1;
+}
+/* SHOW on hover */
+.customer-wrapper:hover .add-customer-btn {
+    display: block;
+}
+    .customer-wrapper:hover .add-customer-btn,
+.customer-wrapper:focus-within .add-customer-btn {
+    display: block;
+}
+    .addBtn{
+font-size:20px;
+cursor:pointer;
+color:#3c5c8a;
+
+background:none;
+border:none;
+display:flex;
+align-item:left;
+padding:0;
+}
+.addBtn:hover{
+color:#6f3ba2;
+text-shadow:0 0 5px #6f3ba2;
+text-decoration: none;
+
+}
+.remBtn{
+font-size:12px;
+cursor:pointer;
+color:#3c5c8a;
+
+background:none;
+border:none;
+display:flex;
+justify-content:center;
+align-item:center;
+padding:0;
+}
+.btnRem:hover{
+color:#6f3ba2;
+text-shadow:0 0 5px #6f3ba2;
+text-decoration: none;
+}
+#customerModal{
+    display:none;
+    position:fixed;
+
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+
+    background:rgba(0,0,0,0.6);
+
+    z-index:99999;
+
+   
+    justify-content:center;
+    align-items:center;
+
+    padding:0;     /* remove gaps */
+    margin:0;
+}
 </style>
 
 <form method="POST">
@@ -400,7 +531,16 @@ label.required::after {
 <div class="form-grid">
 
 <label class="required">Customer Name</label>
-<input type="text" name="customername" required>
+
+<div class="customer-wrapper">
+    
+    <select name="customername" id="customerDropdown" required>
+        ${customerOptions}
+    </select>
+
+    <button type="button" class="add-customer-btn" onclick="createCustomer()">➕</button>
+
+</div>
 
 <label class="required">Proforma Invoice</label>
 <input type="text" name="invoice" required>
@@ -423,7 +563,7 @@ ${empOptions}
 
 <label class="required">ERP</label>
 <select name="erp" required>
-<option value="">Select</option>
+<option value="">--Select--</option>
 <option value="1">Netsuite</option>
 <option value="2">Odoo</option>
 <option value="3">Microsoft dynamics 365</option>
@@ -437,7 +577,7 @@ ${dpOptions}
 
 <label class="required">Project Type</label>
 <select name="projecttype">
-<option value="">Select</option>
+<option value="">--Select--</option>
 <option value="1">Implementation</option>
 <option value="2">Support</option>
 
@@ -445,7 +585,7 @@ ${dpOptions}
 
 <label class="required">Status</label>
 <select name="status" required>
-<option value="">Select</option>
+<option value="">--Select--</option>
 <option value="1">To Do</option>
 <option value="2">In Progress</option>
 <option value="3">UAT</option>
@@ -454,7 +594,7 @@ ${dpOptions}
 </select>
 
 </div>
-<button type="button" onclick="addRow()" style="margin-top:10px;">
+<button type="button" onclick="addRow()" class="addBtn" style="margin-top:10px;">
 ➕ 
 </button>
 <table class="product-table">
@@ -468,7 +608,8 @@ ${dpOptions}
 <th>Technical Consultant</th>
 <th>Expected UAT Date</th>
 <th>Expected Go Live Date</th>
-<th>Action</th>
+<th>Status</th>
+<th></th>
 </tr>
 </thead>
 
@@ -485,7 +626,12 @@ ${rwOptions}
 <td><select name="technical[]">${empOptions}</select></td>
 <td><input type="date" name="expuat[]" /></td>
 <td><input type="date" name="expgolive[]" /></td>
-<td><button type="button" onclick="removeRow(this)">❌</button></td>
+<td>
+<select name="linestatus[]" required>
+${statOptions}
+</select>
+</td>
+<td><button type="button" onclick="removeRow(this)" class="remBtn">❌</button></td>
 </tr>
 </tbody>
 
@@ -495,7 +641,7 @@ ${rwOptions}
 <div id="loader">
     <div class="loader-box">
         <div class="spinner"></div>
-        <p style="margin-top:10px;">Saving your project...</p>
+        
     </div>
 </div>
 <div id="dialog">
@@ -519,8 +665,107 @@ ${rwOptions}
 </div>
 
 </form>
-<script>
+<div id="customerModal" style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.5);
+    justify-content:center;
+    align-items:center;
+    z-index:9999;
+">
 
+    <div style="
+        background:white;
+        padding:25px;
+        border-radius:10px;
+        width:300px;
+        text-align:center;
+    ">
+
+        <h3 style="margin-bottom:15px;">Add New Customer</h3>
+
+        <input type="text" id="newCustomerName" placeholder="Enter name"
+            style="width:100%; padding:8px; margin-bottom:15px; border:1px solid #ccc; border-radius:5px;" />
+
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <button type="button" onclick="saveCustomer()" 
+                style="padding:8px 15px; background:#6f3ba2; color:white; border:none; border-radius:5px;">
+                Save
+            </button>
+
+            <button onclick="closeCustomerModal()" 
+                style="padding:8px 15px; background:#ccc; border:none; border-radius:5px;">
+                Cancel
+            </button>
+        </div>
+
+    </div>
+</div>
+<script>
+function closeCustomerModal(){
+    document.getElementById("customerModal").style.display = "none";
+}
+
+function saveCustomer(){
+
+    var name = document.getElementById("newCustomerName").value;
+
+    if(!name){
+        alert("Please enter customer name");
+        return;
+    }
+
+    // ✅ CLOSE MODAL
+    document.getElementById("customerModal").style.display = "none";
+
+    // ✅ SHOW LOADER
+    document.getElementById("loader").style.display = "flex";
+
+    fetch(window.location.href, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "action=createCustomer&customername=" + encodeURIComponent(name)
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if(data.success){
+
+            // OPTIONAL: small delay for smooth UX
+            document.getElementById("dialog").style.display = "flex";
+document.querySelector(".dialog-title").innerText = "Customer Created!";
+document.querySelector(".dialog-text").innerText = data.name + " added successfully.";
+            setTimeout(function(){
+
+                // ✅ REDIRECT TO SAME SUITELET (refresh page)
+                window.location.href = window.location.href;
+
+            }, 500);
+
+        } else {
+
+            // ❌ ERROR → hide loader + reopen modal
+            document.getElementById("loader").style.display = "none";
+            document.getElementById("customerModal").style.display = "flex";
+
+            alert("Error creating customer");
+        }
+    })
+    .catch(err => {
+
+        document.getElementById("loader").style.display = "none";
+        document.getElementById("customerModal").style.display = "flex";
+
+        console.error(err);
+        alert("Error creating customer");
+    });
+}
+function createCustomer(){
+    document.getElementById("customerModal").style.display = "flex";
+}
 function addRow() {
     var table = document.getElementById("lineItems");
 
@@ -533,7 +778,12 @@ function addRow() {
     <td><select name="technical[]">${empOptions}</select></td>
     <td><input type="date" name="expuat[]"></td>
     <td><input type="date" name="expgolive[]"></td>
-    <td><button type="button" onclick="removeRow(this)">❌</button></td>
+    <td>
+<select name="linestatus[]" required>
+${statOptions}
+</select>
+</td>
+    <td><button type="button" onclick="removeRow(this)" class="remBtn">❌</button></td>
 </tr>
 \`;
 
@@ -553,7 +803,8 @@ document.querySelector("form").addEventListener("submit", function () {
             functional: row.querySelector('[name="functional[]"]').value,
             technical: row.querySelector('[name="technical[]"]').value,
             expuat: row.querySelector('[name="expuat[]"]').value,
-            expgolive: row.querySelector('[name="expgolive[]"]').value
+            expgolive: row.querySelector('[name="expgolive[]"]').value,
+            linestatus: row.querySelector('[name="linestatus[]"]').value
         };
 
         data.push(obj);
@@ -610,7 +861,42 @@ context.response.writePage(form);
 else{
 
 var req = context.request;
+// 🔥 HANDLE CUSTOMER CREATION
+if (req.parameters.action === "createCustomer") {
 
+    var name = req.parameters.customername;
+
+    var customerRec = record.create({
+        type: record.Type.CUSTOMER,
+        isDynamic: true
+    });
+
+    // customerRec.setValue({ fieldId: 'entityid', value: name });
+   customerRec.setValue({ fieldId: 'companyname', value: name });
+customerRec.setValue({ fieldId: 'altname', value: name });
+customerRec.setValue({ fieldId: 'subsidiary', value: 1 });
+
+// ✅ IMPORTANT
+customerRec.setValue({
+    fieldId: 'custentity_rw_emp_port_access',
+    value: true
+});
+
+    var id = customerRec.save();
+
+    context.response.setHeader({
+        name: 'Content-Type',
+        value: 'application/json'
+    });
+
+    context.response.write(JSON.stringify({
+        success: true,
+        id: id,
+        name: name
+    }));
+
+    return; // 🚨 MUST STOP HERE
+}
 var customername = req.parameters.customername;
 var invoice = req.parameters.invoice;
 var accountmanager = req.parameters.accountmanager;
@@ -644,7 +930,7 @@ var functional = normalizeArray(req.parameters['functional[]']);
 var technical = normalizeArray(req.parameters['technical[]']);
 var expuat = normalizeArray(req.parameters['expuat[]']);
 var expgolive = normalizeArray(req.parameters['expgolive[]']);
-
+var linestatus = normalizeArray(req.parameters['linestatus[]']);
 /* Create a custom record */
 log.debug('rwproduct raw', req.parameters['rwproduct[]']);
 log.debug('rwpm raw', req.parameters['rwpm[]']);
@@ -653,51 +939,10 @@ log.debug('functional raw', req.parameters['functional[]']);
 log.debug('technical raw', req.parameters['technical[]']);
 log.debug('expuat raw', req.parameters['expuat[]']);
 log.debug('expgolive raw', req.parameters['expgolive[]']);
-// 🔍 Check if customer already exists
-var customerSearch = search.create({
-    type: search.Type.CUSTOMER,
-    filters: [
-        ['entityid', 'is', customername]
-    ],
-    columns: ['internalid']
-});
 
-var existingCustomer = customerSearch.run().getRange({ start: 0, end: 1 });
 
-var customerId;
 
-// If exists → use existing
-if (existingCustomer.length > 0) {
 
-    customerId = existingCustomer[0].getValue('internalid');
-    log.debug('Customer already exists', customerId);
-
-} else {
-
-    
-    var customerRec = record.create({
-        type: record.Type.CUSTOMER,
-        isDynamic: true
-    });
-
-    customerRec.setValue({
-        fieldId: 'entityid',
-        value: customername
-    });
-    
-    customerRec.setValue({
-        fieldId: 'companyname',
-        value: customername
-    });
-    customerRec.setValue({
-    fieldId: 'subsidiary',
-    value: 1 // 
-});
-
-    customerId = customerRec.save();
-
-    log.debug('Customer Created', customerId);
-}
 var rec = record.create({
 type:'customrecord_rw_portal_access'
 });
@@ -765,13 +1010,7 @@ value:projecttype
 });
 var parentId = rec.save();
 // Link customer to project (IMPORTANT)
-record.submitFields({
-    type: 'customrecord_rw_portal_access',
-    id: parentId,
-    values: {
-        custrecord_rw_customer_link: customerId // ⚠️ change field ID
-    }
-});
+
 /* Product details */
 if (!Array.isArray(rwproduct)) {
     rwproduct = [rwproduct];
@@ -793,6 +1032,9 @@ if (!Array.isArray(expuat)) {
 }
 if (!Array.isArray(expgolive)) {
     expgolive = [expgolive];
+}
+if (!Array.isArray(linestatus)) {
+    linestatus = [linestatus];
 }
 var lineItems = JSON.parse(req.parameters.lineitems || '[]');
 
@@ -849,7 +1091,11 @@ for (var i = 0; i < lineItems.length; i++) {
             value: new Date(item.expuat)
         });
     }
-
+     
+    rec1.setValue({
+        fieldId: 'custrecord_rw_portal_projstat',
+        value: parseInt(item.linestatus)
+    });
     if (item.expgolive) {
         rec1.setValue({
             fieldId: 'custrecord_rw_portal_lineexptgolivedate',
@@ -859,78 +1105,6 @@ for (var i = 0; i < lineItems.length; i++) {
 
     rec1.save();
 }
-// var maxLength = Math.max(
-//     rwproduct.length,
-//     comments.length,
-//     rwpm.length,
-//     functional.length,
-//     technical.length,
-//     expuat.length,
-//     expgolive.length
-// );
-
-// for (var i = 0; i < maxLength; i++) {
-
-//     if (rwproduct[i] === '' || rwproduct[i] == null) continue;
-
-//     var rec1 = record.create({
-//         type: 'customrecord_rw_portal_access2'
-//     });
-
-//     rec1.setValue({
-//         fieldId: 'custrecord1513',
-//         value: parentId
-//     });
-
-//     rec1.setValue({
-//         fieldId: 'custrecord_rw_portal_rwproduct',
-//         value: parseInt(rwproduct[i])
-//     });
-
-//     if (comments[i]) {
-//         rec1.setValue({
-//             fieldId: 'custrecord_rw_portal_additionalcomments',
-//             value: comments[i]
-//         });
-//     }
-
-//     if (rwpm[i]) {
-//         rec1.setValue({
-//             fieldId: 'custrecord_rw_rwprojectmanager',
-//             value: parseInt(rwpm[i])
-//         });
-//     }
-
-//     if (functional[i]) {
-//         rec1.setValue({
-//             fieldId: 'custrecord_rw_portal_funcconsultant',
-//             value: parseInt(functional[i])
-//         });
-//     }
-
-//     if (technical[i]) {
-//         rec1.setValue({
-//             fieldId: 'custrecord_rw_portal_techconsultant',
-//             value: parseInt(technical[i])
-//         });
-//     }
-
-//     if (expuat[i]) {
-//         rec1.setValue({
-//             fieldId: 'custrecord_rw_portal_lineexpecteduatdate',
-//             value: new Date(expuat[i])
-//         });
-//     }
-
-//     if (expgolive[i]) {
-//         rec1.setValue({
-//             fieldId: 'custrecord_rw_portal_lineexptgolivedate',
-//             value: new Date(expgolive[i])
-//         });
-//     }
-
-//     rec1.save();
-// }
 
 
 

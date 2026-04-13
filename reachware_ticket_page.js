@@ -62,6 +62,21 @@ if (context.request.parameters.action === 'getTicket') {
     context.response.write(JSON.stringify({ count: nextNumber }));
     return;
 }
+var customerOptions = '<option value="">--Select--</option>';
+
+var customerSearch = search.create({
+    type: search.Type.CUSTOMER,
+    filters: [
+        ['isinactive','is','F'],
+        'AND',
+    ['custentity_rw_emp_port_access','is','T']
+    ],
+    columns: ['internalid','altname']
+});
+customerSearch.run().each(function(result){
+    customerOptions += '<option value="' + result.getValue('internalid') + '">' + result.getValue('altname') + '</option>';
+     return true;
+});
 var roleSearch = search.create({
     type: 'role',
     columns: ['internalid', 'name']
@@ -173,7 +188,16 @@ label.required::after {
     padding:8px;
     
 }
-
+select {
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.opt:hover {
+    border-color: #6f3ba2;
+    background-color: #f3e8ff;
+    cursor: pointer;
+}
 /* Input */
 .form-row input,
 .form-row select,
@@ -243,7 +267,7 @@ cursor:pointer;
     <div class="form-row">
         <label>Ticket No</label>
         
-        <span id="ticketNoText" style="padding:8px;font-size:14px;font-style:italic;">Generated automatically after client selection</span>
+        <span id="ticketNoText" style="padding:8px;font-size:14px;font-style:italic;">To be Generated automatically</span>
 
 <input type="hidden" id="ticketNoField" name="ticketNo">
     </div>
@@ -289,7 +313,7 @@ cursor:pointer;
     <div class="form-row">
         <label class="required">Client Name</label>
        <select name="projectName" id="projectName" required>
-    ${projectOptions}
+    ${customerOptions}
 </select>
     </div>
 
@@ -298,10 +322,10 @@ cursor:pointer;
         
         <select class="" name="suiteApp" required>
         <option value="">Select</option>
-             <option value="1">Payment Completion on A/R</option>
-            <option value="2">Payment Completion on A/P</option>
-            <option value="3">Material Request</option>
-            <option value="4">Advanced Budgeting</option>
+             <option value="1" class="opt">Payment Completion on A/R</option>
+            <option value="2" class="opt">Payment Completion on A/P</option>
+            <option value="3" class="opt">Material Request</option>
+            <option value="4" class="opt">Advanced Budgeting</option>
         </select>
     </div>
 </div>

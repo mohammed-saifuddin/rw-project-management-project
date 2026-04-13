@@ -116,18 +116,51 @@ div.uir-page-wrapper {
         
 
         .portal{
-            flex:1;
+             width:100%;
             background:#6b3fa0;
             color:white;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            text-align:center;
-            padding:12px;
-            height:60px;
+            
+            margin-left:10px;
+            padding:16px;
+            height:70px;
             font-size:16px;
+            display:flex;
+         justify-content:center;
+         align-items:center;
+         
+         margin-top:0;
         }
+        .header {
+    display: flex;
+    align-items: center;
+    position: relative; /* IMPORTANT */
+    border: 1px solid #2d6fa3;
+}
 
+.logo {
+    z-index: 2;
+    background:white;
+    padding-left:0px;
+}
+
+.portal {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    
+    background: #6b3fa0;
+    color: white;
+    
+    padding: 16px;
+    height: 70px;
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 100%; /* prevent full stretch */
+    margin: 0;
+}
         .login-box{
             width:350px;
             margin:80px auto;
@@ -138,7 +171,56 @@ div.uir-page-wrapper {
             display:flex;
             margin-bottom:15px;
         }
+.login-box{
+    width: 380px;
+    margin: 120px auto;
+    
+    background: #ffffff;
+    padding: 30px 25px;
+    
+    border-radius: 12px;
+    
+    /* SHADOW */
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 
+    /* smooth look */
+    transition: all 0.3s ease;
+}
+.btn{
+    background:#6b3fa0;
+    color:white;
+    padding:10px 20px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+
+body{
+    background: #f4f6f9;
+}
+
+.row input{
+    width:100%;
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    outline:none;
+    transition:0.2s;
+}
+
+.row input:focus{
+    border-color:#6b3fa0;
+    box-shadow:0 0 5px rgba(177, 117, 250, 0.91);
+}
+.btn:hover{
+    background:#5a3390;
+}
+/* Optional hover effect */
+.login-box:hover{
+    box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+}
         .row label{
             width:120px;
             font-size:16px;
@@ -178,6 +260,27 @@ div.uir-page-wrapper {
            background:#155d8a;
            text-decoration:justify;
            }
+           .card-header{
+    text-align:center;
+    margin-bottom:25px;
+}
+
+.icon{
+    font-size:40px;
+    margin-bottom:10px;
+}
+
+.card-title{
+    font-size:22px;
+    font-weight:700;
+    color:#6b3fa0;
+}
+
+.card-subtitle{
+    font-size:13px;
+    color:#777;
+    margin-top:5px;
+}
         </style>
 
        
@@ -193,7 +296,11 @@ div.uir-page-wrapper {
     </div>
 </div>
         <div class="login-box">
-
+             <div class="card-header">
+    <div class="icon">🔐</div>
+    <div class="card-title">Login</div>
+    <div class="card-subtitle">Access your Reachware account</div>
+</div>
             <form method="POST">
 
             <div class="row">
@@ -398,9 +505,15 @@ log.debug("Reset URL", resetUrl);
     }
                 });
 
-                context.response.write(
-                    "<html><script>window.location.href='"+homeUrl+"';</script></html>"
-                );
+               context.response.write(`
+<html>
+<script>
+    localStorage.setItem("isLoggedIn", "true");
+    localStorage.setItem("empId", "${empId}");
+    window.location.href = "${homeUrl}";
+</script>
+</html>
+`);
             }
 
             else{

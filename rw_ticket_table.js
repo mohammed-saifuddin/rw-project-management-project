@@ -33,25 +33,42 @@ deploymentId: 'customdeploy1',
 returnExternalUrl: true
 });
 var projectSearch = search.create({
-    type: 'customrecord_rw_portal_access2',
-     filters: [
-        ['custrecord1513','noneof','@NONE@'] 
-    ],
+    type: 'customrecord_rw_ticket',
+    filters: [],
     columns: [
-      
-search.createColumn({
-    name: 'internalid',
-    sort: search.Sort.DESC 
-}),
-       
-        'custrecord_rw_portal_rwproduct', 
-        'custrecord_rw_portal_additionalcomments',
-        'custrecord1513',
-        'custrecord_rw_portal_projstat'
-
-        
-    
+        search.createColumn({
+            name: 'internalid',
+            sort: search.Sort.DESC   // ✅ THIS LINE
+        }),
+        'internalid',
+        'custrecord_rw_ticket_requesttype',
+        'custrecord_rw_ticket_name',
+        'custrecord_rw_ticket_date',
+        'custrecord_rw_ticket_ticketno',
+        'custrecord_rw_ticket_projectname',
+        'custrecord_rw_ticket_rwsuiteapp',
+        'custrecord_rw_ticket_ticketstatus',
+        'custrecord_rw_ticket_deadline',
+        'custrecord_rw_ticket_issuedetails'
     ]
+});
+
+projectSearch.run().each(function(result){
+
+    var id = result.getValue('internalid');
+    var requestType=result.getText('custrecord_rw_ticket_requesttype')
+    var name = result.getText('custrecord_rw_ticket_name');
+    var date=result.getText('custrecord_rw_ticket_date');
+    var status = result.getText('custrecord_rw_ticket_ticketstatus');
+    var ticketNo = result.getText('custrecord_rw_ticket_ticketno');
+    var projectName=result.getText('custrecord_rw_ticket_projectname');
+    var rwApp=result.getText('custrecord_rw_ticket_rwsuiteapp');
+    var deadline =result.getText('custrecord_rw_ticket_deadline');
+    var issueDetails=result.getValue('custrecord_rw_ticket_issuedetails')
+
+    log.debug("Project", id + " " + requestType + " " + status);
+
+    return true;
 });
 
 var tableRows = '';
@@ -74,212 +91,35 @@ pagedData.pageRanges.forEach(function(pageRange){
     });
 });
 
+    var pageIndex = parseInt(request.parameters.page) || 0;
 
-results.forEach(function(result){
+var pagedData = projectSearch.runPaged({ pageSize: 10 });
 
-    var parentId = result.getValue('custrecord1513');
-    var product = result.getText('custrecord_rw_portal_rwproduct');
+if (pageIndex < 0) pageIndex = 0;
+if (pageIndex >= pagedData.pageRanges.length) pageIndex = 0;
 
-    var status = result.getText('custrecord_rw_portal_projstat');
-    log.debug(status) // ✅ ADD THIS
-    if(!parentId) return;
+var currentPage = pagedData.fetch({ index: pageIndex });
 
-    if(!projectMap[parentId]){
-        var parentData = record.load({
-            type: 'customrecord_rw_portal_access',
-            id: parentId
-        });
+var tableRows = '';
 
-        projectMap[parentId] = {
-            customer: parentData.getText('custrecord_rw_portal_customername') || '',
-            status: parentData.getText('custrecord_rw_portal_status') || '',
-            customerId: parentData.getValue('custrecord_rw_portal_customername'),
-            products: {},
-            
-        };
-    }
+currentPage.data.forEach(function(result){
 
-  if (!projectMap[parentId].products[product]) {
-    projectMap[parentId].products[product] = {
-        count: 0,
-        status: status || 'NA'   // ✅ product-specific status
-    };
-}
-
-
-projectMap[parentId].products[product].count++;
-});
-var projectIds = Object.keys(projectMap);
-
-// 🔥 IMPORTANT: sort before pagination
-projectIds.sort(function(a, b){
-    return Number(b) - Number(a); // DESC order
-});
-
-var totalCount = projectIds.length;
-var totalPages = Math.ceil(totalCount / pageSize);
-
-// Fix invalid page
-if (page >= totalPages) page = 0;
-
-var start = page * pageSize;
-var end = start + pageSize;
-
-var paginatedProjectIds = projectIds.slice(start, end);
-
-log.debug("Page", page);
-log.debug("Paginated IDs", paginatedProjectIds);
-
-var paginatedProjectIds = projectIds.slice(start, end);
-    log.debug("page", page);
-log.debug("start", page * pageSize);
-
-function getTotalTicketCount(){
-    var ticketSearch =search.create({
-        type:'customrecord_rw_ticket',
-        filters:[],
-        columns:[],
-    })
-    var count=ticketSearch.runPaged().count;
-    log.debug("Total tickets",count);
-    return count;
-}
-var totalTickets=getTotalTicketCount();
-function getOpenTicketCount(){
-    var ticketSearch=search.create({
-        type:'customrecord_rw_ticket',
-        filters:[
-            ['custrecord_rw_ticket_ticketstatus','noneof','5']
-        ]
-    })
-    var count=ticketSearch.runPaged().count;
-    log.debug("Total open tickets",count);
-    return count;
-}
-function getTicketCounts(customerId){
-
-    if (!customerId) {
-        log.debug("Invalid customerId", customerId);
-        return { total: 0, open: 0, closed: 0 };
-    }
-
-    customerId = parseInt(customerId, 10);
-
-    var total = 0;
-    var open = 0;
-    var closed = 0;
-
-    var ticketSearch = search.create({
-        type: 'customrecord_rw_ticket',
-        filters: [
-            ['custrecord_rw_ticket_projectname', 'anyof', [customerId]] // ✅ FIX
-        ],
-        columns: [
-            'custrecord_rw_ticket_ticketstatus'
-        ]
-    });
-
-    ticketSearch.run().each(function(result){
-
-        total++;
-
-        var status = result.getValue('custrecord_rw_ticket_ticketstatus');
-
-        if (status == '5') {
-            closed++;
-        } else {
-            open++;
-        }
-
-        return true;
-    });
-
-    return {
-        total: total,
-        open: open,
-        closed: closed
-    };
-}
-var totalOpenTickets=getOpenTicketCount();
-function getClosedTicketCount(){
-    var ticketSearch=search.create({
-        type:'customrecord_rw_ticket',
-        filters:[
-            ['custrecord_rw_ticket_ticketstatus','anyof','5']
-        ]
-    })
-    var count=ticketSearch.runPaged().count;
-    log.debug("Total open tickets",count);
-    return count;
-}
-var totalClosedTickets=getClosedTicketCount();
-    // var parentId = result.getValue('custrecord1513');
-
-    // var customer = '';
-    // var projectId = '';
-    // var status = '';
-    // var total = 0;
-
-    // if(parentId){
-    //     var parentData = record.load({
-    //         type: 'customrecord_rw_portal_access',
-    //         id: parentId
-    //     });
-
-    //     customer = parentData.getValue('custrecord_rw_portal_customername') || '';
-    //     projectId = parentData.id;
-    //     status = parentData.getText('custrecord_rw_portal_status') || '';
-    //     total = projectCounts[parentId] || 0;
-    // }
-
-    // var rwProduct = result.getText('custrecord_rw_portal_rwproduct');
-paginatedProjectIds.forEach(function(projectId){
-
-    var data = projectMap[projectId];
-
-    if(!data) return;
-var ticketData = getTicketCounts(data.customerId);
-    //var products = data.products.join(", ");
-var productList = `
-<div class="product-container">
-${Object.entries(data.products)
-   .map(([name, obj]) => `
-    <div class="product-item">
-        <div class="product-name">${name}</div>
-        <div class="product-meta">
-            <span class="count">Count: ${obj.count}</span>
-            <span class="status ${obj.status.toLowerCase().replace(/\s/g,'')}">${obj.status}</span>
-        </div>
-    </div>
-`).join("")}
-</div>
-`;
     tableRows += `
-<tr class="project-row" >
-
-    <td style="border:1px solid black">
-        
-        <span class="arrow" id="arrow-${projectId}" onclick="toggleProducts('${projectId}')">▶</span>
-        ${projectId}
-    </td>
-
-    <td style="border:1px solid black;" onclick="openProject('${projectId}')">${data.customer}</td>
-    <td style="border:1px solid black;">${data.status}</td>
-   <td style="border:1px solid black;">${Object.keys(data.products).length}</td>
-    <td style="border:1px solid black;">${ticketData.total}</td>
-<td style="border:1px solid black;">${ticketData.open}</td>
-<td style="border:1px solid black;">${ticketData.closed}</td>
-</tr>
-
-<tr id="products-${projectId}" style="display:none; background:#f9f9f9;border:1px solid black;">
-    <td colspan="7" style="padding:0;">
-        <div style="padding:10px;">
-            ${productList}
-        </div>
-    </td>
-</tr>
-`;
+        <tr  class="ho">
+            <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_requesttype') || ''}</td>
+            <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_name') || ''}</td>
+            <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_date') || ''}</td>
+            <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_ticketno') || ''}</td>
+            <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_projectname') || ''}</td>
+            <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_rwsuiteapp')  || ''}</td>
+            <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_ticketstatus') || ''}</td>
+            <td style="border:1px solid black;"> ${result.getValue('custrecord_rw_ticket_deadline') || ''}</td>
+        </tr>
+    `;
 });
+
+var totalPages = pagedData.pageRanges.length;
+
     
 // log.debug("Customer", customer);
 // log.debug("PM", projectId);
@@ -300,8 +140,8 @@ var htmlField = form.addField({
 // var totalCount = projectSearch.runPaged().count;
 // var totalPages = Math.ceil(totalCount / pageSize);
 const projectUrl = url.resolveScript({
-scriptId: 'customscript2877',
-deploymentId: 'customdeploy1',
+scriptId: 'customscript2889',
+deploymentId: 'customdeploy6',
 returnExternalUrl: true
 });
 
@@ -356,7 +196,10 @@ overflow-y:hidden !important;
 .product-row{
     display:none;
 }
-
+.ho:hover{
+background:#6f3ba2;
+color:white;
+}
 .product-card{
     background:#ffffff;
     margin:10px;
@@ -595,13 +438,14 @@ text-decoration: none;
 <table>
 
 <tr>
-<th style="border:1px solid black;">Project ID</th>
-<th style="border:1px solid black;">Customer</th>
-<th style="border:1px solid black;">Status</th>
-<th style="border:1px solid black;">Total Products</th>
-<th style="border:1px solid black;">Total Tickets</th>
-<th style="border:1px solid black;">Open</th>
-<th style="border:1px solid black;">Closed</th>
+<th style="border:1px solid black;">Request Type</th>
+<th style="border:1px solid black;">Requester Name</th>
+<th style="border:1px solid black;">Date</th>
+<th style="border:1px solid black;">Ticket ID</th>
+<th style="border:1px solid black;">Client Name</th>
+<th style="border:1px solid black;">RW Product</th>
+<th style="border:1px solid black;">RW Product</th>
+<th style="border:1px solid black;">Deadline</th>
 </tr>
 
 

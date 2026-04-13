@@ -72,7 +72,60 @@ margin-left:-10px !important;
 margin-right:-10px !important;
 width:1580px !important;
 }
+.login-box{
+    width: 600px;
+    margin: 100px auto;
 
+    background: #ffffff;
+    padding: 30px;
+
+    border-radius: 15px;
+
+    /* SHADOW */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+
+    transition: 0.3s ease;
+}
+
+.login-box:hover{
+    box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+}
+  
+body{
+    background: #f4f6f9;
+}
+.row label{
+    font-size:14px;
+    margin-bottom:5px;
+    color:#333;
+    font-weight:600;
+}
+.btn{
+    background:#6b3fa0;
+    color:white;
+    padding:10px 20px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.btn:hover{
+    background:#5a3390;
+}
+.row input{
+    width:100%;
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    outline:none;
+    transition:0.2s;
+}
+
+.row input:focus{
+    border-color:#6b3fa0;
+    box-shadow:0 0 5px rgba(107,63,160,0.3);
+}
 .header{
 display:flex;
 border:1px solid #2d6fa3;
@@ -82,29 +135,48 @@ border:1px solid #2d6fa3;
 flex:1;
 background:#6b3fa0;
 color:white;
+height:60px;
+display:flex;
+justify-content:center;
+align-items:center;
 text-align:center;
 padding:12px;
 font-size:18px;
 }
 
 .login-box{
-width:350px;
+width:600px;
+justify-content:center;
+align-items:center;
 margin:80px auto;
 }
 
 .row{
 display:flex;
 margin-bottom:15px;
+justify-content:center;
+gap:40px;
+
+align-items:center;
+
 }
 
 .row label{
 width:120px;
+display:flex;
+text-align:left;
+justify-content:start;
+align-items:center;
 font-size:12px;
 }
 
 .row input{
-width:200px;
+width:300px;
 padding:6px;
+display:flex;
+height:30px;
+justify-content:center;
+align-items:center;
 border:1px solid black;
 }
 
@@ -113,6 +185,7 @@ background:#1c6ea4;
 color:white;
 padding:8px 20px;
 border:none;
+
 cursor:pointer;
 }
 .btn-row{
@@ -121,13 +194,33 @@ cursor:pointer;
            align-items:center;
            flex-direction:row;
            gap:10px;
-           margin-left:60px;
+           margin-left:80px;
            }
            .btn:hover{
            background:#155d8a;
            text-decoration:justify;
            }
-           
+     .card-header{
+    text-align:center;
+    margin-bottom:25px;
+}
+
+.icon{
+    font-size:40px;
+    margin-bottom:10px;
+}
+
+.card-title{
+    font-size:22px;
+    font-weight:700;
+    color:#6b3fa0;
+}
+
+.card-subtitle{
+    font-size:13px;
+    color:#777;
+    margin-top:5px;
+}
 </style>
 </head>
 <body>
@@ -138,7 +231,11 @@ Reachware Portal Password Setup
 </div>
 
 <div class="login-box">
-
+<div class="card-header">
+    <div class="icon">🔒</div>
+    <div class="card-title">Reset Password</div>
+    <div class="card-subtitle">Secure your account by setting a new password</div>
+</div>
 <form method="POST">
 
 <input type="hidden" name="empid" value="${empId}">
