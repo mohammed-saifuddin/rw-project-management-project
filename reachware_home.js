@@ -229,6 +229,7 @@ cursor:pointer;
 .logout:hover{
 background:white;
 color:#6b3fa0;
+font-weight:bold;
 
 }
 #div__body,

@@ -570,8 +570,9 @@ td{
 }
 
 .project-row:hover{
-    background:#6f3ba2;
-    cursor:pointer;
+    background:#E6E6FA;
+color:black;
+    font-weight:bold;
 }
 @keyframes slideDown{
     from{

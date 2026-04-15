@@ -372,8 +372,9 @@ overflow-y:hidden !important;
     display:none;
 }
 .ho:hover{
-background:#6f3ba2;
-color:white;
+background:#E6E6FA;
+color:black;
+font-weight:bold;
 }
 .product-card{
     background:#ffffff;

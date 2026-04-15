@@ -24,6 +24,10 @@ const onRequest = (context) => {
         });
         var selectedEmpId = empId || '';
         log.debug("FINAL EMP ID", selectedEmpId);
+        var currentUser = runtime.getCurrentUser();
+var loggedRoleName = currentUser.roleCenter;  // ✅ USE NAME
+
+log.debug("Logged Role Name", loggedRoleName);
          var rwOptions ='<option value="">--Select--</option>';
 var rwSearch=search.create({
     type:'customlist_rw_ticket_rwsuiteapplist',
@@ -101,11 +105,14 @@ roleSearch.run().each(function(result){
     var id = result.getValue('internalid');
     var name = result.getValue('name');
 
-    roleOptions += '<option value="'+id+'">'+name+'</option>';
+    roleOptions += '<option value="'+id+'" ' + 
+    (name === loggedRoleName ? 'selected' : '') +
+    '>' + name + '</option>';
 
     return true;
 });
 var empOptions = '<option value="">Select</option>';
+var emp1Options = '<option value="">Select</option>';
         var empSearch = search.create({
     type: 'employee',
     filters: [
@@ -136,12 +143,40 @@ var projectSearch = search.create({
     filters: [['isinactive','is','F']],
     columns: ['internalid','name']
 });
-
+var empRoleMap = {};
 projectSearch.run().each(function(result){
     var id = result.getValue('internalid');
     var name = result.getValue('name');
 
     projectOptions += '<option value="'+id+'">'+name+'</option>';
+var empSearch = search.create({
+    type: 'employee',
+    filters: [
+        ['isinactive','is','F']
+    ],
+    columns: ['internalid','firstname','lastname','role']
+});
+
+empSearch.run().each(function(result){
+
+    var id = result.getValue('internalid');
+    var firstname = result.getValue('firstname');
+    var lastname = result.getValue('lastname');
+
+    var roleId = result.getValue('role');
+    var roleName = result.getText('role');
+
+    empRoleMap[id] = {
+        roleId: roleId,
+        roleName: roleName
+    };
+
+    emp1Options += '<option value="'+id+'">'+
+        firstname + ' ' + lastname +
+        '</option>';
+
+    return true;
+});
     return true;
 });
         htmlField.defaultValue = `
@@ -271,7 +306,7 @@ cursor:pointer;
 
 <div style="flex:1;">
     <div class="form-row">
-        <label class="required">Employee Name</label>
+        <label class="required">Assignee</label>
         <input type="hidden" name="empid" value="${selectedEmpId}">
         <select name="name" required>
         ${empOptions}
@@ -280,10 +315,7 @@ cursor:pointer;
 
     <div class="form-row">
         <label class="required">Date</label>
-         <span id="dateText" style="padding:8px;font-size:14px;"></span>
-    
-    <!-- Hidden field -->
-    <input type="hidden" id="dateField" name="date">
+    <input type="date" id="dateField" name="date" readonly>
     </div>
 
     <div class="form-row">
@@ -299,10 +331,7 @@ cursor:pointer;
     <div class="form-row">
         <label class="required">Email</label>
         
-    <span id="emailText" style="padding:8px;font-size:14px;"></span>
-    
-    <!-- Hidden field (for saving) -->
-    <input type="hidden" id="emailField" name="email">
+    <input type="text" id="emailField" name="email" readonly>
     </div>
 
     <div class="form-row">
@@ -413,7 +442,7 @@ cursor:pointer;
         <label class="required">Assigned To</label>
         
         <select class="" name="assignedTo" required>
-            ${empOptions}
+            ${emp1Options}
         </select>
     </div>
 
@@ -432,6 +461,8 @@ cursor:pointer;
 </div>
 
 <script>
+var loggedRoleName = "${loggedRoleName}";
+var empRoleMap = ${JSON.stringify(empRoleMap)};
 document.addEventListener("DOMContentLoaded", function () {
 
     setTimeout(function () {
@@ -442,18 +473,34 @@ document.addEventListener("DOMContentLoaded", function () {
         var month = String(today.getMonth() + 1).padStart(2, '0');
         var day = String(today.getDate()).padStart(2, '0');
 
-        var formattedDate = year + "-" + month + "-" + day;
+        var formattedDate = year + "-" + month + "-" + day; // YYYY-MM-DD
 
-        // Display
-        var dateText = document.getElementById("dateText");
-
-        // Hidden field
         var dateField = document.getElementById("dateField");
 
-        if (dateText) dateText.innerText = formattedDate;
-        if (dateField) dateField.value = formattedDate;
+        if (dateField) {
+            dateField.value = formattedDate;
+        }
 
     }, 300);
+
+});
+document.addEventListener("DOMContentLoaded", function () {
+
+    const empDropdown = document.querySelector("select[name='name']");
+    const roleDropdown = document.querySelector("select[name='roleOfUser']");
+
+    function setRole() {
+        const empId = empDropdown.value;
+
+        if (empRoleMap[empId] && roleDropdown) {
+            roleDropdown.value = empRoleMap[empId].roleId;
+        }
+    }
+
+    if (empDropdown) {
+        empDropdown.addEventListener("change", setRole);
+        setRole(); // 🔥 auto on load
+    }
 
 });
 document.addEventListener("DOMContentLoaded", function () {
@@ -464,17 +511,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         console.log("Email:", email);
 
-        // Show as text
-        var emailText = document.getElementById("emailText");
-
-        // Hidden field
         var emailField = document.getElementById("emailField");
 
-        if (email) {
-            if (emailText) emailText.innerText = email;
-            if (emailField) emailField.value = email;
-        } else {
-            if (emailText) emailText.innerText = "Not Available";
+        if (email && emailField) {
+            emailField.value = email;
         }
 
     }, 300);

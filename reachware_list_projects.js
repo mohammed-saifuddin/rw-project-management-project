@@ -21,8 +21,17 @@ var statSearch = search.create({
     columns: ['internalid','name']
 });
 
+
+
 statSearch.run().each(function(result){
-    statOptions += '<option value="'+result.getValue('internalid')+'">'+result.getValue('name')+'</option>';
+
+    var id = result.getValue('internalid');
+    var name = result.getValue('name');
+
+    var isSelected = (name === 'To-Do') ? 'selected' : '';
+
+    statOptions += '<option value="'+id+'" '+isSelected+'>'+name+'</option>';
+
     return true;
 });
 var rwSearch=search.create({
@@ -587,7 +596,7 @@ ${dpOptions}
 <label class="required">Status</label>
 <select name="status" required>
 <option value="">--Select--</option>
-<option value="1">To Do</option>
+<option value="1" selected>To Do</option>
 <option value="2">In Progress</option>
 <option value="3">UAT</option>
 <option value="4">Code Review</option>
@@ -604,7 +613,7 @@ ${dpOptions}
 <tr>
 <th>RW Product</th>
 <th>Additional Comments</th>
-<th>RW Project Manager</th>
+<th>Project Manager</th>
 <th>Functional Consultant</th>
 <th>Technical Consultant</th>
 <th>Expected UAT Date</th>

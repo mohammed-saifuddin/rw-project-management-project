@@ -68,7 +68,7 @@ returnExternalUrl: true,
 
 
 
-        name = ticketRec.getValue('custrecord_rw_ticket_name') || '';
+        name = ticketRec.getText('custrecord_rw_ticket_name') || '';
         date = ticketRec.getText('custrecord_rw_ticket_date') || '';
         email = ticketRec.getText('custrecord_rw_ticket_email') || '';
         requestType = ticketRec.getText('custrecord_rw_ticket_requesttype') || '';
