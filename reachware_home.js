@@ -485,7 +485,7 @@ function hideLoader(){
      document.getElementById("mainFrame").style.display = "block";
 }
 function openHome(){
-setPageTitle("Home | Reachware");
+setPageTitle("Home");
 document.getElementById("headerTitle").innerText = "Reachware Project Management Portal";
  document.getElementById("projectContent").style.display = "none";
 

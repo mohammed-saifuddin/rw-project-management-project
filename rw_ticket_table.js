@@ -16,6 +16,8 @@ var requesterName = request.parameters.requesterName;
 var fromDate = request.parameters.fromdate;
 var toDate = request.parameters.todate;
 var pageParam = request.parameters.page;
+var empId = context.request.parameters.empid;
+var email = context.request.parameters.email;
 var page = parseInt(pageParam, 10) || 0;
 
 if (isNaN(page) || page < 0) page = 0;
@@ -311,7 +313,11 @@ var htmlField = form.addField({
 const projectUrl = url.resolveScript({
 scriptId: 'customscript2889',
 deploymentId: 'customdeploy6',
-returnExternalUrl: true
+returnExternalUrl: true,
+params: {
+        empid: empId,
+        email: email
+    }
 });
 
 var nextPage = page + 1;

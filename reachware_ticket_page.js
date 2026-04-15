@@ -3,8 +3,8 @@
  * @NScriptType Suitelet
  */
 
-define(['N/ui/serverWidget','N/record','N/search','N/url','N/file','N/format'], 
-(serverWidget, record, search, url, file, format) => {
+define(['N/ui/serverWidget','N/record','N/search','N/url','N/file','N/format','N/runtime'], 
+(serverWidget, record, search, url, file, format,runtime) => {
 
 const onRequest = (context) => {
 
@@ -13,12 +13,17 @@ const onRequest = (context) => {
 
         var form = serverWidget.createForm({ title: ' ' });
           var email = context.request.parameters.email || '';
-    var empId = context.request.parameters.empid || '';
+    var empId = context.request.parameters.empid 
+         || context.request.parameters.empId 
+         || context.request.parameters.employeeId 
+         || '';
         var htmlField = form.addField({
             id: 'custpage_html',
             type: serverWidget.FieldType.INLINEHTML,
             label: 'HTML'
         });
+        var selectedEmpId = empId || '';
+        log.debug("FINAL EMP ID", selectedEmpId);
          var rwOptions ='<option value="">--Select--</option>';
 var rwSearch=search.create({
     type:'customlist_rw_ticket_rwsuiteapplist',
@@ -115,10 +120,15 @@ empSearch.run().each(function(result){
     var firstname = result.getValue('firstname');
     var lastname = result.getValue('lastname');
 
-    empOptions += '<option value="'+id+'">'+firstname+' '+lastname+'</option>';
+    var isSelected = (String(id) === selectedEmpId) ? 'selected' : '';
+
+    empOptions += '<option value="'+id+'" '+isSelected+'>' +
+        firstname + ' ' + lastname +
+        '</option>';
 
     return true;
 });
+log.debug("emp id is ",selectedEmpId)
 var projectOptions = '<option value="">Select</option>';
 
 var projectSearch = search.create({
@@ -262,7 +272,7 @@ cursor:pointer;
 <div style="flex:1;">
     <div class="form-row">
         <label class="required">Employee Name</label>
-        
+        <input type="hidden" name="empid" value="${selectedEmpId}">
         <select name="name" required>
         ${empOptions}
         </select>
@@ -864,9 +874,26 @@ function showDialog(){
     document.getElementById("loader").style.display = "none";
     document.getElementById("dialog").style.display = "flex";
 }
+    var selectedEmpId = "${selectedEmpId}";
+console.log("Emp from URL:", selectedEmpId);
 function redirectPage(){
     window.location.href = window.redirectUrl;
 }
+    document.addEventListener("DOMContentLoaded", function () {
+
+    setTimeout(function () {
+
+        var empId = selectedEmpId;
+
+        var dropdown = document.querySelector("select[name='name']");
+
+        if (dropdown && empId) {
+            dropdown.value = empId;
+        }
+
+    }, 300);
+
+});
 </script>
 
 </body>
