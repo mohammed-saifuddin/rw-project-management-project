@@ -9,7 +9,12 @@ const onRequest = (context) => {
 
 var form = serverWidget.createForm({ title:' ' });
 var request = context.request;
-
+var clientName = request.parameters.clientName;
+var rwProduct = request.parameters.rwProduct;
+var status = request.parameters.status;
+var requesterName = request.parameters.requesterName;
+var fromDate = request.parameters.fromdate;
+var toDate = request.parameters.todate;
 var pageParam = request.parameters.page;
 var page = parseInt(pageParam, 10) || 0;
 
@@ -20,7 +25,65 @@ var baseUrl = url.resolveScript({
     deploymentId: runtime.getCurrentScript().deploymentId,
     returnExternalUrl: true
 });
+var customerOptions = '<option value="">All</option>';
+var empOptions ='<option value="">All</option>';
+var empSearch = search.create({
+    type: 'employee',
+    filters: [
+        ['isinactive','is','F']
+    ],
+    columns: ['internalid','firstname','lastname']
+});
 
+empSearch.run().each(function(result){
+
+    var id = result.getValue('internalid');
+    var firstname = result.getValue('firstname');
+    var lastname = result.getValue('lastname');
+
+    empOptions += `<option value="${id}" ${
+        request.parameters.requesterName == id ? 'selected' : ''
+    }>${firstname} ${lastname}</option>`;
+
+    return true;
+});
+var customerSearch = search.create({
+    type: search.Type.CUSTOMER,
+    filters: [
+        ['isinactive','is','F'],
+        'AND',
+    ['custentity_rw_emp_port_access','is','T']
+    ],
+    columns: ['internalid','altname']
+});
+customerSearch.run().each(function(result){
+    var id = result.getValue('internalid');
+    var name = result.getValue('altname');
+
+    customerOptions += `<option value="${id}" ${
+        request.parameters.clientName == id ? 'selected' : ''
+    }>${name}</option>`;
+    
+     return true;
+});
+var productOptions = '<option value="">All</option>';
+
+var productSearch = search.create({
+    type: 'customlist_rw_ticket_rwsuiteapplist', 
+    columns:['internalid','name']// 👈 your list ID
+});
+
+productSearch.run().each(function(result){
+
+    var id = result.getValue('internalid');
+    var name = result.getValue('name');
+
+    productOptions += `<option value="${id}" ${
+        request.parameters.rwProduct == id ? 'selected' : ''
+    }>${name}</option>`;
+
+    return true;
+});
  var loginUrl = url.resolveScript({
 scriptId: 'customscript2872',
 deploymentId: 'customdeploy1',
@@ -32,15 +95,92 @@ scriptId: 'customscript2892',
 deploymentId: 'customdeploy1',
 returnExternalUrl: true
 });
+var viewTicketUrl = url.resolveScript({
+    scriptId: 'customscript2895',   // 👈 your ticket view script
+    deploymentId: 'customdeploy1',
+    returnExternalUrl: true
+});
+var pageIndex = parseInt(request.parameters.page) || 0;
+if (!pageParam) page = 0;
+if (page < 0) page = 0;
+//var pagedData = projectSearch.runPaged({ pageSize: 1000 });
+var tableRows = '';
+var projectCounts = {};
+var projectMap = {};
+var start = page * pageSize;
+var end = start + pageSize;
+
+// var searchResult = projectSearch.run();  // RUN ONLY ONCE
+
+var results = [];
+    
+var filters = [];
+function formatDate(dateStr){
+    if (!dateStr) return null;
+
+    var parts = dateStr.split('-'); // YYYY-MM-DD
+    return parts[1] + '/' + parts[2] + '/' + parts[0]; // MM/DD/YYYY
+}
+fromDate = formatDate(fromDate);
+toDate = formatDate(toDate);
+// Ticket ID
+
+
+
+
+
+// Ticket ID
+
+
+// Client
+if (clientName && clientName !== '') {
+    if (filters.length > 0) filters.push('AND');
+    filters.push([
+        'custrecord_rw_ticket_projectname',
+        'anyof',
+        clientName
+    ]);
+}
+
+// Product
+if (rwProduct && rwProduct !== '') {
+    if (filters.length > 0) filters.push('AND');
+    filters.push([
+        'custrecord_rw_ticket_rwsuiteapp',
+        'anyof',
+        rwProduct
+    ]);
+}
+
+// Status
+if (status && status !== '') {
+    if (filters.length > 0) filters.push('AND');
+    filters.push([
+        'custrecord_rw_ticket_ticketstatus',
+        'anyof',
+        status
+    ]);
+}
+
+// Requester Name
+if (requesterName && requesterName !== '') {
+    if (filters.length > 0) filters.push('AND');
+    filters.push([
+        'custrecord_rw_ticket_name',
+        'anyof',
+        requesterName
+    ]);
+}
+
+
 var projectSearch = search.create({
     type: 'customrecord_rw_ticket',
-    filters: [],
+    filters: filters,
     columns: [
         search.createColumn({
             name: 'internalid',
-            sort: search.Sort.DESC   // ✅ THIS LINE
+            sort: search.Sort.DESC
         }),
-        'internalid',
         'custrecord_rw_ticket_requesttype',
         'custrecord_rw_ticket_name',
         'custrecord_rw_ticket_date',
@@ -49,76 +189,105 @@ var projectSearch = search.create({
         'custrecord_rw_ticket_rwsuiteapp',
         'custrecord_rw_ticket_ticketstatus',
         'custrecord_rw_ticket_deadline',
-        'custrecord_rw_ticket_issuedetails'
+        
     ]
 });
-
-projectSearch.run().each(function(result){
-
-    var id = result.getValue('internalid');
-    var requestType=result.getText('custrecord_rw_ticket_requesttype')
-    var name = result.getText('custrecord_rw_ticket_name');
-    var date=result.getText('custrecord_rw_ticket_date');
-    var status = result.getText('custrecord_rw_ticket_ticketstatus');
-    var ticketNo = result.getText('custrecord_rw_ticket_ticketno');
-    var projectName=result.getText('custrecord_rw_ticket_projectname');
-    var rwApp=result.getText('custrecord_rw_ticket_rwsuiteapp');
-    var deadline =result.getText('custrecord_rw_ticket_deadline');
-    var issueDetails=result.getValue('custrecord_rw_ticket_issuedetails')
-
-    log.debug("Project", id + " " + requestType + " " + status);
-
-    return true;
-});
-
-var tableRows = '';
-var projectCounts = {};
-var projectMap = {};
-var start = page * pageSize;
-var end = start + pageSize;
-
-var searchResult = projectSearch.run();  // RUN ONLY ONCE
-
-var results = [];
-if (!pageParam) page = 0;
-if (page < 0) page = 0;
-var pagedData = projectSearch.runPaged({ pageSize: 1000 });
-
-pagedData.pageRanges.forEach(function(pageRange){
-    var page = pagedData.fetch({ index: pageRange.index });
-    page.data.forEach(function(result){
-        results.push(result);
-    });
-});
-
-    var pageIndex = parseInt(request.parameters.page) || 0;
-
 var pagedData = projectSearch.runPaged({ pageSize: 10 });
 
-if (pageIndex < 0) pageIndex = 0;
-if (pageIndex >= pagedData.pageRanges.length) pageIndex = 0;
+var pageIndex = parseInt(request.parameters.page) || 0;
 
-var currentPage = pagedData.fetch({ index: pageIndex });
+var currentPage = { data: [] };
+
+// ✅ SAFE PAGINATION
+if (pagedData.pageRanges && pagedData.pageRanges.length > 0) {
+
+    if (pageIndex < 0) pageIndex = 0;
+
+    if (pageIndex >= pagedData.pageRanges.length) {
+        pageIndex = pagedData.pageRanges.length - 1;
+    }
+
+    try {
+        currentPage = pagedData.fetch({ index: pageIndex });
+    } catch (e) {
+        log.error("FETCH ERROR", e);
+        currentPage = { data: [] };
+    }
+}
+// projectSearch.run().each(function(result){
+
+//     var id = result.getValue('internalid');
+//     var requestType=result.getText('custrecord_rw_ticket_requesttype')
+//     var name = result.getText('custrecord_rw_ticket_name');
+//     var date=result.getText('custrecord_rw_ticket_date');
+//     var status = result.getText('custrecord_rw_ticket_ticketstatus');
+//     var ticketNo = result.getText('custrecord_rw_ticket_ticketno');
+//     var projectName=result.getText('custrecord_rw_ticket_projectname');
+//     var rwApp=result.getText('custrecord_rw_ticket_rwsuiteapp');
+//     var deadline =result.getText('custrecord_rw_ticket_deadline');
+//     var issueDetails=result.getValue('custrecord_rw_ticket_issuedetails')
+
+//     log.debug("Project", id + " " + requestType + " " + status);
+
+//     return true;
+// });
+
+
 
 var tableRows = '';
 
-currentPage.data.forEach(function(result){
+var data = (currentPage && currentPage.data) ? currentPage.data : [];
 
-    tableRows += `
-        <tr  class="ho">
-            <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_requesttype') || ''}</td>
-            <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_name') || ''}</td>
-            <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_date') || ''}</td>
-            <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_ticketno') || ''}</td>
-            <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_projectname') || ''}</td>
-            <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_rwsuiteapp')  || ''}</td>
-            <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_ticketstatus') || ''}</td>
-            <td style="border:1px solid black;"> ${result.getValue('custrecord_rw_ticket_deadline') || ''}</td>
+if (!data || data.length === 0) {
+
+    tableRows = `
+        <tr>
+            <td colspan="8" style="text-align:center;">
+                No records found
+            </td>
         </tr>
     `;
-});
 
-var totalPages = pagedData.pageRanges.length;
+} else {
+
+    for (var i = 0; i < data.length; i++) {
+
+        var result = data[i];
+
+        tableRows += `
+            <tr class="ho" onclick="openTicket('${result.getValue('internalid')}')">
+                <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_requesttype') || ''}</td>
+                <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_name') || ''}</td>
+                <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_date') || ''}</td>
+                <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_ticketno') || ''}</td>
+                <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_projectname') || ''}</td>
+                <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_rwsuiteapp') || ''}</td>
+                <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_ticketstatus') || ''}</td>
+                <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_deadline') || ''}</td>
+            </tr>
+        `;
+    }
+}
+var totalPages = pagedData.pageRanges.length || 1;
+// var tableRows = '';
+
+// currentPage.data.forEach(function(result){
+
+//     tableRows += `
+//         <tr  class="ho">
+//             <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_requesttype') || ''}</td>
+//             <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_name') || ''}</td>
+//             <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_date') || ''}</td>
+//             <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_ticketno') || ''}</td>
+//             <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_projectname') || ''}</td>
+//             <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_rwsuiteapp')  || ''}</td>
+//             <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_ticketstatus') || ''}</td>
+//             <td style="border:1px solid black;"> ${result.getValue('custrecord_rw_ticket_deadline') || ''}</td>
+//         </tr>
+//     `;
+// });
+
+// var totalPages = pagedData.pageRanges.length | 1;
 
     
 // log.debug("Customer", customer);
@@ -411,9 +580,128 @@ text-decoration: none;
     cursor: pointer;
 }
 
-.
+.filter-card{
+    display:flex;
+    gap:20px;
+    align-items:flex-end;
+    padding:15px 20px;
+    margin:10px;
+    background:#ffffff;
+    border-radius:12px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.1);
+    flex-wrap:wrap;
+}
+
+.filter-group{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+}
+
+.filter-group label{
+    font-size:12px;
+    font-weight:600;
+    color:#555;
+}
+
+.filter-group input{
+    padding:8px 10px;
+    border:1px solid #ccc;
+    
+    font-size:13px;
+    outline:none;
+    transition:0.2s;
+}
+
+.filter-group input:focus{
+    border-color:#6f3ba2;
+    box-shadow:0 0 5px rgba(111,59,162,0.3);
+}
+
+.filter-actions{
+    display:flex;
+    gap:10px;
+}
+
+.btn-primary{
+    background:#6f3ba2;
+    color:white;
+    border:none;
+    padding:8px 15px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.btn-primary:hover{
+    background:#5a2d8a;
+}
+
+.btn-clear{
+    background:#eee;
+    border:none;
+    padding:8px 15px;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.btn-clear:hover{
+    background:#ddd;
+}
 </style>
 <form method="GET">
+<div class="filter-card">
+
+    <div class="filter-group">
+        <label>Client Name</label>
+        
+
+               <select name="clientName">
+               ${customerOptions}
+               </select>
+    </div>
+    <div class="filter-group">
+        <label>Rw Product</label>
+        
+               <select name="rwProduct">
+               ${productOptions}
+               </select>
+    </div>
+    <div class="filter-group">
+        <label>Status</label>
+        
+          <select name="status">
+    <option value="">All</option>
+    <option value="1" ${request.parameters.status=='1'?'selected':''}>To Do</option>
+    <option value="2" ${request.parameters.status=='2'?'selected':''}>In Progress</option>
+    <option value="3" ${request.parameters.status=='3'?'selected':''}>Code Review</option>
+    <option value="4" ${request.parameters.status=='4'?'selected':''}>UAT</option>
+    <option value="5" ${request.parameters.status=='5'?'selected':''}>Done</option>
+</select>
+    </div>
+    <div class="filter-group">
+        <label>Requester Name</label>
+        
+                <select name="requesterName">
+               ${empOptions}
+               </select>
+    </div>
+   
+
+    
+
+    <div class="filter-actions">
+        <button type="submit" class="btn-primary">Apply</button>
+        
+    </div>
+
+</div>
+
+
+
+
+
+<input type="hidden" id="pageInput" name="page" value="${page}">
 <input type="hidden" id="pageInput" name="page" value="${page}">
 <div class="content">
 
@@ -444,7 +732,7 @@ text-decoration: none;
 <th style="border:1px solid black;">Ticket ID</th>
 <th style="border:1px solid black;">Client Name</th>
 <th style="border:1px solid black;">RW Product</th>
-<th style="border:1px solid black;">RW Product</th>
+<th style="border:1px solid black;">Status</th>
 <th style="border:1px solid black;">Deadline</th>
 </tr>
 
@@ -462,9 +750,11 @@ ${paginationHtml}
 </div>
 </form>
 <script>
+
 document.title="Projects"
 var projectUrl = '${projectUrl}';
 var viewProjectUrl='${viewProjectUrl}';
+var viewTicketUrl ='${viewTicketUrl}';
 // function listProjects(){
 // /*alert("list of projects");*/
 // document.getElementById("homeContent").style.display = "none";
@@ -474,6 +764,18 @@ var viewProjectUrl='${viewProjectUrl}';
 // document.getElementById("mainFrame").src = projectUrl;
 
 // }
+function openTicket(ticketId){
+
+    var loader = document.getElementById("loader");
+    var frame = document.getElementById("mainFrame");
+
+    loader.style.display = "block";   // show spinner
+    frame.style.display = "block";    // show iframe
+
+    var urlWithParam = '${viewTicketUrl}' + '&ticketId=' + ticketId;
+
+    frame.src = urlWithParam;
+}
 function toggleProducts(projectId){
 
     var row = document.getElementById("products-" + projectId);
@@ -514,6 +816,10 @@ function listProjects(){
 function hideLoader(){
     var loader = document.getElementById("loader");
     loader.style.display = "none";
+}
+    
+    function clearFilters(){
+    window.parent.location.href = projectUrl;
 }
    function openProject(projectId){
     var loader = document.getElementById("loader");

@@ -19,6 +19,15 @@ const onRequest = (context) => {
             type: serverWidget.FieldType.INLINEHTML,
             label: 'HTML'
         });
+         var rwOptions ='<option value="">--Select--</option>';
+var rwSearch=search.create({
+    type:'customlist_rw_ticket_rwsuiteapplist',
+    columns:['internalid','name']
+})
+rwSearch.run().each(function(result){
+    rwOptions +='<option value="'+result.getValue('internalid')+'">'+result.getValue('name')+'</option>';
+    return true;
+})
         var roleOptions = '<option value="">Select</option>';
 if (context.request.parameters.action === 'getTicket') {
 
@@ -35,7 +44,7 @@ if (context.request.parameters.action === 'getTicket') {
             'custrecord_rw_ticket_ticketno'
         ]
     });
-
+   
     var result = ticketSearch.run().getRange({ start: 0, end: 1000 });
 
     log.debug("Results Found", result.length); // DEBUG
@@ -252,8 +261,11 @@ cursor:pointer;
 
 <div style="flex:1;">
     <div class="form-row">
-        <label class="required">Name</label>
-        <input type="text" name="name" required>
+        <label class="required">Employee Name</label>
+        
+        <select name="name" required>
+        ${empOptions}
+        </select>
     </div>
 
     <div class="form-row">
@@ -321,11 +333,7 @@ cursor:pointer;
         <label class="required">Reachware Product</label>
         
         <select class="" name="suiteApp" required>
-        <option value="">Select</option>
-             <option value="1" class="opt">Payment Completion on A/R</option>
-            <option value="2" class="opt">Payment Completion on A/P</option>
-            <option value="3" class="opt">Material Request</option>
-            <option value="4" class="opt">Advanced Budgeting</option>
+      ${rwOptions}
         </select>
     </div>
 </div>
@@ -661,8 +669,8 @@ if (formattedIssueDate) {
 
         
         var redirectUrl = url.resolveScript({
-                scriptId: 'customscript2876',
-                deploymentId: 'customdeploy5',
+                scriptId: 'customscript2894',
+                deploymentId: 'customdeploy1',
                 returnExternalUrl: true
                 });
 

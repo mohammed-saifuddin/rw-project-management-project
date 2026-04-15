@@ -117,6 +117,15 @@ returnExternalUrl: true,
     }
 });
 
+const taskUrl = url.resolveScript({
+scriptId: 'customscript2899',
+deploymentId: 'customdeploy1',
+returnExternalUrl: true,
+ params: {
+        empid: empId,
+        email: email
+    }
+});
 
 const projectUrl = url.resolveScript({
 scriptId: 'customscript2876',
@@ -151,8 +160,11 @@ html, body {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
+    overflow-y:hidden;
+    overflow: hidden;
     
-    
+
+
     overflow-x: hidden;   /* removes right scroll */
 }
 
@@ -171,17 +183,16 @@ html, body {
 }
 
 /* Fix container */
-.container {
+.container{
     display: flex;
-    width: 100%;
-    
+    height: 100vh;   /* full screen */
 }
 
 /* Fix content overflow */
-.content {
-    
-      
-    overflow-x: hidden;
+.content{
+    flex: 1;
+    padding: 0 20px;
+    overflow: hidden;   /* ✅ no scrollbar */
 }
 body{
 font-family: Arial;
@@ -231,16 +242,21 @@ color:#6b3fa0;
     max-width: 100% !important;
 }
 .container{
-display:flex;
+    display:flex;
+    
 }
 
 .sidebar{
-width:0;
-overflow:hidden;
-background:#1667a5;
-color:white;
-min-height:400px;
-transition:0.3s;
+    width:0;
+    overflow:hidden;
+    background:#1667a5;
+    color:white;
+    height:100vh;           /* ✅ full screen */
+    //position:fixed;
+    
+    left:0;
+    transition:0.3s;
+    overflow-y:hidden;        /* ✅ scroll only if needed */
 }
 
 .menu{
@@ -254,9 +270,10 @@ background:#0f4e80;
 }
 
 .content{
-flex:1;
-padding: 0 20px;
-
+    flex:1;
+    padding: 0 20px;
+    height: calc(100vh - 60px);  /* ✅ full screen minus header */
+    overflow: hidden;
 }
 .con{
 
@@ -306,7 +323,7 @@ text-align:center;
 
 
   border: 6px solid #f3f3f3;
-  border-top: 6px solid #6b3fa0;
+  border-top: 6px solid rgb(107, 63, 160);
   border-radius: 50%;
   width: 50px;
   height: 50px;
@@ -349,11 +366,12 @@ Logout
 <div class="menu" onclick="openProjects()">Projects</div>
 <div class="menu" onclick="openTickets()">Tickets</div>
 
+
 </div>
 
 <div class="content" style="margin-top:-20px;">
 
-<div id="projectContent" style="display: none;width:100%;height:100%;">
+<div id="projectContent" style="display:none;width:100%;height:calc(100vh - 60px);">
 <iframe id="mainFrame" style="width:100%;height:100%;border:none;display:none;" onload="hideLoader()"></iframe>
 </div>
 
@@ -421,7 +439,7 @@ console.log("Stored EmpId:", localStorage.getItem("empId"));
 
 function openMenu(){
 document.getElementById("sidebar").style.width="180px";
-document.getElementById("sidebar").style.height="700px";
+// document.getElementById("sidebar").style.height="700px";
 
 }
 
@@ -433,8 +451,9 @@ function setPageTitle(title){
 }
 var projectUrl = '${projectUrl}';
 var ticketUrl ='${ticketUrl}';
+var taskUrl ='${taskUrl}';
 function openProjects(){
-setPageTitle("Projects | Reachware");
+setPageTitle("Projects");
 document.getElementById("headerTitle").innerText = "Reachware Project Management Portal";
  document.getElementById("homeContent").style.display = "none";
 document.getElementById("loader").style.display = "block"; 
@@ -444,8 +463,17 @@ document.getElementById("projectContent").style.display = "block";
 
 
 }
+function openTasks(){
+alert("task are opening");
+setPageTitle("Task");
+document.getElementById("headerTitle").innerText = "Reachware Ticketing APP - Task";
+ document.getElementById("homeContent").style.display = "none";
+document.getElementById("loader").style.display = "block"; 
+document.getElementById("mainFrame").src = taskUrl  ;
+document.getElementById("projectContent").style.display = "block";
+}
 function openTickets(){
-setPageTitle("Tickets | Reachware");
+setPageTitle("Tickets");
 document.getElementById("headerTitle").innerText = "Reachware Ticketing APP - ISSUE";
  document.getElementById("homeContent").style.display = "none";
 document.getElementById("loader").style.display = "block"; 

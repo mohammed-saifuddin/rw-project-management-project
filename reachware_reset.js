@@ -71,6 +71,7 @@ padding-right:-10px !important;
 margin-left:-10px !important;
 margin-right:-10px !important;
 width:1580px !important;
+overflow:hidden;
 }
 .login-box{
     width: 600px;

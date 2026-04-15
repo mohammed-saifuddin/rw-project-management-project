@@ -79,6 +79,7 @@ results.forEach(function(result){
 
     var parentId = result.getValue('custrecord1513');
     var product = result.getText('custrecord_rw_portal_rwproduct');
+    var productId = result.getValue('custrecord_rw_portal_rwproduct');
 
     var status = result.getText('custrecord_rw_portal_projstat');
     log.debug(status) // ✅ ADD THIS
@@ -99,12 +100,14 @@ results.forEach(function(result){
         };
     }
 
-  if (!projectMap[parentId].products[product]) {
+if(!projectMap[parentId].products[product]){
     projectMap[parentId].products[product] = {
         count: 0,
-        status: status || 'NA'   // ✅ product-specific status
+        status: status || 'NA',
+        productId: productId
     };
 }
+
 
 
 projectMap[parentId].products[product].count++;
@@ -158,47 +161,53 @@ function getOpenTicketCount(){
 }
 function getTicketCounts(customerId){
 
-    if (!customerId) {
-        log.debug("Invalid customerId", customerId);
-        return { total: 0, open: 0, closed: 0 };
-    }
-
-    customerId = parseInt(customerId, 10);
-
     var total = 0;
     var open = 0;
     var closed = 0;
 
     var ticketSearch = search.create({
         type: 'customrecord_rw_ticket',
-        filters: [
-            ['custrecord_rw_ticket_projectname', 'anyof', [customerId]] // ✅ FIX
-        ],
         columns: [
+            'custrecord_rw_ticket_projectname',
             'custrecord_rw_ticket_ticketstatus'
         ]
     });
 
     ticketSearch.run().each(function(result){
 
-        total++;
+        var ticketCustomer = result.getValue('custrecord_rw_ticket_projectname');
 
-        var status = result.getValue('custrecord_rw_ticket_ticketstatus');
+        // ✅ manual match (NO filter issues)
+        if(ticketCustomer == customerId){
 
-        if (status == '5') {
-            closed++;
-        } else {
-            open++;
+            total++;
+
+            var status = result.getValue('custrecord_rw_ticket_ticketstatus');
+
+            if (status == '5') closed++;
+            else open++;
         }
 
         return true;
     });
 
-    return {
-        total: total,
-        open: open,
-        closed: closed
-    };
+    return { total, open, closed };
+}
+function getProductTicketCount(projectId, productId){
+
+    if (!projectId || !productId) return 0;
+
+    var ticketSearch = search.create({
+        type: 'customrecord_rw_ticket',
+        filters: [
+            ['custrecord_rw_ticket_projectname','anyof',[projectId]],
+            'AND',
+            ['custrecord_rw_ticket_rwsuiteapp','anyof',[productId]] // ✅ FIX
+        ],
+        columns: ['internalid']
+    });
+
+    return ticketSearch.runPaged().count;
 }
 var totalOpenTickets=getOpenTicketCount();
 function getClosedTicketCount(){
@@ -233,6 +242,41 @@ var totalClosedTickets=getClosedTicketCount();
     // }
 
     // var rwProduct = result.getText('custrecord_rw_portal_rwproduct');
+ function buildTicketMap(){
+
+    var ticketMap = {};
+
+    var ticketSearch = search.create({
+        type: 'customrecord_rw_ticket',
+        columns: [
+            'custrecord_rw_ticket_projectname',
+            'custrecord_rw_ticket_rwsuiteapp'
+        ]
+    });
+
+    ticketSearch.run().each(function(result){
+
+        var customerId = result.getValue('custrecord_rw_ticket_projectname');
+        var productName = result.getText('custrecord_rw_ticket_rwsuiteapp');
+
+        productName = productName ? productName.trim().toLowerCase() : '';
+
+        if(!ticketMap[customerId]){
+            ticketMap[customerId] = {};
+        }
+
+        if(!ticketMap[customerId][productName]){
+            ticketMap[customerId][productName] = 0;
+        }
+
+        ticketMap[customerId][productName]++;
+
+        return true;
+    });
+
+    return ticketMap;
+}
+var ticketMap = buildTicketMap();
 paginatedProjectIds.forEach(function(projectId){
 
     var data = projectMap[projectId];
@@ -243,15 +287,30 @@ var ticketData = getTicketCounts(data.customerId);
 var productList = `
 <div class="product-container">
 ${Object.entries(data.products)
-   .map(([name, obj]) => `
+   .map(([name, obj]) => {
+
+    var customerId = data.customerId;
+
+var ticketCount = 0;
+
+var cleanName = name.trim().toLowerCase();
+data.customerId = data.customerId.toString();
+if(ticketMap[data.customerId] && ticketMap[data.customerId][cleanName]){
+    ticketCount = ticketMap[data.customerId][cleanName];
+}
+    return `
     <div class="product-item">
         <div class="product-name">${name}</div>
+
         <div class="product-meta">
-            <span class="count">Count: ${obj.count}</span>
+            <span class="count">Products: ${obj.count}</span>
             <span class="status ${obj.status.toLowerCase().replace(/\s/g,'')}">${obj.status}</span>
+            <span class="count">Tickets: ${ticketCount}</span>
         </div>
     </div>
-`).join("")}
+    `;
+})
+.join("")}
 </div>
 `;
     tableRows += `
@@ -263,7 +322,7 @@ ${Object.entries(data.products)
         ${projectId}
     </td>
 
-    <td style="border:1px solid black;" onclick="openProject('${projectId}')">${data.customer}</td>
+    <td style="border:1px solid black;" onclick="openProject('${projectId}')"><u>${data.customer}</u></td>
     <td style="border:1px solid black;">${data.status}</td>
    <td style="border:1px solid black;">${Object.keys(data.products).length}</td>
     <td style="border:1px solid black;">${ticketData.total}</td>

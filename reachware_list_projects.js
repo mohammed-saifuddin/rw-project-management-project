@@ -543,8 +543,9 @@ text-decoration: none;
 </div>
 
 <label class="required">Proforma Invoice</label>
-<input type="text" name="invoice" required>
 
+        <input type="file" id="attachment" name="invoice" >
+<input type="hidden" name="fileId" id="fileId">
 <label class="required">Account Manager</label>
 <select name="accountmanager" required>
 ${empOptions}
@@ -837,6 +838,23 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
+document.getElementById('attachment').addEventListener('change', function(){
+
+    var file = this.files[0];
+    var formData = new FormData();
+    formData.append("file", file);
+
+    fetch("https://2771600.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=2890&deploy=1&compid=2771600&ns-at=AAEJ7tMQRHG8OQo6ARWBSPkf8htuXBSiRp_GEKmie7jHHMP-uJ0", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log(data);
+        document.getElementById('fileId').value = data.fileId;
+        //alert("File uploaded successfully!");
+    });
+});
 window.addEventListener('storage', function(event) {
 
     if (event.key === 'logout-event') {
@@ -861,6 +879,10 @@ context.response.writePage(form);
 else{
 
 var req = context.request;
+var fileId = req.parameters.fileId;
+        
+
+log.debug("Received File ID", fileId);
 // 🔥 HANDLE CUSTOMER CREATION
 if (req.parameters.action === "createCustomer") {
 
@@ -955,10 +977,10 @@ fieldId:'custrecord_rw_portal_customername',
 value:customername
 });
 
-rec.setValue({
-fieldId:'custrecord_rw_portal_proformainvoice',
-value:invoice
-});
+// rec.setValue({
+// fieldId:'custrecord_rw_portal_proformainvoice',
+// value:invoice
+// });
 
 rec.setValue({
 fieldId:'custrecord_rw_portal_accountmanager',
@@ -1008,6 +1030,12 @@ rec.setValue({
 fieldId:'custrecord_rw_portal_projecttype',
 value:projecttype
 });
+     if (fileId) {
+    rec.setValue({
+        fieldId: 'custrecord_rw_portal_proformainvoice',
+        value: fileId   
+    });
+}
 var parentId = rec.save();
 // Link customer to project (IMPORTANT)
 

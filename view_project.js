@@ -22,6 +22,11 @@ const onRequest = (context) => {
     var scheduledUatDate= '';
     var goliveDate ='';
     var performa='';
+      var fileUrl = '';
+var fileName = '';
+
+
+
 const projectUrl = url.resolveScript({
 scriptId: 'customscript2876',
 deploymentId: 'customdeploy5',
@@ -32,7 +37,8 @@ returnExternalUrl: true
 
         var projectRec = record.load({
             type: 'customrecord_rw_portal_access',
-            id: projectId
+            id: projectId,
+            isDynamic: false
         });
 
         customer = projectRec.getText('custrecord_rw_portal_customername') || '';
@@ -45,7 +51,19 @@ returnExternalUrl: true
         scheduledUatDate = projectRec.getValue('custrecord_rw_portal_scheduleduatdate') || '';
         goliveDate = projectRec.getValue('custrecord_rw_portal_scheduledgolivedate') || '';
         performa=projectRec.getValue('custrecord_rw_portal_proformainvoice')
-    
+    if (performa) {
+    try {
+        var fileObj = file.load({
+            id: performa
+        });
+
+        fileUrl = fileObj.url;
+        fileName = fileObj.name;
+
+    } catch (e) {
+        log.error("File Load Error", e);
+    }
+}
          var scheduled='';
          var golive='';
         if(scheduledUatDate){
@@ -62,12 +80,9 @@ if(goliveDate){
 }
 
 
-     var fileObj = file.load({
-    id: performa
-});
+   
 
-var fileUrl = fileObj.url;
-var fileName = fileObj.name;
+
 var lineItemsHtml = '';
 
 var lineSearch = search.create({
@@ -267,7 +282,9 @@ if(goliveRaw){
         <div class="label">Customer</div>
         <div class="value">${customer}</div>
         <div class="label">Performa Invoice</div>
-        <div class="value"><a href="${fileUrl}" target="_blank">${fileName}</a></div>
+        <div class="value">
+    ${fileUrl ? `<a href="${fileUrl}" target="_blank">${fileName}</a>` : 'No Attachment'}
+</div>
         <div class="label">Status</div>
         <div class="value">${status}</div>
 
@@ -297,6 +314,7 @@ if(goliveRaw){
             <th style="border:1px solid #ddd;font-size:12px;padding:8px;">Technical</th>
             <th style="border:1px solid #ddd;font-size:12px;padding:8px;">Expected UAT</th>
             <th style="border:1px solid #ddd;font-size:12px;padding:8px;">Expected Go Live</th>
+            <th style="border:1px solid #ddd;font-size:12px;padding:8px;">Status</th>
         </tr>
     </thead>
     <tbody>
@@ -310,7 +328,7 @@ if(goliveRaw){
     <p>Loading projects...</p>
 </div>
     <script>
-   
+   document.title="project details";
     var projectUrl = '${projectUrl}';
      function goBack(){
 

@@ -40,6 +40,7 @@ html, body {
     margin: 0 !important;
     padding: 0 !important;
     margin-top:-10px !impoertant;
+    overflow-y:hidden;
 /* Remove ALL parent spacing */
 body * {
     margin: 0;
@@ -246,8 +247,7 @@ body{
             cursor:pointer;
             margin-right:10px;
         }
-            .logo{
-            margin-left:12px;}
+            
             .btn-row{
             display:flex;
            justify-content:center;
