@@ -80,6 +80,44 @@ if (context.request.parameters.action === 'getTicket') {
     context.response.write(JSON.stringify({ count: nextNumber }));
     return;
 }
+if (context.request.parameters.action === 'getProducts') {
+
+    var customerId = context.request.parameters.customerId;
+
+    log.debug("Customer ID", customerId);
+
+    var products = [];
+
+    var mappingSearch = search.create({
+        type: 'customrecord_rw_support_',
+        filters: [
+            ['custrecord_rw_project_summary', 'anyof', customerId]
+        ],
+        columns: [
+            'custrecord_rw_support_product'
+        ]
+    });
+
+    mappingSearch.run().each(function(result) {
+
+        var prodId = result.getValue('custrecord_rw_support_product');
+        var prodName = result.getText('custrecord_rw_support_product');
+
+        if (prodId) {
+            products.push({
+                id: prodId,
+                name: prodName
+            });
+        }
+
+        return true;
+    });
+
+    log.debug("Products Found", products);
+
+    context.response.write(JSON.stringify(products));
+    return;
+}
 var customerOptions = '<option value="">--Select--</option>';
 
 var customerSearch = search.create({
@@ -371,9 +409,9 @@ cursor:pointer;
     <div class="form-row">
         <label class="required">Reachware Product</label>
         
-        <select class="" name="suiteApp" required>
-      ${rwOptions}
-        </select>
+       <select class="" name="suiteApp" id="suiteApp" required>
+  <option value="">Select Product</option>
+</select>
     </div>
 </div>
 
@@ -518,6 +556,27 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
     }, 300);
+
+});
+document.getElementById('projectName').addEventListener('change', function () {
+
+    var customerId = this.value;
+
+    if (!customerId) return;
+
+    fetch(window.location.href + "&action=getProducts&customerId=" + customerId)
+    .then(res => res.json())
+    .then(data => {
+
+        var dropdown = document.getElementById('suiteApp');
+
+        dropdown.innerHTML = '<option value="">Select Product</option>';
+
+       data.forEach(function(prod){
+    dropdown.innerHTML += '<option value="' + prod.id + '">' + prod.name + '</option>';
+});
+
+    });
 
 });
 document.getElementById('projectName').addEventListener('change', function () {

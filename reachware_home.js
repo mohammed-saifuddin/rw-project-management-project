@@ -130,7 +130,11 @@ returnExternalUrl: true,
 const projectUrl = url.resolveScript({
 scriptId: 'customscript2876',
 deploymentId: 'customdeploy5',
-returnExternalUrl: true
+returnExternalUrl: true,
+params: {
+        empid: empId,
+        email: email
+    }
 });
 const ticketUrl = url.resolveScript({
 scriptId: 'customscript2894',

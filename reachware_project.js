@@ -9,7 +9,11 @@ const onRequest = (context) => {
 
 var form = serverWidget.createForm({ title:' ' });
 var request = context.request;
-
+  var email = context.request.parameters.email || '';
+    var empId = context.request.parameters.empid 
+         || context.request.parameters.empId 
+         || context.request.parameters.employeeId 
+         || '';
 var pageParam = request.parameters.page;
 var page = parseInt(pageParam, 10) || 0;
 
@@ -30,7 +34,11 @@ returnExternalUrl: true,
 var viewProjectUrl = url.resolveScript({
 scriptId: 'customscript2892',
 deploymentId: 'customdeploy1',
-returnExternalUrl: true
+returnExternalUrl: true,
+params: {
+        empid: empId,
+        email: email
+    }
 });
 var projectSearch = search.create({
     type: 'customrecord_rw_portal_access2',

@@ -912,6 +912,10 @@ customerRec.setValue({
     fieldId: 'custentity_rw_emp_port_access',
     value: true
 });
+customerRec.setValue({
+    fieldId: 'custentity_is_rw_customer',
+    value: true
+});
 
     var id = customerRec.save();
 
