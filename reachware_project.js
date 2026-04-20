@@ -16,14 +16,11 @@ var request = context.request;
          || '';
 var pageParam = request.parameters.page;
 var page = parseInt(pageParam, 10) || 0;
-
+var filterType = context.request.parameters.filter;
+log.debug("Filter Type", filterType);
 if (isNaN(page) || page < 0) page = 0;
 var pageSize = 10;
-var baseUrl = url.resolveScript({
-    scriptId: runtime.getCurrentScript().id,
-    deploymentId: runtime.getCurrentScript().deploymentId,
-    returnExternalUrl: true
-});
+
 
  var loginUrl = url.resolveScript({
 scriptId: 'customscript2872',
@@ -40,18 +37,85 @@ params: {
         email: email
     }
 });
+var filters = [];
+
+if(filterType === 'open'){
+    filters.push([
+        'custrecord1513.custrecord_rw_portal_status',
+        'noneof',
+        '5'
+    ]);
+}
+else if(filterType === 'inprogress'){
+    filters.push([
+        'custrecord1513.custrecord_rw_portal_status',
+        'anyof',
+        '2'
+    ]);
+}
+else if(filterType === 'kickof'){
+    filters.push([
+        'custrecord1513.custrecord_rw_portal_status',
+        'anyof',
+        '6'
+    ]);
+}
+else if(filterType === 'bussinessrequirement'){
+    filters.push([
+        'custrecord1513.custrecord_rw_portal_status',
+        'anyof',
+        '7'
+    ]);
+}
+else if(filterType === 'training'){
+    filters.push([
+        'custrecord1513.custrecord_rw_portal_status',
+        'anyof',
+        '8'
+    ]);
+}
+else if(filterType === 'golive'){
+    filters.push([
+        'custrecord1513.custrecord_rw_portal_status',
+        'anyof',
+        '9'
+    ]);
+}
+else if(filterType === 'coc'){
+    filters.push([
+        'custrecord1513.custrecord_rw_portal_status',
+        'anyof',
+        '10'
+    ]);
+}
+else if(filterType === 'support'){
+    filters.push([
+        'custrecord1513.custrecord_rw_portal_status',
+        'anyof',
+        '11'
+    ]);
+}
+else if(filterType === 'uat'){
+    filters.push([
+        'custrecord1513.custrecord_rw_portal_status',
+        'anyof',
+        '3'
+    ]);
+}
+// total → no filter
 var projectSearch = search.create({
     type: 'customrecord_rw_portal_access2',
-     filters: [
-        ['custrecord1513','noneof','@NONE@'] 
-    ],
+     filters:filters,
     columns: [
       
 search.createColumn({
     name: 'internalid',
     sort: search.Sort.DESC 
 }),
-       
+       search.createColumn({
+    name: 'custrecord_rw_portal_status',
+    join: 'custrecord1513'
+}),
         'custrecord_rw_portal_rwproduct', 
         'custrecord_rw_portal_additionalcomments',
         'custrecord1513',
@@ -230,26 +294,7 @@ function getClosedTicketCount(){
     return count;
 }
 var totalClosedTickets=getClosedTicketCount();
-    // var parentId = result.getValue('custrecord1513');
-
-    // var customer = '';
-    // var projectId = '';
-    // var status = '';
-    // var total = 0;
-
-    // if(parentId){
-    //     var parentData = record.load({
-    //         type: 'customrecord_rw_portal_access',
-    //         id: parentId
-    //     });
-
-    //     customer = parentData.getValue('custrecord_rw_portal_customername') || '';
-    //     projectId = parentData.id;
-    //     status = parentData.getText('custrecord_rw_portal_status') || '';
-    //     total = projectCounts[parentId] || 0;
-    // }
-
-    // var rwProduct = result.getText('custrecord_rw_portal_rwproduct');
+    
  function buildTicketMap(){
 
     var ticketMap = {};
@@ -369,7 +414,11 @@ var htmlField = form.addField({
 const projectUrl = url.resolveScript({
 scriptId: 'customscript2877',
 deploymentId: 'customdeploy1',
-returnExternalUrl: true
+returnExternalUrl: true,
+params: {
+        empid: empId,
+        email: email
+    }
 });
 
 var nextPage = page + 1;
@@ -411,7 +460,7 @@ margin:0 !important;
 padding:0 !important;
 width:100%;
 height:100%;
-overflow-y:hidden !important;
+overflow-y:auto;
 }
 .arrow{
     display:inline-block;
@@ -636,7 +685,7 @@ text-decoration: none;
     cursor: pointer;
 }
 
-.
+
 </style>
 <form method="GET">
 <input type="hidden" id="pageInput" name="page" value="${page}">
@@ -645,13 +694,14 @@ text-decoration: none;
 <iframe id="mainFrame"
         style="
         width:100%;
-        height:100%;
+        height:100vh;
         border:none;
         display:none;
         position:absolute;
         top:0;
         left:0;
         background:white;
+        overflow:hidden;
         
         "
         onload="hideLoader()">
@@ -739,18 +789,20 @@ function hideLoader(){
     var loader = document.getElementById("loader");
     loader.style.display = "none";
 }
-   function openProject(projectId){
+  function openProject(projectId){
     var loader = document.getElementById("loader");
     var frame = document.getElementById("mainFrame");
 
     loader.style.display = "block";
+
+    // 🔥 hide table content
+    document.getElementById("homeContent").style.display = "none";
+
+    // show iframe
     frame.style.display = "block";
 
-    // Pass projectId to Suitelet
     var urlWithParam = viewProjectUrl + '&projectId=' + projectId;
-
     frame.src = urlWithParam;
-    console.log(urlWithParam);
 }
 function goToPage(page){
     var loader = document.getElementById("loader");

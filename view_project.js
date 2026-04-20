@@ -8,7 +8,8 @@ define(['N/ui/serverWidget','N/record','N/url','N/search','N/format','N/file','N
 const onRequest = (context) => {
    
 if (context.request.method === 'POST') {
-
+var projectStatus = context.request.parameters.projectStatus;
+var projectId = context.request.parameters.projectId;
     var body;
 
     try {
@@ -48,7 +49,15 @@ values['custrecord_rw_portal_lineexptgolivedate'] =
 if(line.status){
     values['custrecord_rw_portal_projstat'] = line.status;
 }
-
+if(projectStatus && projectId){
+    record.submitFields({
+        type: 'customrecord_rw_portal_access',
+        id: projectId,
+        values: {
+            custrecord_rw_portal_status: projectStatus
+        }
+    });
+}
 record.submitFields({
     type: 'customrecord_rw_portal_access2',
     id: line.id,
@@ -65,17 +74,87 @@ var statSearch = search.create({
     type: 'customlist_rw_portal_access_pjstlist',
     columns: ['internalid','name']
 });
-
-var empOptions = '<option value="">--Select--</option>';
-
-
-    var request = context.request;
+var request = context.request;
     var projectId = request.parameters.projectId;
  var email = context.request.parameters.email || '';
     var empId = context.request.parameters.empid 
          || context.request.parameters.empId 
          || context.request.parameters.employeeId 
          || '';
+var empOptions = '<option value="">--Select--</option>';
+function getEmployeeInternalId(email){
+
+    var empSearch = search.create({
+        type: search.Type.EMPLOYEE,
+       
+            filters: email ? [['email','is', email]] : []
+            
+        ,
+        columns: ['internalid']
+    });
+
+    var res = empSearch.run().getRange({ start: 0, end: 1 });
+
+    if(res.length > 0){
+        return res[0].getValue('internalid');
+    }
+
+    return null;
+}
+var empInternalId = getEmployeeInternalId(email);
+function getEmployeeRole(empInternalId){
+    if(!empInternalId) return '';
+
+    var empData = search.lookupFields({
+        type: search.Type.EMPLOYEE,
+        id: empInternalId,
+        columns: ['role']
+    });
+
+    if(empData.role && empData.role.length > 0){
+        return empData.role[0].text;
+    }
+
+    return '';
+}
+var empRole = getEmployeeRole(empInternalId);
+log.debug("Employee Role", empRole);
+function getRoleType(roleName){
+    roleName = roleName.toLowerCase();
+
+    if(roleName.includes('pmo')) return 'PMO';
+    if(roleName.includes('project manager')) return 'PM';
+    if(roleName.includes('developer')) return 'DEV';
+
+    return 'OTHER';
+}
+
+var roleType = getRoleType(empRole);
+var tableHeader = '';
+
+if(roleType === 'PMO' || roleType === 'DEV'){
+    tableHeader = `
+        <tr style="background:#6f3ba2; color:white;">
+            <th style="border:1px solid black;">RW Product</th>
+            <th style="border:1px solid black;">Comments</th>
+            <th style="border:1px solid black;">Status</th>
+        </tr>
+    `;
+} else {
+    tableHeader = `
+        <tr style="background:#6f3ba2; color:white;">
+            <th style="border:1px solid black;">RW Product</th>
+            <th style="border:1px solid black;">Comments</th>
+            <th style="border:1px solid black;">Project Manager</th>
+            <th style="border:1px solid black;">Functional consultant</th>
+            <th style="border:1px solid black;">Technical consultant</th>
+            <th style="border:1px solid black;">Expected UAT</th>
+            <th style="border:1px solid black;">Expected Go Live</th>
+            <th style="border:1px solid black;">Status</th>
+        </tr>
+    `;
+}
+    
     var customer = '';
     var status = '';
     var projectType = '';
@@ -106,7 +185,11 @@ var techDropdown = '<option value="">--Select--</option>';
 const projectUrl = url.resolveScript({
 scriptId: 'customscript2876',
 deploymentId: 'customdeploy5',
-returnExternalUrl: true
+returnExternalUrl: true,
+params: {
+        empid: empId,
+        email: email
+    }
 });
  var currentUser = runtime.getCurrentUser();
 var userId = currentUser.id;
@@ -152,6 +235,26 @@ log.debug("USER", runtime.getCurrentUser().id);
         log.error("File Load Error", e);
     }
 }
+var projectStatusOptions = '<option value="">--Select--</option>';
+
+var projectStatusSearch = search.create({
+    type: 'customlist_rw_portal_access_pjstlist',
+    columns: ['internalid','name']
+});
+
+var projectStatusId = projectRec.getValue('custrecord_rw_portal_status');
+
+projectStatusSearch.run().each(function(res){
+
+    var id = res.getValue('internalid');
+    var name = res.getValue('name');
+
+    var selected = (id == projectStatusId) ? 'selected' : '';
+
+    projectStatusOptions += '<option value="'+id+'" '+selected+'>'+name+'</option>';
+
+    return true;
+});
          var scheduled='';
          var golive='';
         if(scheduledUatDate){
@@ -265,48 +368,58 @@ var lineId = result.id;   // 🔥 BEST WAY
  
 
 
-  lineItemsHtml += `
+ if(roleType === 'PMO' || roleType === 'DEV'){
+    lineItemsHtml += `
 <tr data-id="${lineId}">
+    <td style="border:1px solid black;">${product}</td>
+    <td style="border:1px solid black;">${comments}</td>
+    <td style="border:1px solid black;">
+        <span class="view-mode">${linestatus}</span>
+        <select class="edit-mode status" style="display:none;">
+            ${statOptions}
+        </select>
+    </td>
+</tr>`;
+}
+else {
+    lineItemsHtml += `
+<tr data-id="${lineId}">
+<td style="border:1px solid black;">${product}</td>
+<td style="border:1px solid black;">${comments}</td>
+<td style="border:1px solid black;">${pm}</td>
 
-<td style="border:1px solid #ccc;padding:8px;">${product}</td>
-<td style="border:1px solid #ccc;">${comments}</td>
-<td style="border:1px solid #ccc;">${pm}</td>
-
-<td style="border:1px solid #ccc;padding:8px;">
+<td style="border:1px solid black;">
     <span class="view-mode">${functional}</span>
-    
-    <select class="edit-mode functional" style="display:none;" value="${functional}">
+    <select class="edit-mode functional" style="display:none;">
        ${funcDropdown}
     </select>
 </td>
 
-<td style="border:1px solid #ccc;padding:8px;">
+<td style="border:1px solid black;">
     <span class="view-mode">${technical}</span>
-    
-    <select class="edit-mode technical" style="display:none;" value="${technical}">
+    <select class="edit-mode technical" style="display:none;">
        ${techDropdown}
     </select>
 </td>
 
-<td style="border:1px solid #ccc;padding:8px;">
+<td style="border:1px solid black;">
     <span class="view-mode">${uat}</span>
-    <input class="edit-mode uat" type="date" value="${uatRaw ? format.format({ value: uatRaw, type: format.Type.DATE }).split('/').reverse().join('-') : ''}" style="display:none;" />
+    <input class="edit-mode uat" type="date" value="${toInputDate(uatRaw)}" style="display:none;" />
 </td>
 
-<td style="border:1px solid #ccc;padding:8px;">
+<td style="border:1px solid black;">
     <span class="view-mode">${golive}</span>
-    <input class="edit-mode golive" type="date" value="${goliveRaw ? format.format({ value: goliveRaw, type: format.Type.DATE }).split('/').reverse().join('-') : ''}" style="display:none;" />
+    <input class="edit-mode golive" type="date" value="${toInputDate(goliveRaw)}" style="display:none;" />
 </td>
 
-<td style="border:1px solid #ccc;">
+<td style="border:1px solid black;">
     <span class="view-mode">${linestatus}</span>
-    <select class="edit-mode status" style="display:none;" value="${linestatus}">
+    <select class="edit-mode status" style="display:none;">
        ${statOptions}
     </select>
 </td>
-
-</tr>
-`;
+</tr>`;
+}
     return true;
 });
     }
@@ -323,6 +436,7 @@ var lineId = result.id;   // 🔥 BEST WAY
             font-family: Arial;
             margin:0;
             padding:20px;
+            height:100%;
             
         }
 .form-grid {
@@ -462,7 +576,15 @@ var lineId = result.id;   // 🔥 BEST WAY
     ${fileUrl ? `<a href="${fileUrl}" target="_blank">${fileName}</a>` : 'No Attachment'}
 </div>
         <div class="label">Status</div>
-        <div class="value">${status}</div>
+<div class="value">
+
+    <span class="view-mode">${status}</span>
+
+    <select id="projectStatus" class="edit-mode" style="display:none;">
+        ${projectStatusOptions}
+    </select>
+
+</div>
 
         <div class="label">Direct Project</div>
         <div class="value">${directProject}</div>
@@ -481,18 +603,9 @@ var lineId = result.id;   // 🔥 BEST WAY
 
 
 <table style="width:100%; border-collapse:collapse; margin-top:14px;">
-    <thead>
-        <tr style="background:#6f3ba2; color:white;">
-            <th style="border:1px solid #ddd;font-size:12px;padding:8px;">RW Product</th>
-            <th style="border:1px solid #ddd;font-size:12px;padding:8px;">Comments</th>
-            <th style="border:1px solid #ddd;font-size:12px;padding:8px;">Project Manager</th>
-            <th style="border:1px solid #ddd;font-size:12px;padding:8px;">Functional consultant</th>
-            <th style="border:1px solid #ddd;font-size:12px;padding:8px;">Technical consultant</th>
-            <th style="border:1px solid #ddd;font-size:12px;padding:8px;">Expected UAT</th>
-            <th style="border:1px solid #ddd;font-size:12px;padding:8px;">Expected Go Live</th>
-            <th style="border:1px solid #ddd;font-size:12px;padding:8px;">Status</th>
-        </tr>
-    </thead>
+  <thead>
+    ${tableHeader}
+</thead>
     <tbody>
         ${lineItemsHtml || '<tr><td colspan="7">No data found</td></tr>'}
     </tbody>
@@ -528,6 +641,7 @@ var lineId = result.id;   // 🔥 BEST WAY
   function saveData(){
 
     var rows = document.querySelectorAll("tbody tr");
+    var projectStatus = document.getElementById("projectStatus")?.value || '';
     var data = [];
 
     rows.forEach(function(row){
@@ -565,12 +679,13 @@ var status     = row.querySelector("select.edit-mode.status")?.value;
         return;
     }
 
-    fetch(window.location.href, {
+  fetch(window.location.href, {
     method: "POST",
     headers: {
         "Content-Type": "application/x-www-form-urlencoded"
     },
-    body: "data=" + encodeURIComponent(JSON.stringify(data))
+    body: "data=" + encodeURIComponent(JSON.stringify(data)) + 
+          "&projectStatus=" + projectStatus
 })
 .then(res => res.text())
 .then(res => {
@@ -593,7 +708,12 @@ var status     = row.querySelector("select.edit-mode.status")?.value;
                 var txt = funcSel.options[funcSel.selectedIndex]?.text || '';
                 row.querySelector("td:nth-child(4) .view-mode").innerText = txt;
             }
+var statusSelect = document.getElementById("projectStatus");
 
+if(statusSelect){
+    var selectedText = statusSelect.options[statusSelect.selectedIndex]?.text || '';
+    document.querySelector("#projectStatus").previousElementSibling.innerText = selectedText;
+}
             if(techSel){
                 var txt = techSel.options[techSel.selectedIndex]?.text || '';
                 row.querySelector("td:nth-child(5) .view-mode").innerText = txt;

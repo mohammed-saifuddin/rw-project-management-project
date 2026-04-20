@@ -138,6 +138,7 @@ function formatDate(date){
             font-family: Arial;
             margin:0;
             padding:20px;
+            height:100%;
             
         }
 .form-grid {
@@ -236,9 +237,27 @@ function formatDate(date){
     font-weight:bold;
     color:#6f3ba2;
 }
+    #editBtn{
+    margin-top:20px;
+            padding:10px 15px;
+            background:#6f3ba2;
+            color:white;
+            border:none;
+            border-radius:5px;
+            cursor:pointer;
+    }
         .backBtn:hover{
             background:#5a2d87;
         }
+            #saveBtn{
+             margin-top:20px;
+            padding:10px 15px;
+            background:#6f3ba2;
+            color:white;
+            border:none;
+            border-radius:5px;
+            cursor:pointer;
+            }
     </style>
 
     <div class="container">

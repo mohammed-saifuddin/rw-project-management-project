@@ -7,11 +7,28 @@ define(['N/ui/serverWidget','N/record','N/search','N/url','N/file','N/format','N
 (serverWidget, record, search, url, file, format,runtime) => {
 
 const onRequest = (context) => {
+var productOptions = '<option value="">All</option>';
 
+var productSearch = search.create({
+    type: 'customlist_rw_ticket_rwsuiteapplist', 
+    columns:['internalid','name']// 
+});
+
+productSearch.run().each(function(result){
+
+    var id = result.getValue('internalid');
+    var name = result.getValue('name');
+
+    productOptions += `<option value="${id}" 
+    >${name}</option>`;
+
+    return true;
+});
     
     if (context.request.method === 'GET') {
 
         var form = serverWidget.createForm({ title: ' ' });
+        form.hideNavBar = true;
           var email = context.request.parameters.email || '';
     var empId = context.request.parameters.empid 
          || context.request.parameters.empId 
@@ -40,84 +57,44 @@ rwSearch.run().each(function(result){
         var roleOptions = '<option value="">Select</option>';
 if (context.request.parameters.action === 'getTicket') {
 
-    var projectId = context.request.parameters.projectId;
+   var requestType = context.request.parameters.requestType;
 
-    log.debug("Project ID", projectId); // DEBUG
+var projectId = context.request.parameters.projectId;
+var requestType = context.request.parameters.requestType;
 
-    var ticketSearch = search.create({
-        type: 'customrecord_rw_ticket',
-        filters: [
-            ['custrecord_rw_ticket_projectname', 'anyof', projectId]
-        ],
-        columns: [
-            'custrecord_rw_ticket_ticketno'
-        ]
-    });
-   
-    var result = ticketSearch.run().getRange({ start: 0, end: 1000 });
+var ticketSearch = search.create({
+    type: 'customrecord_rw_ticket',
+    filters: [
+        ['custrecord_rw_ticket_projectname', 'anyof', projectId],
+        'AND',
+        ['custrecord_rw_ticket_requesttype', 'anyof', requestType]
+    ],
+    columns: ['custrecord_rw_ticket_ticketno']
+});
 
-    log.debug("Results Found", result.length); // DEBUG
+var result = ticketSearch.run().getRange({ start: 0, end: 1000 });
 
-    var maxNumber = 0;
+var maxNumber = 0;
 
-    result.forEach(function(rec) {
+result.forEach(function(rec) {
 
-        var ticket = rec.getValue('custrecord_rw_ticket_ticketno');
+    var ticket = rec.getValue('custrecord_rw_ticket_ticketno');
 
-        if (ticket) {
-            var num = parseInt(ticket.split('-').pop()) || 0;
+    if (ticket) {
+        var num = parseInt(ticket.split('-').pop()) || 0;
 
-            if (num > maxNumber) {
-                maxNumber = num;
-            }
+        if (num > maxNumber) {
+            maxNumber = num;
         }
-    });
+    }
+});
 
-    var nextNumber = maxNumber + 1;
+var nextNumber = maxNumber + 1;
 
-    log.debug("Next Number", nextNumber); // DEBUG
-
-    context.response.write(JSON.stringify({ count: nextNumber }));
-    return;
+context.response.write(JSON.stringify({ count: nextNumber }));
+return;
 }
-if (context.request.parameters.action === 'getProducts') {
 
-    var customerId = context.request.parameters.customerId;
-
-    log.debug("Customer ID", customerId);
-
-    var products = [];
-
-    var mappingSearch = search.create({
-        type: 'customrecord_rw_support_',
-        filters: [
-            ['custrecord_rw_project_summary', 'anyof', customerId]
-        ],
-        columns: [
-            'custrecord_rw_support_product'
-        ]
-    });
-
-    mappingSearch.run().each(function(result) {
-
-        var prodId = result.getValue('custrecord_rw_support_product');
-        var prodName = result.getText('custrecord_rw_support_product');
-
-        if (prodId) {
-            products.push({
-                id: prodId,
-                name: prodName
-            });
-        }
-
-        return true;
-    });
-
-    log.debug("Products Found", products);
-
-    context.response.write(JSON.stringify(products));
-    return;
-}
 var customerOptions = '<option value="">--Select--</option>';
 
 var customerSearch = search.create({
@@ -217,20 +194,43 @@ empSearch.run().each(function(result){
 });
     return true;
 });
+
         htmlField.defaultValue = `
 
 <style>
-body {
-    font-family: Arial;
-    background:white;
+
+body{
+margin:0 !important;
+width:100%;
 }
 
 html, body {
-    overflow: hidden !important;   
-    height: 100% !important;
+    margin: 0;
+    padding: 0;
+    
+    
+}
+/* REMOVE ALL NETSUITE WRAPPER SPACE */
+body > div,
+.uir-page-container,
+.uir-page-wrapper,
+.uir-page-body,
+.uir-page-main {
     margin: 0 !important;
     padding: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    left: 0 !important;
 }
+
+
+#div__body{
+padding:0 !important;
+margin:0 !important;
+}
+
+
+
 label.required::after {
     content: " *";
     color: red;
@@ -304,6 +304,7 @@ select {
 .row {
     display:flex;
     gap:20px;
+    
 }
 
 /* Special colors */
@@ -313,13 +314,14 @@ select {
 /* Textarea */
 textarea {
     height:40px;
-    resize:both;
+    resize:vertical;
 }
 .attach{
 height:30px;
 
 
 }
+
 /* Button */
 button {
    margin-top:20px;
@@ -410,7 +412,7 @@ cursor:pointer;
         <label class="required">Reachware Product</label>
         
        <select class="" name="suiteApp" id="suiteApp" required>
-  <option value="">Select Product</option>
+  ${productOptions}
 </select>
     </div>
 </div>
@@ -501,6 +503,8 @@ cursor:pointer;
 <script>
 var loggedRoleName = "${loggedRoleName}";
 var empRoleMap = ${JSON.stringify(empRoleMap)};
+var requestTypeDropdown = document.querySelector("select[name='requestType']");
+var projectDropdown = document.getElementById('projectName');
 document.addEventListener("DOMContentLoaded", function () {
 
     setTimeout(function () {
@@ -579,31 +583,31 @@ document.getElementById('projectName').addEventListener('change', function () {
     });
 
 });
-document.getElementById('projectName').addEventListener('change', function () {
+// document.getElementById('projectName').addEventListener('change', function () {
 
-    var projectId = this.value;
-    var projectText = this.options[this.selectedIndex].text;
+//     var projectId = this.value;
+//     var projectText = this.options[this.selectedIndex].text;
 
-    if (!projectId) return;
+//     if (!projectId) return;
 
-    var prefix = projectText.replace(/\s/g, '').substring(0, 2).toUpperCase();
+//     var prefix = projectText.replace(/\s/g, '').substring(0, 2).toUpperCase();
 
-    fetch(window.location.href + "&action=getTicket&projectId=" + projectId)
-    .then(res => res.json())
-    .then(data => {
+//     fetch(window.location.href + "&action=getTicket&projectId=" + projectId)
+//     .then(res => res.json())
+//     .then(data => {
 
-        console.log("Next Number:", data.count); // 🔍 DEBUG
+//         console.log("Next Number:", data.count); // 🔍 DEBUG
 
-        var ticketNo = prefix + "-ISSU-" + ('000' + data.count).slice(-3);
+//         var ticketNo = prefix + "-ISSU-" + ('000' + data.count).slice(-3);
 
-        var ticketInput = document.getElementById('ticketNoField');
-var ticketText = document.getElementById('ticketNoText');
+//         var ticketInput = document.getElementById('ticketNoField');
+// var ticketText = document.getElementById('ticketNoText');
 
-if (ticketInput) ticketInput.value = ticketNo;
-if (ticketText) ticketText.innerText = ticketNo;
-    });
+// if (ticketInput) ticketInput.value = ticketNo;
+// if (ticketText) ticketText.innerText = ticketNo;
+//     });
 
-});
+// });
 
 document.getElementById('attachment').addEventListener('change', function(){
 
@@ -622,8 +626,47 @@ document.getElementById('attachment').addEventListener('change', function(){
         //alert("File uploaded successfully!");
     });
 });
+function generateTicketNumber() {
 
+    var projectDropdown = document.getElementById('projectName');
+    var requestTypeDropdown = document.querySelector("select[name='requestType']");
+
+    var projectId = projectDropdown.value;
+    var projectText = projectDropdown.options[projectDropdown.selectedIndex]?.text || '';
+    var requestType = requestTypeDropdown.value;
+
+    if (!projectId || !requestType) return;
+
+    var prefix = projectText.replace(/\s/g, '').substring(0, 2).toUpperCase();
+
+    var year = new Date().getFullYear();
+
+    // 🔥 type mapping
+    var typeCode = "";
+    switch(requestType){
+        case "1": typeCode = "NRQ"; break;
+        case "2": typeCode = "ISSU"; break;
+        case "3": typeCode = "ENH"; break;
+        case "4": typeCode = "TRN"; break;
+    }
+
+    fetch(window.location.href + 
+        "&action=getTicket&projectId=" + projectId + 
+        "&requestType=" + requestType)
+    .then(res => res.json())
+    .then(data => {
+
+        var ticketNo = prefix + "-" + typeCode + "-" + ('000' + data.count).slice(-3);
+
+        document.getElementById('ticketNoField').value = ticketNo;
+        document.getElementById('ticketNoText').innerText = ticketNo;
+    });
+}
+projectDropdown.addEventListener('change', generateTicketNumber);
+requestTypeDropdown.addEventListener('change', generateTicketNumber);
 //console.log(file);
+
+
 </script>
 `;
 

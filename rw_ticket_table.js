@@ -21,7 +21,7 @@ var email = context.request.parameters.email;
 var page = parseInt(pageParam, 10) || 0;
 
 if (isNaN(page) || page < 0) page = 0;
-var pageSize = 10;
+var pageSize = 5;
 var baseUrl = url.resolveScript({
     scriptId: runtime.getCurrentScript().id,
     deploymentId: runtime.getCurrentScript().deploymentId,
@@ -355,11 +355,11 @@ htmlField.defaultValue = `
 
 <style>
 html, body{
-margin:0 !important;
-padding:0 !important;
-width:100%;
-height:100%;
-overflow-y:hidden !important;
+    margin:0 !important;
+    padding:0 !important;
+    width:100%;
+    height:100%;
+    overflow-y:hidden !important;
 }
 .arrow{
     display:inline-block;
@@ -375,6 +375,28 @@ overflow-y:hidden !important;
 background:#E6E6FA;
 color:black;
 font-weight:bold;
+}
+.filter-card{
+    flex-shrink: 0;   /* stays fixed */
+}
+    .table-container{
+    flex: 1;              /* takes remaining space */
+    overflow-y: auto;     /* ✅ scroll here only */
+    scrollbar-width: none;
+}
+
+.table-container::-webkit-scrollbar{
+    display: none;
+}
+    .pagination{
+    flex-shrink: 0;
+    text-align: center;
+    padding: 10px;
+}
+.main-container{
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 .product-card{
     background:#ffffff;
@@ -468,9 +490,12 @@ margin:0;
 }
 
 .content{
-padding:0px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    
+    overflow-y: hidden;   /* 🔥 KEY LINE */
 }
-
 /* table */
 
 table{
@@ -589,9 +614,9 @@ text-decoration: none;
 
 .filter-card{
     display:flex;
-    gap:20px;
+    gap:10px;
     align-items:flex-end;
-    padding:15px 20px;
+    padding:8px 10px;
     margin:10px;
     background:#ffffff;
     border-radius:12px;
@@ -606,7 +631,7 @@ text-decoration: none;
 }
 
 .filter-group label{
-    font-size:12px;
+    font-size:11px;
     font-weight:600;
     color:#555;
 }
@@ -651,12 +676,19 @@ text-decoration: none;
     border-radius:8px;
     cursor:pointer;
 }
-
+#mainFrame{
+    width:100%;
+    border:none;
+    display:none;
+}
 .btn-clear:hover{
     background:#ddd;
 }
 </style>
 <form method="GET">
+<div class="main-container">
+
+
 <div class="filter-card">
 
     <div class="filter-group">
@@ -721,7 +753,9 @@ text-decoration: none;
         position:absolute;
         top:0;
         left:0;
-        background:white;
+        
+        
+        overflow-y:hidden;
         
         "
         onload="hideLoader()">
@@ -730,7 +764,11 @@ text-decoration: none;
 
 <button class="addBtn" type="button" onclick="listProjects()">+</button>
 
-<table>
+
+
+    <div class="table-container">
+
+        <table>
 
 <tr>
 <th style="border:1px solid black;">Request Type</th>
@@ -748,7 +786,13 @@ text-decoration: none;
 ${tableRows}
 
 </table>
-${paginationHtml}
+
+    </div>
+
+    <div class="pagination">
+        ${paginationHtml}
+    </div>
+</div>
 </div>
 </div>
 <div id="loader">
@@ -808,6 +852,9 @@ function toggleProducts(projectId){
     row.style.display = "table-row";
     arrow.classList.add("rotate");
 }
+    function resizeIframe(obj) {
+    obj.style.height = obj.contentWindow.document.body.scrollHeight + 'px';
+}
 function listProjects(){
     var loader = document.getElementById("loader");
     var frame = document.getElementById("mainFrame");
@@ -828,18 +875,20 @@ function hideLoader(){
     function clearFilters(){
     window.parent.location.href = projectUrl;
 }
-   function openProject(projectId){
+ function openProject(projectId){
     var loader = document.getElementById("loader");
     var frame = document.getElementById("mainFrame");
 
     loader.style.display = "block";
+
+    // 🔥 hide table content
+    document.getElementById("homeContent").style.display = "none";
+
+    // show iframe
     frame.style.display = "block";
 
-    // Pass projectId to Suitelet
     var urlWithParam = viewProjectUrl + '&projectId=' + projectId;
-
     frame.src = urlWithParam;
-    console.log(urlWithParam);
 }
 function goToPage(page){
     var loader = document.getElementById("loader");

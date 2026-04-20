@@ -3,12 +3,13 @@
  * @NScriptType Suitelet
  */
 
-define(['N/ui/serverWidget','N/url','N/search'], (serverWidget,url,search) => {
+define(['N/ui/serverWidget','N/url','N/search','N/runtime'], (serverWidget,url,search,runtime) => {
 
 const onRequest = (context) => {
 
 var empId = context.request.parameters.empid;
 var email = context.request.parameters.email;
+var empInternalId = getEmployeeInternalId(email);
 function getTotalCount(){
     var projectSearch = search.create({
         type:'customrecord_rw_portal_access',
@@ -75,6 +76,98 @@ function getInProgressCount(){
     log.debug("Total project in progress",count);
     return count;
 }
+function getKickOffCount(){
+    var projectSearch = search.create({
+        type:'customrecord_rw_portal_access',
+        filters:[
+            ['custrecord_rw_portal_status','anyof','6']
+        ],
+        columns:[],
+        
+    })
+    var count =projectSearch.runPaged().count;
+    log.debug("Total project in progress",count);
+    return count;
+}
+function getBussinessCount(){
+    var projectSearch = search.create({
+        type:'customrecord_rw_portal_access',
+        filters:[
+            ['custrecord_rw_portal_status','anyof','7']
+        ],
+        columns:[],
+        
+    })
+    var count =projectSearch.runPaged().count;
+    log.debug("Total project in progress",count);
+    return count;
+}
+function getTrainingCount(){
+    var projectSearch = search.create({
+        type:'customrecord_rw_portal_access',
+        filters:[
+            ['custrecord_rw_portal_status','anyof','8']
+        ],
+        columns:[],
+        
+    })
+    var count =projectSearch.runPaged().count;
+    log.debug("Total project in progress",count);
+    return count;
+}
+function getUATCount(){
+    var projectSearch = search.create({
+        type:'customrecord_rw_portal_access',
+        filters:[
+            ['custrecord_rw_portal_status','anyof','3']
+        ],
+        columns:[],
+        
+    })
+    var count =projectSearch.runPaged().count;
+    log.debug("Total project in progress",count);
+    return count;
+}
+function getGoliveCount(){
+    var projectSearch = search.create({
+        type:'customrecord_rw_portal_access',
+        filters:[
+            ['custrecord_rw_portal_status','anyof','9']
+        ],
+        columns:[],
+        
+    })
+    var count =projectSearch.runPaged().count;
+    log.debug("Total project in progress",count);
+    return count;
+}
+var empRoleMap = {};
+function getCOCCount(){
+    var projectSearch = search.create({
+        type:'customrecord_rw_portal_access',
+        filters:[
+            ['custrecord_rw_portal_status','anyof','10']
+        ],
+        columns:[],
+        
+    })
+    var count =projectSearch.runPaged().count;
+    log.debug("Total project in progress",count);
+    return count;
+}
+function getSupportCount(){
+    var projectSearch = search.create({
+        type:'customrecord_rw_portal_access',
+        filters:[
+            ['custrecord_rw_portal_status','anyof','11']
+        ],
+        columns:[],
+        
+    })
+    var count =projectSearch.runPaged().count;
+    log.debug("Total project in progress",count);
+    return count;
+}
 function getOpenProjectCount(){
     var projectSearch=search.create({
         type:'customrecord_rw_portal_access',
@@ -85,6 +178,17 @@ function getOpenProjectCount(){
     var count=projectSearch.runPaged().count;
     log.debug("Total open projects",count);
     return count;
+}
+function getEmployeeRole(empInternalId){
+    if(!empInternalId) return '';
+
+    var empSearch = search.lookupFields({
+        type: search.Type.EMPLOYEE,
+        id: empInternalId,
+        columns: ['role']
+    });
+
+    return empSearch.role[0].text; // Role Name
 }
 function getOpenTicketCount(){
     var ticketSearch=search.create({
@@ -136,6 +240,10 @@ params: {
         email: email
     }
 });
+ var selectedEmpId = empId || '';
+        log.debug("FINAL EMP ID", selectedEmpId);
+        var currentUser = runtime.getCurrentUser();
+var loggedRoleName = currentUser.roleCenter; 
 const ticketUrl = url.resolveScript({
 scriptId: 'customscript2894',
 deploymentId: 'customdeploy1',
@@ -151,7 +259,95 @@ var totalTickets=getTotalTicketCount();
 var openProjects=getOpenProjectCount();
 var openTickets=getOpenTicketCount();
 var empInternalId = getEmployeeInternalId(email);
+var empRole = getEmployeeRole(empInternalId);
+log.debug("Employee Role", empRole);
 var assignedTickets = getAssignedTicketCount(empInternalId);
+var kickOffCount=getKickOffCount();
+var bussinesCount=getBussinessCount();
+var training=getTrainingCount();
+var uatCount=getUATCount();
+var golive=getGoliveCount();
+var coc=getCOCCount();
+var support=getSupportCount();
+function getRoleType(roleName){
+    roleName = roleName.toLowerCase();
+
+    if(roleName.includes('pmo')) return 'PMO';
+    if(roleName.includes('project manager')) return 'PM';
+    if(roleName.includes('developer')) return 'DEV';
+
+    return 'OTHER';
+}
+
+var roleType = getRoleType(empRole);
+let statsHeader = '';
+let statsValues = '';
+if(roleType === 'PMO' || roleType === 'DEV'){
+    statsHeader = `
+        <div>Total Projects</div>
+        <div>Open Projects</div>
+        <div>In Progress</div>
+        <div>Kickoff</div>
+        <div>Business requirement</div>
+        <div>Training</div>
+        <div>UAT</div>
+        <div>Go live</div>
+        <div>COC</div>
+        <div>Support</div>
+    `;
+
+   statsValues = `
+    <div class="data-val" onclick="openProjects('total')">${projectCount}</div>
+    <div class="data-val" onclick="openProjects('open')">${openProjects}</div>
+    <div class="data-val" onclick="openProjects('inprogress')">${inProgressCount}</div>
+    <div class="data-val" onclick="openProjects('kickof')">${kickOffCount}</div>
+    <div class="data-val" onclick="openProjects('bussinessrequirement')">${bussinesCount}</div>
+    <div class="data-val" onclick="openProjects('training')">${training}</div>
+    <div class="data-val" onclick="openProjects('uat')">${uatCount}</div>
+    <div class="data-val" onclick="openProjects('golive')">${golive}</div>
+    <div class="data-val" onclick="openProjects('coc')">${coc}</div>
+    <div class="data-val" onclick="openProjects('support')">${support}</div>
+`;
+}
+else if(roleType === 'PM'){
+    statsHeader = `
+        <div>My Projects</div>
+        <div>In Progress</div>
+        <div>Project Tickets</div>
+    `;
+
+    statsValues = `
+        <div>${projectCount}</div>
+        <div>${inProgressCount}</div>
+        <div>${totalTickets}</div>
+    `;
+}
+else if(roleType === 'DEV'){
+    statsHeader = `
+        <div>Assigned Tickets</div>
+        <div>Open Tickets</div>
+    `;
+
+    statsValues = `
+        <div>${assignedTickets}</div>
+        <div>${openTickets}</div>
+    `;
+}
+else{
+     statsHeader = `
+        <div>Assigned Tickets</div>
+        <div>Open Tickets</div>
+        <div>Total Tickets</div>
+    `;
+
+    statsValues = `
+        <div>${assignedTickets}</div>
+        <div>${totalTickets}</div>
+    `;
+}
+var avatarLetter = (empRole && empRole.length > 0) 
+    ? empRole.charAt(0).toUpperCase() 
+    : 'U';
 let html = `
 
 <style>
@@ -171,7 +367,10 @@ html, body {
 
     overflow-x: hidden;   /* removes right scroll */
 }
-
+.data-val:hover{
+  background:#E6E6FA;
+  color:black;
+}
 /* Remove NetSuite spacing */
 #main_form,
 .uir-page-body-content,
@@ -198,44 +397,83 @@ html, body {
     padding: 0 20px;
     overflow: hidden;   /* ✅ no scrollbar */
 }
+    .stats-container {
+    width: 100%;
+}
+
+.stats-header,
+.stats-values {
+    display: flex;
+    width: 100%;
+}
+
+.stats-header div,
+.stats-values div {
+    flex: 1;   /* 🚀 THIS IS THE KEY */
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    text-align: center;
+}
+
+/* Optional styling */
+.stats-header div {
+    background: #6b3fa0;
+    color: white;
+    padding: 10px;
+}
+
+.stats-values div {
+    padding: 15px;
+    border: 1px solid #ccc;
+    font-size: 18px;
+}
 body{
 font-family: Arial;
 margin:0;
 }
 
 .header{
-background:#6b3fa0;
-color:white;
-padding:15px;
-text-align:center;
-font-size:18px;
-position:relative;
+    background:#6b3fa0;
+    color:white;
+    padding:15px;
+
+    display:flex;
+    align-items:center;
 }
 
+/* Left */
+.left-section{
+    flex:1;
+}
+
+/* Center */
+.center-section{
+    flex:2;
+    text-align:center;
+    font-size:18px;
+    
+}
+
+/* Right */
+.right-section{
+    flex:1;
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    gap:15px;
+}
 .menu-icon{
-position:absolute;
+position:static;
 left:15px;
 top:12px;
 font-size:22px;
 cursor:pointer;
 }
 
-.logout{
-position:absolute;
-right:20px;
-top:12px;
-background:#6b3fa0;
-border:1px solid white;
-padding:6px 15px;
-color:white;
-cursor:pointer;
-}
-.logout:hover{
-background:white;
-color:#6b3fa0;
-font-weight:bold;
 
-}
 #div__body,
 .uir-page-wrapper,
 .uir-page-main,
@@ -247,21 +485,23 @@ font-weight:bold;
     max-width: 100% !important;
 }
 .container{
-    display:flex;
-    
+    display:block;   
 }
-
 .sidebar{
-    width:0;
-    overflow:hidden;
-    background:#1667a5;
-    color:white;
-    height:100vh;           /* ✅ full screen */
-    //position:fixed;
-    
-    left:0;
-    transition:0.3s;
-    overflow-y:hidden;        /* ✅ scroll only if needed */
+    position: fixed;   /* 🚀 key change */
+    top: 60px;
+    left: 0;
+
+    width: 0;
+    height: 100vh;
+
+    background: #1667a5;
+    color: white;
+
+    overflow: hidden;
+    transition: 0.3s;
+
+    z-index: 1000;   /* above content */
 }
 
 .menu{
@@ -274,8 +514,10 @@ cursor:pointer;
 background:#0f4e80;
 }
 
-.content{
-    flex:1;
+
+    .content{
+    width: 100%;
+    padding: 0 20px;
     padding: 0 20px;
     height: calc(100vh - 60px);  /* ✅ full screen minus header */
     overflow: hidden;
@@ -294,18 +536,31 @@ grid-template-columns: repeat(6,1fr);
 background:#6b3fa0;
 color:white;
 }
+.stats-header, .stats-values {
+    display: flex;
+    flex-wrap: nowrap;   /* 🚀 prevents going to next line */
+    width: 100%;
+}
 
+.stats-header div,
+.stats-values div {
+    flex: 1;
+    width:100%;
+    
+
+    display: flex;              /* 🔥 important */
+    justify-content: center;    /* horizontal center */
+    align-items: center;        /* vertical center */
+
+    text-align: center;
+}
 .stats-header div{
 padding:10px;
 text-align:center;
 border-right:1px solid white;
 }
 
-.stats-values{
-display:grid;
-grid-template-columns: repeat(6,1fr);
-text-align:center;
-}
+
 #loader {
   display: none;
   position: fixed;
@@ -319,6 +574,27 @@ text-align:center;
   padding-top: 200px;
 
  
+}
+ .stats-container{
+    display: inline-flex;
+    flex-direction: column;
+}
+
+.stats-header,
+.stats-values{
+    display: flex;
+    flex-wrap: nowrap;
+    width:100%;
+}
+
+.stats-header div,
+.stats-values div{
+    
+    flex: 1;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 .spinner {
   position:absolute;
@@ -346,6 +622,61 @@ border:1px solid #ccc;
 font-size:20px;
 }
 
+.right-section{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+.role-text{
+    font-size:12px;
+    font-weight:bold;
+    background:white;
+    border-radius:20px;
+    padding:6px 15px;
+        color:#6b3fa0;
+}
+        .role-text:hover{
+        background:#1667a5;
+        color :white;
+        }
+
+/* REMOVE absolute positioning */
+.logout{
+    position:static;   /* 🚀 important */
+    background:#6b3fa0;
+    border:1px solid white;
+    padding:6px 15px;
+    color:white;
+    cursor:pointer;
+}
+    
+.logout:hover{
+background:white;
+color:#6b3fa0;
+font-weight:bold;
+
+}
+    .title{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:18px;
+}
+    .avatar{
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+
+    background: #6b3fa0;
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-weight: bold;
+    font-size: 14px;
+}
 </style>
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -353,13 +684,18 @@ font-size:20px;
 <div class="con" sytle="width:100%;margin:0;padding:0;background:pink;">
 <div class="header">
 
-<div class="menu-icon" onmouseover="openMenu()">☰</div>
+    <div class="left-section">
+        <div class="menu-icon" onmouseover="openMenu()">☰</div>
+    </div>
 
-<span id="headerTitle">Reachware Project Management Portal</span>
+    <div class="center-section" id="headerTitle">
+        Reachware Project Management Portal
+    </div>
 
-<button class="logout" onclick="logout()">
-Logout
-</button>
+    <div class="right-section">
+        <span class="role-text"> ${empRole}</span>
+        <button class="logout" onclick="logout()">Logout</button>
+    </div>
 
 </div>
 
@@ -368,8 +704,8 @@ Logout
 <div class="sidebar" id="sidebar" onmouseleave="closeMenu()">
 
 <div class="menu" onclick="openHome()">Home</div>
-<div class="menu" onclick="openProjects()">Projects</div>
-<div class="menu" onclick="openTickets()">Tickets</div>
+<div class="menu" onclick="openProjects(); closeMenu()">Projects</div>
+<div class="menu" onclick="openTickets(); closeMenu()">Tickets</div>
 
 
 </div>
@@ -377,27 +713,21 @@ Logout
 <div class="content" style="margin-top:-20px;">
 
 <div id="projectContent" style="display:none;width:100%;height:calc(100vh - 60px);">
-<iframe id="mainFrame" style="width:100%;height:100%;border:none;display:none;" onload="hideLoader()"></iframe>
+<iframe id="mainFrame" style="width:100%;height:100%;border:none;display:none;margin-top:20px;overflow-y:hidden;" onload="hideLoader()"></iframe>
 </div>
 
 <div id="homeContent" style="margin-top:50px;">
 
-<div class="stats-header">
-<div>Total Projects</div>
-<div>Open Projects</div>
-<div>Total Tickets</div>
-<div>Open Tickets</div>
-<div>In Progress</div>
-<div>Assigned Tickets</div>
-</div>
+<div class="stats-container">
 
-<div class="stats-values">
-<div>${projectCount}</div>
-<div>${openProjects}</div>
-<div>${totalTickets}</div>
-<div>${openTickets}</div>
-<div>${inProgressCount}</div>
-<div>${assignedTickets}</div>
+    <div class="stats-header">
+        ${statsHeader}
+    </div>
+
+    <div class="stats-values">
+        ${statsValues}
+    </div>
+
 </div>
 
 </div>
@@ -443,13 +773,11 @@ console.log("Stored EmpId:", localStorage.getItem("empId"));
 
 
 function openMenu(){
-document.getElementById("sidebar").style.width="180px";
-// document.getElementById("sidebar").style.height="700px";
-
+    document.getElementById("sidebar").style.width="180px";
 }
 
 function closeMenu(){
-document.getElementById("sidebar").style.width="0";
+    document.getElementById("sidebar").style.width="0";
 }
 function setPageTitle(title){
     document.title = title + " | Reachware";
@@ -457,16 +785,32 @@ function setPageTitle(title){
 var projectUrl = '${projectUrl}';
 var ticketUrl ='${ticketUrl}';
 var taskUrl ='${taskUrl}';
-function openProjects(){
-setPageTitle("Projects");
+// function openProjects(){
+// setPageTitle("Projects");
+// document.getElementById("headerTitle").innerText = "Reachware Project Management Portal";
+//  document.getElementById("homeContent").style.display = "none";
+// document.getElementById("loader").style.display = "block"; 
+// document.getElementById("mainFrame").src = projectUrl  ;
+// document.getElementById("projectContent").style.display = "block";
+
+
+
+// }
+function openProjects(type){
+
+    setPageTitle("Projects");
 document.getElementById("headerTitle").innerText = "Reachware Project Management Portal";
- document.getElementById("homeContent").style.display = "none";
-document.getElementById("loader").style.display = "block"; 
-document.getElementById("mainFrame").src = projectUrl  ;
-document.getElementById("projectContent").style.display = "block";
+    document.getElementById("homeContent").style.display = "none";
+    document.getElementById("loader").style.display = "block";
 
+    let url = projectUrl;
 
+    if(type){
+        url += "&filter=" + type;   // 👈 pass filter
+    }
 
+    document.getElementById("mainFrame").src = url;
+    document.getElementById("projectContent").style.display = "block";
 }
 function openTasks(){
 alert("task are opening");
@@ -498,7 +842,8 @@ document.getElementById("loader").style.display = "none";
 document.getElementById("homeContent").style.display = "block";
 
 }
-
+var loggedRoleName = "${loggedRoleName}";
+var empRoleMap = ${JSON.stringify(empRoleMap)};
 window.onload = function(){
 
     

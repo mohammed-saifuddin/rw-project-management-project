@@ -3,7 +3,7 @@
  * @NScriptType Suitelet
  */
 
-define(['N/ui/serverWidget','N/record','N/search','N/url'], (serverWidget,record,search,url) => {
+define(['N/ui/serverWidget','N/record','N/search','N/url','N/runtime'], (serverWidget,record,search,url,runtime) => {
 
 const onRequest = (context) => {
 
@@ -21,7 +21,8 @@ var statSearch = search.create({
     columns: ['internalid','name']
 });
 
-
+var empId = context.request.parameters.empid;
+var email = context.request.parameters.email;
 
 statSearch.run().each(function(result){
 
@@ -31,6 +32,25 @@ statSearch.run().each(function(result){
     var isSelected = (name === 'To-Do') ? 'selected' : '';
 
     statOptions += '<option value="'+id+'" '+isSelected+'>'+name+'</option>';
+
+    return true;
+});
+var statOptions1 ='<option value="">--Select--</option>';
+var statSearch = search.create({
+    type: 'customlist_rw_portal_statuslist',
+    columns: ['internalid','name']
+});
+
+
+
+statSearch.run().each(function(result){
+
+    var id = result.getValue('internalid');
+    var name = result.getValue('name');
+
+    var isSelected = (name === 'To Do') ? 'selected' : '';
+
+    statOptions1 += '<option value="'+id+'" '+isSelected+'>'+name+'</option>';
 
     return true;
 });
@@ -95,7 +115,105 @@ var html = form.addField({
     type: serverWidget.FieldType.INLINEHTML,
     label: ' '
 });
+function getEmployeeInternalId(email){
 
+    var empSearch = search.create({
+        type: search.Type.EMPLOYEE,
+       
+            filters: email ? [['email','is', email]] : []
+            
+        ,
+        columns: ['internalid']
+    });
+
+    var res = empSearch.run().getRange({ start: 0, end: 1 });
+
+    if(res.length > 0){
+        return res[0].getValue('internalid');
+    }
+
+    return null;
+}
+var empInternalId = getEmployeeInternalId(email);
+function getEmployeeRole(empInternalId){
+    if(!empInternalId) return '';
+
+    var empSearch = search.lookupFields({
+        type: search.Type.EMPLOYEE,
+        id: empInternalId,
+        columns: ['role']
+    });
+
+    return empSearch.role[0].text; // Role Name
+}
+function getRoleType(roleName){
+    roleName = roleName.toLowerCase();
+
+    if(roleName.includes('pmo')) return 'PMO';
+    if(roleName.includes('project manager')) return 'PM';
+    if(roleName.includes('developer')) return 'DEV';
+
+    return 'OTHER';
+}
+
+
+var empRole = getEmployeeRole(empInternalId);
+log.debug("Employee Role", empRole);
+var roleType = getRoleType(empRole);
+var tableHeader = '';
+
+if(roleType === 'PMO' || roleType === 'DEV'){
+    tableHeader = `
+        <tr>
+            <th>RW Product</th>
+            <th>Additional Comments</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+    `;
+} else {
+    tableHeader = `
+        <tr>
+            <th>RW Product</th>
+            <th>Additional Comments</th>
+            <th>Project Manager</th>
+            <th>Functional Consultant</th>
+            <th>Technical Consultant</th>
+            <th>Expected UAT Date</th>
+            <th>Expected Go Live Date</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+    `;
+}
+var rowHtml = '';
+
+if(roleType === 'PMO' || roleType === 'DEV'){
+    rowHtml = `
+    <tr>
+        <td><select name="rwproduct[]">${rwOptions}</select></td>
+        <td><input type="text" name="comments[]"></td>
+        <td>
+            <select name="linestatus[]">${statOptions}</select>
+        </td>
+        <td><button type="button" onclick="removeRow(this)">❌</button></td>
+    </tr>
+    `;
+} else {
+    rowHtml = `
+    <tr>
+        <td><select name="rwproduct[]">${rwOptions}</select></td>
+        <td><input type="text" name="comments[]"></td>
+        <td><select name="rwpm[]">${empOptions}</select></td>
+        <td><select name="functional[]">${empOptions}</select></td>
+        <td><select name="technical[]">${empOptions}</select></td>
+        <td><input type="date" name="expuat[]"></td>
+        <td><input type="date" name="expgolive[]"></td>
+        <td><select name="linestatus[]">${statOptions}</select></td>
+        <td><button type="button" onclick="removeRow(this)">❌</button></td>
+    </tr>
+    `;
+}
 html.defaultValue = `
 
 <style>
@@ -560,7 +678,7 @@ text-decoration: none;
 ${empOptions}
 </select>
 
-<label class="required">Scheduled UAT Date</label>
+<label class="required">Kick of Date</label>
 <input type="date" name="uatdate" required>
 
 <label class="required">Project Manager</label>
@@ -595,12 +713,7 @@ ${dpOptions}
 
 <label class="required">Status</label>
 <select name="status" required>
-<option value="">--Select--</option>
-<option value="1" selected>To Do</option>
-<option value="2">In Progress</option>
-<option value="3">UAT</option>
-<option value="4">Code Review</option>
-<option value="5">Done</option>
+${statOptions1}
 </select>
 
 </div>
@@ -610,39 +723,10 @@ ${dpOptions}
 <table class="product-table">
 
 <thead>
-<tr>
-<th>RW Product</th>
-<th>Additional Comments</th>
-<th>Project Manager</th>
-<th>Functional Consultant</th>
-<th>Technical Consultant</th>
-<th>Expected UAT Date</th>
-<th>Expected Go Live Date</th>
-<th>Status</th>
-<th></th>
-</tr>
+${tableHeader}
 </thead>
-
 <tbody id="lineItems">
-<tr>
-<td>
-<select name="rwproduct[]">
-${rwOptions}
-</select>
-</td>
-<td><input type="text" name="comments[]" /></td>
-<td><select name="rwpm[]">${empOptions}</select></td>
-<td><select name="functional[]">${empOptions}</select></td>
-<td><select name="technical[]">${empOptions}</select></td>
-<td><input type="date" name="expuat[]" /></td>
-<td><input type="date" name="expgolive[]" /></td>
-<td>
-<select name="linestatus[]" required>
-${statOptions}
-</select>
-</td>
-<td><button type="button" onclick="removeRow(this)" class="remBtn">❌</button></td>
-</tr>
+${rowHtml}
 </tbody>
 
 </table>
@@ -779,26 +863,11 @@ function createCustomer(){
 function addRow() {
     var table = document.getElementById("lineItems");
 
-    var newRow = \`
-<tr>
-    <td><select name="rwproduct[]">${rwOptions}</select></td>
-    <td><input type="text" name="comments[]"></td>
-    <td><select name="rwpm[]">${empOptions}</select></td>
-    <td><select name="functional[]">${empOptions}</select></td>
-    <td><select name="technical[]">${empOptions}</select></td>
-    <td><input type="date" name="expuat[]"></td>
-    <td><input type="date" name="expgolive[]"></td>
-    <td>
-<select name="linestatus[]" required>
-${statOptions}
-</select>
-</td>
-    <td><button type="button" onclick="removeRow(this)" class="remBtn">❌</button></td>
-</tr>
-\`;
+    var newRow = ` + JSON.stringify(rowHtml) + `;
 
     table.insertAdjacentHTML("beforeend", newRow);
 }
+   
 document.querySelector("form").addEventListener("submit", function () {
 
     var rows = document.querySelectorAll("#lineItems tr");
@@ -806,16 +875,16 @@ document.querySelector("form").addEventListener("submit", function () {
 
     rows.forEach(function(row){
 
-        var obj = {
-            rwproduct: row.querySelector('[name="rwproduct[]"]').value,
-            comments: row.querySelector('[name="comments[]"]').value,
-            rwpm: row.querySelector('[name="rwpm[]"]').value,
-            functional: row.querySelector('[name="functional[]"]').value,
-            technical: row.querySelector('[name="technical[]"]').value,
-            expuat: row.querySelector('[name="expuat[]"]').value,
-            expgolive: row.querySelector('[name="expgolive[]"]').value,
-            linestatus: row.querySelector('[name="linestatus[]"]').value
-        };
+       var obj = {
+    rwproduct: row.querySelector('[name="rwproduct[]"]')?.value || '',
+    comments: row.querySelector('[name="comments[]"]')?.value || '',
+    rwpm: row.querySelector('[name="rwpm[]"]')?.value || '',
+    functional: row.querySelector('[name="functional[]"]')?.value || '',
+    technical: row.querySelector('[name="technical[]"]')?.value || '',
+    expuat: row.querySelector('[name="expuat[]"]')?.value || '',
+    expgolive: row.querySelector('[name="expgolive[]"]')?.value || '',
+    linestatus: row.querySelector('[name="linestatus[]"]')?.value || ''
+};
 
         data.push(obj);
     });
