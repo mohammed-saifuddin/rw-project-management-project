@@ -188,7 +188,12 @@ function getEmployeeRole(empInternalId){
         columns: ['role']
     });
 
-    return empSearch.role[0].text; // Role Name
+    // ✅ SAFE CHECK
+    if (empSearch.role && empSearch.role.length > 0) {
+        return empSearch.role[0].text || '';
+    }
+
+    return '';   // fallback
 }
 function getOpenTicketCount(){
     var ticketSearch=search.create({
@@ -270,6 +275,7 @@ var golive=getGoliveCount();
 var coc=getCOCCount();
 var support=getSupportCount();
 function getRoleType(roleName){
+    if (!roleName) return 'OTHER';
     roleName = roleName.toLowerCase();
 
     if(roleName.includes('pmo')) return 'PMO';
@@ -278,11 +284,39 @@ function getRoleType(roleName){
 
     return 'OTHER';
 }
+var myOpenCount = 0;
 
+if (empId) {
+
+    var openTicketSearch = search.create({
+        type: 'customrecord_rw_ticket',
+        filters: [
+            ['custrecord_rw_ticket_assignedto','anyof',empId],
+            'AND',
+            ['custrecord_rw_ticket_ticketstatus','noneof','5'] // exclude Done
+        ],
+        columns: [
+            search.createColumn({ name: 'internalid', summary: 'COUNT' })
+        ]
+    });
+
+    var result = openTicketSearch.run().getRange({ start: 0, end: 1 });
+
+    if (result && result.length > 0) {
+        myOpenCount = result[0].getValue({
+            name: 'internalid',
+            summary: 'COUNT'
+        }) || 0;
+    }
+}
+if (!empRole || empRole.trim() === '') {
+    empRole =  'Administrator';
+}
 var roleType = getRoleType(empRole);
+
 let statsHeader = '';
 let statsValues = '';
-if(roleType === 'PMO' || roleType === 'DEV'){
+if(roleType === 'PMO'){
     statsHeader = `
         <div>Total Projects</div>
         <div>Open Projects</div>
@@ -311,15 +345,23 @@ if(roleType === 'PMO' || roleType === 'DEV'){
 }
 else if(roleType === 'PM'){
     statsHeader = `
-        <div>My Projects</div>
+        <div>Total projects</div>
         <div>In Progress</div>
-        <div>Project Tickets</div>
+        <div>Open projects</div>
+        <div>Total Tickets</div>
+        <div>Open Tickets</div>
+        
+        <div>Assigned Tickets</div>
     `;
 
     statsValues = `
-        <div>${projectCount}</div>
-        <div>${inProgressCount}</div>
-        <div>${totalTickets}</div>
+        <div class="data-val" onclick="openProjects('total')">${projectCount}</div>
+        <div class="data-val" onclick="openProjects('inprogress')">${inProgressCount}</div>
+        <div class="data-val" onclick="openProjects('open')">${openProjects}</div>
+        <div class="data-val" onclick="openTickets('total')">${totalTickets}</div>
+        <div class="data-val" onclick="openTickets('open')">${myOpenCount}</div>
+        
+        <div class="data-val" onclick="openTickets('assigned')">${assignedTickets}</div>
     `;
 }
 else if(roleType === 'DEV'){
@@ -329,8 +371,9 @@ else if(roleType === 'DEV'){
     `;
 
     statsValues = `
-        <div>${assignedTickets}</div>
-        <div>${openTickets}</div>
+       <div class="data-val" onclick="openTickets('assigned')">${assignedTickets}</div>
+    
+    <div class="data-val" onclick="openTickets('open')">${myOpenCount}</div>
     `;
 }
 else{
@@ -340,10 +383,12 @@ else{
         <div>Total Tickets</div>
     `;
 
+    
     statsValues = `
-        <div>${assignedTickets}</div>
-        <div>${totalTickets}</div>
-    `;
+    <div class="data-val" onclick="openTickets('assigned')">${assignedTickets}</div>
+    <div class="data-val" onclick="openTickets('open')">${myOpenCount}</div>
+    <div class="data-val" onclick="openTickets('total')">${totalTickets}</div>
+`;
 }
 var avatarLetter = (empRole && empRole.length > 0) 
     ? empRole.charAt(0).toUpperCase() 
@@ -360,12 +405,15 @@ html, body {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
-    overflow-y:hidden;
-    overflow: hidden;
+    
+   overflow-x:hidden !important;
     
 
 
-    overflow-x: hidden;   /* removes right scroll */
+    
+}
+#homeContent{
+    overflow: hidden;
 }
 .data-val:hover{
   background:#E6E6FA;
@@ -713,7 +761,7 @@ font-weight:bold;
 <div class="content" style="margin-top:-20px;">
 
 <div id="projectContent" style="display:none;width:100%;height:calc(100vh - 60px);">
-<iframe id="mainFrame" style="width:100%;height:100%;border:none;display:none;margin-top:20px;overflow-y:hidden;" onload="hideLoader()"></iframe>
+<iframe id="mainFrame" style="width:100%;height:100%;border:none;display:none;margin-top:20px;" onload="hideLoader()"></iframe>
 </div>
 
 <div id="homeContent" style="margin-top:50px;">
@@ -821,13 +869,31 @@ document.getElementById("loader").style.display = "block";
 document.getElementById("mainFrame").src = taskUrl  ;
 document.getElementById("projectContent").style.display = "block";
 }
-function openTickets(){
-setPageTitle("Tickets");
-document.getElementById("headerTitle").innerText = "Reachware Ticketing APP - ISSUE";
- document.getElementById("homeContent").style.display = "none";
-document.getElementById("loader").style.display = "block"; 
-document.getElementById("mainFrame").src = ticketUrl  ;
-document.getElementById("projectContent").style.display = "block";
+// function openTickets(){
+// setPageTitle("Tickets");
+// document.getElementById("headerTitle").innerText = "Reachware Ticketing APP - ISSUE";
+//  document.getElementById("homeContent").style.display = "none";
+// document.getElementById("loader").style.display = "block"; 
+// document.getElementById("mainFrame").src = ticketUrl  ;
+// document.getElementById("projectContent").style.display = "block";
+// }
+function openTickets(type){
+
+    setPageTitle("Tickets");
+    document.getElementById("headerTitle").innerText = "Reachware Ticketing APP - ISSUE";
+
+    document.getElementById("homeContent").style.display = "none";
+    document.getElementById("loader").style.display = "block";
+
+    let url = ticketUrl;
+
+    if(type){
+       url += "&filter=" + type;
+url += "&empid=" + localStorage.getItem("empId");   // 🔥 REQUIRED
+    }
+
+    document.getElementById("mainFrame").src = url;
+    document.getElementById("projectContent").style.display = "block";
 }
 function hideLoader(){
     document.getElementById("loader").style.display = "none";

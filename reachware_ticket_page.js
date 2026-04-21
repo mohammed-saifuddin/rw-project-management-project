@@ -205,27 +205,34 @@ width:100%;
 }
 
 html, body {
-    margin: 0;
-    padding: 0;
-    
+    margin: 0 !important;
+    padding: 0 !important;
     
 }
-/* REMOVE ALL NETSUITE WRAPPER SPACE */
+/* 🔥 TAKE FULL CONTROL */
 body > div,
 .uir-page-container,
 .uir-page-wrapper,
 .uir-page-body,
-.uir-page-main {
+.uir-page-main,
+#div__body {
     margin: 0 !important;
     padding: 0 !important;
-    width: 100vw !important;
-    max-width: 100vw !important;
-    left: 0 !important;
 }
 
+/* 🔥 CRITICAL FIX (THIS YOU MISSED) */
+#custpage_html_fs,
+#custpage_html_fs_lbl,
+#custpage_html_fs_val {
+    margin: 0 !important;
+    margin-top:-20px;
+    padding: 0 !important;
+    border: none !important;
+}
 
 #div__body{
 padding:0 !important;
+margin-top:-20px;
 margin:0 !important;
 }
 
@@ -321,7 +328,17 @@ height:30px;
 
 
 }
-
+.container {
+    width: 100%; 
+    height:100%;         /* ✅ fixed width */
+    max-width: 95%;
+    max-height:99%;
+    margin: 0 auto;        /* center horizontally */
+    margin-left:0px;
+    padding-left:0px;
+    margin-top:-40px;
+    padding-top:-40px;
+}
 /* Button */
 button {
    margin-top:20px;

@@ -19,7 +19,8 @@ var pageParam = request.parameters.page;
 var empId = context.request.parameters.empid;
 var email = context.request.parameters.email;
 var page = parseInt(pageParam, 10) || 0;
-
+var filterType = context.request.parameters.filter;
+var mode = request.parameters.mode;
 if (isNaN(page) || page < 0) page = 0;
 var pageSize = 5;
 var baseUrl = url.resolveScript({
@@ -72,7 +73,7 @@ var productOptions = '<option value="">All</option>';
 
 var productSearch = search.create({
     type: 'customlist_rw_ticket_rwsuiteapplist', 
-    columns:['internalid','name']// 👈 your list ID
+    columns:['internalid','name']
 });
 
 productSearch.run().each(function(result){
@@ -98,7 +99,7 @@ deploymentId: 'customdeploy1',
 returnExternalUrl: true
 });
 var viewTicketUrl = url.resolveScript({
-    scriptId: 'customscript2895',   // 👈 your ticket view script
+    scriptId: 'customscript2895',  
     deploymentId: 'customdeploy1',
     returnExternalUrl: true
 });
@@ -174,6 +175,40 @@ if (requesterName && requesterName !== '') {
     ]);
 }
 
+// Assigned tickets
+if (filterType === 'assigned' && empId) {
+
+    if (filters.length > 0) filters.push('AND');
+
+    filters.push([
+        'custrecord_rw_ticket_assignedto',
+        'anyof',
+        empId
+    ]);
+}
+// ✅ OPEN TICKETS FILTER
+// ✅ MY OPEN TICKETS (IMPORTANT)
+if (filterType === 'open' && empId) {
+
+    if (filters.length > 0) filters.push('AND');
+
+    // Assigned to logged-in user
+    filters.push([
+        'custrecord_rw_ticket_assignedto',
+        'anyof',
+        empId
+    ]);
+
+    filters.push('AND');
+
+    // Exclude Done (closed)
+    filters.push([
+        'custrecord_rw_ticket_ticketstatus',
+        'noneof',
+        '5'   // Done
+    ]);
+}
+// Total tickets → no filter (show all)
 
 var projectSearch = search.create({
     type: 'customrecord_rw_ticket',
@@ -185,6 +220,7 @@ var projectSearch = search.create({
         }),
         'custrecord_rw_ticket_requesttype',
         'custrecord_rw_ticket_name',
+        'custrecord_rw_ticket_assignedto',
         'custrecord_rw_ticket_date',
         'custrecord_rw_ticket_ticketno',
         'custrecord_rw_ticket_projectname',
@@ -199,7 +235,7 @@ var pagedData = projectSearch.runPaged({ pageSize: 10 });
 var pageIndex = parseInt(request.parameters.page) || 0;
 
 var currentPage = { data: [] };
-
+var totalCount = pagedData.count;
 // ✅ SAFE PAGINATION
 if (pagedData.pageRanges && pagedData.pageRanges.length > 0) {
 
@@ -351,16 +387,75 @@ var paginationHtml = `
 
 </div>
 `;
+
+var filterHtml = '';
+
+if (!(mode === 'form' || request.parameters.hidefilters === 'true')){
+    filterHtml = `
+    <div class="filter-card">
+
+    <div class="filter-group">
+        <label>Client Name</label>
+        
+
+               <select name="clientName">
+               ${customerOptions}
+               </select>
+    </div>
+    <div class="filter-group">
+        <label>Rw Product</label>
+        
+               <select name="rwProduct">
+               ${productOptions}
+               </select>
+    </div>
+    <div class="filter-group">
+        <label>Status</label>
+        
+          <select name="status">
+    <option value="">All</option>
+    <option value="1" ${request.parameters.status=='1'?'selected':''}>To Do</option>
+    <option value="2" ${request.parameters.status=='2'?'selected':''}>In Progress</option>
+    <option value="3" ${request.parameters.status=='3'?'selected':''}>Code Review</option>
+    <option value="4" ${request.parameters.status=='4'?'selected':''}>UAT</option>
+    <option value="5" ${request.parameters.status=='5'?'selected':''}>Done</option>
+</select>
+    </div>
+    <div class="filter-group">
+        <label>Requester Name</label>
+        
+                <select name="requesterName">
+               ${empOptions}
+               </select>
+    </div>
+   
+
+    
+
+    <div class="filter-actions">
+        <button type="submit" class="btn-primary">Apply</button>
+        
+    </div>
+
+</div>
+
+    `;
+}
 htmlField.defaultValue = `
 
 <style>
-html, body{
-    margin:0 !important;
-    padding:0 !important;
-    width:100%;
-    height:100%;
-    overflow-y:hidden !important;
+*{
+    box-sizing:border-box;   /* ✅ VERY IMPORTANT */
 }
+html, body{
+    margin:0;
+    padding:0;
+    height:100%;
+    overflow:hidden;   /* ✅ no page scroll */
+}
+
+
+
 .arrow{
     display:inline-block;
     cursor:pointer;
@@ -379,11 +474,7 @@ font-weight:bold;
 .filter-card{
     flex-shrink: 0;   /* stays fixed */
 }
-    .table-container{
-    flex: 1;              /* takes remaining space */
-    overflow-y: auto;     /* ✅ scroll here only */
-    scrollbar-width: none;
-}
+ 
 
 .table-container::-webkit-scrollbar{
     display: none;
@@ -394,9 +485,10 @@ font-weight:bold;
     padding: 10px;
 }
 .main-container{
-    height: 100vh;
+    height: 100%;
     display: flex;
     flex-direction: column;
+    margin-top:0;
 }
 .product-card{
     background:#ffffff;
@@ -451,7 +543,36 @@ font-weight:bold;
     font-size:11px;
     color:white;
 }
+.table-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    position:relative;
+    margin:10px 5px;
+}
 
+/* LEFT */
+.header-left{
+    flex:1;
+}
+
+/* CENTER TITLE */
+.header-title{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    font-weight:bold;
+    font-size:18px;
+}
+
+/* RIGHT COUNT */
+.header-right{
+    flex:1;
+    text-align:right;
+    font-weight:bold;
+    font-size:14px;
+    color:#6f3ba2;
+}
 /* dynamic colors */
 .status.todo{ background:#999; }
 .status.inprogress{ background:#f39c12; }
@@ -494,7 +615,7 @@ margin:0;
     display: flex;
     flex-direction: column;
     
-    overflow-y: hidden;   /* 🔥 KEY LINE */
+    overflow: hidden;   /* 🔥 KEY LINE */
 }
 /* table */
 
@@ -617,7 +738,7 @@ text-decoration: none;
     gap:10px;
     align-items:flex-end;
     padding:8px 10px;
-    margin:10px;
+    margin:0;
     background:#ffffff;
     border-radius:12px;
     box-shadow:0 4px 12px rgba(0,0,0,0.1);
@@ -676,70 +797,86 @@ text-decoration: none;
     border-radius:8px;
     cursor:pointer;
 }
-#mainFrame{
-    width:100%;
-    border:none;
-    display:none;
-}
+
 .btn-clear:hover{
     background:#ddd;
+}
+    /* Main layout */
+.main-container{
+    height:100%;
+    display:flex;
+    flex-direction:column;
+}
+
+/* Top filter stays fixed */
+.filter-card{
+    flex-shrink:0;
+}
+
+/* Content area */
+.content{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    
+}
+
+/* Table should scroll ONLY if needed */
+.table-container{
+    flex:1;
+    overflow-y:auto;   /* ✅ only this scrolls */
+    /* ❌ REMOVE height:100% */
+}
+
+/* Pagination fixed */
+.pagination{
+    flex-shrink:0;
+}
+.top-bar{
+    flex-shrink:0;
+}
+/* Iframe FIX */
+#mainFrame{
+    width:100%;
+    height:100%;
+    border:none;
+    display:none;
+    overflow:hidden;
+    overflow-y:hidden;
+    position:absolute;   /* ✅ IMPORTANT (remove absolute) */
+}
+    /* 🔥 HEADER BAR */
+.table-header{
+    display:flex;
+    justify-content:space-between;  /* left + right */
+    align-items:center;
+    margin:10px 5px;
+}
+
+/* optional title */
+.table-title{
+    font-weight:bold;
+    font-size:16px;
+}
+
+/* 🔥 COUNT ON RIGHT */
+.table-count{
+    font-weight:bold;
+    font-size:14px;
+    color:#6f3ba2;
 }
 </style>
 <form method="GET">
 <div class="main-container">
 
 
-<div class="filter-card">
-
-    <div class="filter-group">
-        <label>Client Name</label>
-        
-
-               <select name="clientName">
-               ${customerOptions}
-               </select>
-    </div>
-    <div class="filter-group">
-        <label>Rw Product</label>
-        
-               <select name="rwProduct">
-               ${productOptions}
-               </select>
-    </div>
-    <div class="filter-group">
-        <label>Status</label>
-        
-          <select name="status">
-    <option value="">All</option>
-    <option value="1" ${request.parameters.status=='1'?'selected':''}>To Do</option>
-    <option value="2" ${request.parameters.status=='2'?'selected':''}>In Progress</option>
-    <option value="3" ${request.parameters.status=='3'?'selected':''}>Code Review</option>
-    <option value="4" ${request.parameters.status=='4'?'selected':''}>UAT</option>
-    <option value="5" ${request.parameters.status=='5'?'selected':''}>Done</option>
-</select>
-    </div>
-    <div class="filter-group">
-        <label>Requester Name</label>
-        
-                <select name="requesterName">
-               ${empOptions}
-               </select>
-    </div>
-   
-
-    
-
-    <div class="filter-actions">
-        <button type="submit" class="btn-primary">Apply</button>
-        
-    </div>
-
-</div>
 
 
 
-
-
+<input type="hidden" name="mode" value="${mode || ''}">
+<input type="hidden" name="filter" value="${filterType || ''}">
+<input type="hidden" name="empid" value="${empId || ''}">
 <input type="hidden" id="pageInput" name="page" value="${page}">
 <input type="hidden" id="pageInput" name="page" value="${page}">
 <div class="content">
@@ -750,9 +887,10 @@ text-decoration: none;
         height:100%;
         border:none;
         display:none;
-        position:absolute;
-        top:0;
-        left:0;
+        margin:0px;
+        padding:0px;
+        
+        
         
         
         overflow-y:hidden;
@@ -761,12 +899,27 @@ text-decoration: none;
         onload="hideLoader()">
 </iframe>
 <div id="homeContent">
-
-<button class="addBtn" type="button" onclick="listProjects()">+</button>
-
+${filterHtml}
 
 
-    <div class="table-container">
+<div class="table-header">
+    
+    <div class="header-left">
+        <div class="top-bar">
+    <button class="addBtn" type="button" onclick="listProjects()">+</button>
+</div>
+    </div>
+
+    <div class="header-title">
+        Tickets
+    </div>
+
+    <div class="header-right">
+        Total: ${totalCount}
+    </div>
+
+</div>
+    
 
         <table>
 
@@ -794,7 +947,7 @@ ${tableRows}
     </div>
 </div>
 </div>
-</div>
+
 <div id="loader">
     <div class="spinner"></div>
     <p>Opening........</p>
@@ -820,8 +973,12 @@ function openTicket(ticketId){
     var loader = document.getElementById("loader");
     var frame = document.getElementById("mainFrame");
 
-    loader.style.display = "block";   // show spinner
-    frame.style.display = "block";    // show iframe
+    loader.style.display = "block";
+
+    // 🔥 THIS LINE YOU MISSED
+    document.getElementById("homeContent").style.display = "none";
+
+    frame.style.display = "block";
 
     var urlWithParam = '${viewTicketUrl}' + '&ticketId=' + ticketId;
 
@@ -861,7 +1018,8 @@ function listProjects(){
 
     loader.style.display = "block";   // spinner
     frame.style.display = "block";    // overlay iframe
-    frame.src = projectUrl;
+     document.getElementById("homeContent").style.display = "none";
+    frame.src = projectUrl + "&mode=form&hidefilters=true";
 }
 // function hideLoader(){
 //     document.getElementById("loader").style.display = "none";

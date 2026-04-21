@@ -157,16 +157,18 @@ function formatDate(date){
     padding: 8px;
     border-radius: 5px;
 }
-        // .container{
-        //     max-width:1000px;
+        .container{
+            max-width:95%;
+            width:100%;
+            height:100%;
+            margin:auto;
+            background:white;
+            padding:0px;
+            margin-top:-30px;
+            margin-left:-20px;
+        
             
-        //     height:fit-content;
-        //     margin:auto;
-        //     background:white;
-        //     padding:20px;
-        //     border-radius:10px;
-        //     box-shadow:0 0 10px rgba(0,0,0,0.1);
-        // }
+        }
 
         .title{
             font-size:20px;

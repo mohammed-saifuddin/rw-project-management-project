@@ -45,6 +45,7 @@ html, body {
 body * {
     margin: 0;
     margin-top:10px;
+    overflow:hidden;
 }
 .full-header {
     
@@ -53,7 +54,7 @@ body * {
     margin-left: -50vw;
     margin-right: -50vw;
     width: 100vw;
-    height:25px;
+    height:80px;
     position: fixed;   
     top: 0;
     margin-top:-10px;
@@ -156,6 +157,7 @@ div.uir-page-wrapper {
     height: 70px;
     
     display: flex;
+    font-size:18px;
     justify-content: center;
     align-items: center;
 

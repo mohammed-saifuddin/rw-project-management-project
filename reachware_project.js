@@ -145,7 +145,7 @@ pagedData.pageRanges.forEach(function(pageRange){
         results.push(result);
     });
 });
-
+var totalCount = pagedData.count;
 
 results.forEach(function(result){
 
@@ -249,7 +249,7 @@ function getTicketCounts(customerId){
 
         var ticketCustomer = result.getValue('custrecord_rw_ticket_projectname');
 
-        // ✅ manual match (NO filter issues)
+        
         if(ticketCustomer == customerId){
 
             total++;
@@ -472,7 +472,36 @@ overflow-y:auto;
 .product-row{
     display:none;
 }
+.table-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    position:relative;
+    margin:10px 5px;
+}
 
+/* LEFT */
+.header-left{
+    flex:1;
+}
+
+/* CENTER TITLE */
+.header-title{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    font-weight:bold;
+    font-size:18px;
+}
+
+/* RIGHT COUNT */
+.header-right{
+    flex:1;
+    font-size:16px;
+    text-align:right;
+    font-weight:bold;
+    color:#6f3ba2;
+}
 .product-card{
     background:#ffffff;
     margin:10px;
@@ -708,8 +737,22 @@ text-decoration: none;
 </iframe>
 <div id="homeContent">
 
-<button class="addBtn" type="button" onclick="listProjects()">+</button>
 
+<div class="table-header">
+    
+    <div class="header-left">
+        <button class="addBtn" type="button" onclick="listProjects()">+</button>
+    </div>
+
+    <div class="header-title">
+        Projects
+    </div>
+
+    <div class="header-right">
+        Total: ${totalCount}
+    </div>
+
+</div>
 <table>
 
 <tr>
@@ -778,6 +821,7 @@ function listProjects(){
     var frame = document.getElementById("mainFrame");
 
     loader.style.display = "block";   // spinner
+    document.getElementById("homeContent").style.display = "none";
     frame.style.display = "block";    // overlay iframe
     frame.src = projectUrl;
 }

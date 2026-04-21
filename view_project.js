@@ -132,25 +132,25 @@ function getRoleType(roleName){
 var roleType = getRoleType(empRole);
 var tableHeader = '';
 
-if(roleType === 'PMO' || roleType === 'DEV'){
+if(roleType === 'PMO'){
     tableHeader = `
         <tr style="background:#6f3ba2; color:white;">
-            <th style="border:1px solid black;">RW Product</th>
-            <th style="border:1px solid black;">Comments</th>
-            <th style="border:1px solid black;">Status</th>
+            <th style="border:1px solid #ccc;padding:8px;">RW Product</th>
+            <th style="border:1px solid #ccc;padding:8px;">Comments</th>
+            <th style="border:1px solid #ccc;padding:8px;">Status</th>
         </tr>
     `;
 } else {
     tableHeader = `
         <tr style="background:#6f3ba2; color:white;">
-            <th style="border:1px solid black;">RW Product</th>
-            <th style="border:1px solid black;">Comments</th>
-            <th style="border:1px solid black;">Project Manager</th>
-            <th style="border:1px solid black;">Functional consultant</th>
-            <th style="border:1px solid black;">Technical consultant</th>
-            <th style="border:1px solid black;">Expected UAT</th>
-            <th style="border:1px solid black;">Expected Go Live</th>
-            <th style="border:1px solid black;">Status</th>
+            <th style="border:1px solid #ccc;padding:8px;">RW Product</th>
+            <th style="border:1px solid #ccc;padding:8px;">Comments</th>
+            <th style="border:1px solid #ccc;padding:8px;">Project Manager</th>
+            <th style="border:1px solid #ccc;padding:8px;">Functional consultant</th>
+            <th style="border:1px solid #ccc;padding:8px;">Technical consultant</th>
+            <th style="border:1px solid #ccc;padding:8px;">Expected UAT</th>
+            <th style="border:1px solid #ccc;padding:8px;">Expected Go Live</th>
+            <th style="border:1px solid #ccc;padding:8px;">Status</th>
         </tr>
     `;
 }
@@ -368,12 +368,12 @@ var lineId = result.id;   // 🔥 BEST WAY
  
 
 
- if(roleType === 'PMO' || roleType === 'DEV'){
+ if(roleType === 'PMO'){
     lineItemsHtml += `
 <tr data-id="${lineId}">
-    <td style="border:1px solid black;">${product}</td>
-    <td style="border:1px solid black;">${comments}</td>
-    <td style="border:1px solid black;">
+    <td style="border:1px solid #ccc;padding:8px;">${product}</td>
+    <td style="border:1px solid #ccc;padding:8px;">${comments}</td>
+    <td style="border:1px solid #ccc;padding:8px;">
         <span class="view-mode">${linestatus}</span>
         <select class="edit-mode status" style="display:none;">
             ${statOptions}
@@ -384,35 +384,35 @@ var lineId = result.id;   // 🔥 BEST WAY
 else {
     lineItemsHtml += `
 <tr data-id="${lineId}">
-<td style="border:1px solid black;">${product}</td>
-<td style="border:1px solid black;">${comments}</td>
-<td style="border:1px solid black;">${pm}</td>
+<td style="border:1px solid #ccc;padding:8px;">${product}</td>
+<td style="border:1px solid #ccc;padding:8px;">${comments}</td>
+<td style="border:1px solid #ccc;padding:8px;">${pm}</td>
 
-<td style="border:1px solid black;">
+<td style="border:1px solid #ccc;padding:8px;">
     <span class="view-mode">${functional}</span>
     <select class="edit-mode functional" style="display:none;">
        ${funcDropdown}
     </select>
 </td>
 
-<td style="border:1px solid black;">
+<td style="border:1px solid #ccc; padding:8px;">
     <span class="view-mode">${technical}</span>
     <select class="edit-mode technical" style="display:none;">
        ${techDropdown}
     </select>
 </td>
 
-<td style="border:1px solid black;">
+<td style="border:1px solid #ccc;padding:8px;">
     <span class="view-mode">${uat}</span>
     <input class="edit-mode uat" type="date" value="${toInputDate(uatRaw)}" style="display:none;" />
 </td>
 
-<td style="border:1px solid black;">
+<td style="border:1px solid #ccc;padding:8px;">
     <span class="view-mode">${golive}</span>
     <input class="edit-mode golive" type="date" value="${toInputDate(goliveRaw)}" style="display:none;" />
 </td>
 
-<td style="border:1px solid black;">
+<td style="border:1px solid #ccc;padding:8px;">
     <span class="view-mode">${linestatus}</span>
     <select class="edit-mode status" style="display:none;">
        ${statOptions}
