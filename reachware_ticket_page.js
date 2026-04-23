@@ -7,7 +7,7 @@ define(['N/ui/serverWidget','N/record','N/search','N/url','N/file','N/format','N
 (serverWidget, record, search, url, file, format,runtime) => {
 
 const onRequest = (context) => {
-var productOptions = '<option value="">All</option>';
+var productOptions = '<option value="">Select Product</option>';
 
 var productSearch = search.create({
     type: 'customlist_rw_ticket_rwsuiteapplist', 
@@ -55,6 +55,35 @@ rwSearch.run().each(function(result){
     return true;
 })
         var roleOptions = '<option value="">Select</option>';
+        if (context.request.parameters.action === 'getProducts') {
+
+    var customerId = context.request.parameters.customerId;
+
+    var productList = [];
+
+    var mappingSearch = search.create({
+        type: 'customrecord_rw_support_', // 🔥 YOUR MAPPING RECORD
+        filters: [
+            ['custrecord_customer', 'is', customerId]
+        ],
+        columns: [
+            'custrecord_product'
+        ]
+    });
+
+    mappingSearch.run().each(function(result) {
+
+        productList.push({
+            id: result.getValue('custrecord_product'),
+            name: result.getText('custrecord_product')
+        });
+
+        return true;
+    });
+
+    context.response.write(JSON.stringify(productList));
+    return;
+}
 if (context.request.parameters.action === 'getTicket') {
 
    var requestType = context.request.parameters.requestType;
@@ -202,11 +231,13 @@ empSearch.run().each(function(result){
 body{
 margin:0 !important;
 width:100%;
+height:100%;
 }
 
 html, body {
     margin: 0 !important;
     padding: 0 !important;
+    height:100%;
     
 }
 /* 🔥 TAKE FULL CONTROL */
@@ -330,14 +361,16 @@ height:30px;
 }
 .container {
     width: 100%; 
-    height:100%;         /* ✅ fixed width */
+    height:650px;         /* ✅ fixed width */
     max-width: 95%;
     max-height:99%;
-    margin: 0 auto;        /* center horizontally */
+    position:absolute;
     margin-left:0px;
     padding-left:0px;
     margin-top:-40px;
-    padding-top:-40px;
+    
+   
+    
 }
 /* Button */
 button {
@@ -348,6 +381,7 @@ color:white;
 border:none;
 cursor:pointer;
 }
+
 </style>
 
 <div class="container">
@@ -583,8 +617,6 @@ document.getElementById('projectName').addEventListener('change', function () {
 
     var customerId = this.value;
 
-    if (!customerId) return;
-
     fetch(window.location.href + "&action=getProducts&customerId=" + customerId)
     .then(res => res.json())
     .then(data => {
@@ -593,12 +625,11 @@ document.getElementById('projectName').addEventListener('change', function () {
 
         dropdown.innerHTML = '<option value="">Select Product</option>';
 
-       data.forEach(function(prod){
-    dropdown.innerHTML += '<option value="' + prod.id + '">' + prod.name + '</option>';
-});
+        data.forEach(function(prod){
+            dropdown.innerHTML += '<option value="' + prod.id + '">' + prod.name + '</option>';
+        });
 
     });
-
 });
 // document.getElementById('projectName').addEventListener('change', function () {
 
@@ -654,7 +685,7 @@ function generateTicketNumber() {
 
     if (!projectId || !requestType) return;
 
-    var prefix = projectText.replace(/\s/g, '').substring(0, 2).toUpperCase();
+    var prefix = projectText.replace(/\s/g, '').substring(0, 3).toUpperCase();
 
     var year = new Date().getFullYear();
 
@@ -880,7 +911,7 @@ body {
     inset: 0;
     left:0px;
     right:0px;
-    //background: rgba(0,0,0,0.4);
+    background:white;
     z-index: 9999;
     justify-content: center;
     align-items: center;
@@ -1021,7 +1052,7 @@ window.redirectUrl = "${redirectUrl}";
             Ticket has been created successfully.
         </div>
 
-        <button class="dialog-btn" onclick="redirectPage()">
+        <button class="dialog-btn" type="button" onclick="redirectPage()">
             Continue
         </button>
 

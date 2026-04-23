@@ -177,7 +177,7 @@ div.uir-page-wrapper {
 .login-box{
     width: 380px;
     margin: 120px auto;
-    
+    margin-top:20px;
     background: #ffffff;
     padding: 30px 25px;
     

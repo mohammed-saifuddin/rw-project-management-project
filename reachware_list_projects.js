@@ -104,6 +104,16 @@ empSearch.run().each(function(result){
 
     return true;
 });
+var homeUrl = url.resolveScript({
+                    scriptId:'customscript2874',
+                    deploymentId:'customdeploy3',
+                    returnExternalUrl:true,
+                    params:{
+        empid: empId,
+        email: email
+    }
+                });
+
 var loginUrl = url.resolveScript({
 scriptId: 'customscript2872',
 deploymentId: 'customdeploy1',
@@ -144,7 +154,12 @@ function getEmployeeRole(empInternalId){
         columns: ['role']
     });
 
-    return empSearch.role[0].text; // Role Name
+    // ✅ SAFE CHECK
+    if (empSearch.role && empSearch.role.length > 0) {
+        return empSearch.role[0].text || '';
+    }
+
+    return '';   // fallback
 }
 function getRoleType(roleName){
     roleName = roleName.toLowerCase();
@@ -258,7 +273,17 @@ body {
 padding:0 !important;
 margin:0 !important;
 }
-
+.backBtn{
+            margin-top:20px;
+            padding:10px 15px;
+            background:#6f3ba2;
+            color:white;
+            border:none;
+            border-radius:5px;
+            display:flex;
+            align-item:left;
+            cursor:pointer;
+        }
 .header{
 width:calc(100% + 40px);
 margin-left:-20px;
@@ -629,6 +654,28 @@ color:#6f3ba2;
 text-shadow:0 0 5px #6f3ba2;
 text-decoration: none;
 }
+/* Toast Notification */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #e74c3c; /* red for warning */
+    color: white;
+    padding: 12px 18px;
+    border-radius: 25px;
+    font-size: 14px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.3s ease;
+    z-index: 100000;
+}
+
+/* show state */
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
 #customerModal{
     display:none;
     position:fixed;
@@ -654,7 +701,7 @@ text-decoration: none;
 <form method="POST">
 
 <div class="main-container">
-
+<div id="toast" class="toast"></div>
 <div class="form-grid">
 
 <label class="required">Customer Name</label>
@@ -720,6 +767,7 @@ ${statOptions1}
 <button type="button" onclick="addRow()" class="addBtn" style="margin-top:10px;">
 ➕ 
 </button>
+
 <table class="product-table">
 
 <thead>
@@ -731,7 +779,9 @@ ${rowHtml}
 
 </table>
 <input type="hidden" name="lineitems" id="lineitems">
-<button type="submit" class="savebtn">Save</button>
+
+<button type="submit" class="savebtn" >Save</button>
+
 <div id="loader">
     <div class="loader-box">
         <div class="spinner"></div>
@@ -800,7 +850,17 @@ ${rowHtml}
 function closeCustomerModal(){
     document.getElementById("customerModal").style.display = "none";
 }
+function showToast(message){
 
+    var toast = document.getElementById("toast");
+    toast.innerText = message;
+
+    toast.classList.add("show");
+
+    setTimeout(function(){
+        toast.classList.remove("show");
+    }, 3000); // disappears after 3 sec
+}
 function saveCustomer(){
 
     var name = document.getElementById("newCustomerName").value;
@@ -867,7 +927,16 @@ function addRow() {
 
     table.insertAdjacentHTML("beforeend", newRow);
 }
-   
+   var homeUrl = '${homeUrl}';
+     function goBack(){
+
+    var loader = document.getElementById("loader");
+    loader.style.display = "block";   // ✅ show loader
+
+    setTimeout(function(){
+        window.parent.location.href = homeUrl;
+    }, 300); // small delay for smooth UX
+}
 document.querySelector("form").addEventListener("submit", function () {
 
     var rows = document.querySelectorAll("#lineItems tr");
@@ -892,9 +961,16 @@ document.querySelector("form").addEventListener("submit", function () {
     document.getElementById("lineitems").value = JSON.stringify(data);
 });
 function removeRow(btn) {
+    var table = document.getElementById("lineItems");
+    var rows = table.querySelectorAll("tr");
+
+    if (rows.length <= 1) {
+        showToast("At least one line item is required");
+        return;
+    }
+
     btn.closest("tr").remove();
 }
-
 function showLoader() {
     document.getElementById("loader").style.display = "flex";
 }

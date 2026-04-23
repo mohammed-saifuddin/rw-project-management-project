@@ -17,6 +17,7 @@ var fromDate = request.parameters.fromdate;
 var toDate = request.parameters.todate;
 var pageParam = request.parameters.page;
 var empId = context.request.parameters.empid;
+var dynamicTitle = context.request.parameters.title || 'Tickets';
 var email = context.request.parameters.email;
 var page = parseInt(pageParam, 10) || 0;
 var filterType = context.request.parameters.filter;
@@ -93,6 +94,16 @@ deploymentId: 'customdeploy1',
 returnExternalUrl: true,
 
 });
+var homeUrl = url.resolveScript({
+                    scriptId:'customscript2874',
+                    deploymentId:'customdeploy3',
+                    returnExternalUrl:true,
+                    params:{
+        empid: empId,
+        email: email
+    }
+                });
+
 var viewProjectUrl = url.resolveScript({
 scriptId: 'customscript2892',
 deploymentId: 'customdeploy1',
@@ -451,7 +462,7 @@ html, body{
     margin:0;
     padding:0;
     height:100%;
-    overflow:hidden;   /* ✅ no page scroll */
+    
 }
 
 
@@ -610,13 +621,7 @@ font-family:Arial;
 margin:0;
 }
 
-.content{
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    
-    overflow: hidden;   /* 🔥 KEY LINE */
-}
+
 /* table */
 
 table{
@@ -815,10 +820,16 @@ text-decoration: none;
 
 /* Content area */
 .content{
-    flex:1;
-    display:flex;
+    //flex:1;
+     width:85%;
+     min-width:95%;
+     height:660px;
+     margin-top:-20px;
+     display:flex;
+    position:absolute;
     flex-direction:column;
-    overflow:hidden;
+    overflow-y:hidden;
+    overflow-x:hidden;
     
 }
 
@@ -836,17 +847,19 @@ text-decoration: none;
 .top-bar{
     flex-shrink:0;
 }
-/* Iframe FIX */
-#mainFrame{
-    width:100%;
-    height:100%;
-    border:none;
-    display:none;
-    overflow:hidden;
-    overflow-y:hidden;
-    position:absolute;   /* ✅ IMPORTANT (remove absolute) */
-}
-    /* 🔥 HEADER BAR */
+
+    .backBtn{
+            margin-top:20px;
+            padding:10px 15px;
+            background:#6f3ba2;
+            color:white;
+            border:none;
+            border-radius:5px;
+            display:flex;
+            align-item:left;
+            cursor:pointer;
+        }
+   
 .table-header{
     display:flex;
     justify-content:space-between;  /* left + right */
@@ -860,7 +873,7 @@ text-decoration: none;
     font-size:16px;
 }
 
-/* 🔥 COUNT ON RIGHT */
+
 .table-count{
     font-weight:bold;
     font-size:14px;
@@ -887,13 +900,14 @@ text-decoration: none;
         height:100%;
         border:none;
         display:none;
-        margin:0px;
-        padding:0px;
-        
-        
-        
-        
+        position:absolute;
+        margin-top:10px;
+        margin-left:6px;
+        top:0;
+        left:0;
+        background:white;
         overflow-y:hidden;
+        overflow-x:hidden;
         
         "
         onload="hideLoader()">
@@ -911,7 +925,7 @@ ${filterHtml}
     </div>
 
     <div class="header-title">
-        Tickets
+        ${dynamicTitle}
     </div>
 
     <div class="header-right">
@@ -939,7 +953,7 @@ ${filterHtml}
 ${tableRows}
 
 </table>
-
+<button class="backBtn" type="button" onclick="goBack()">⬅ Back</button>
     </div>
 
     <div class="pagination">
@@ -1068,6 +1082,16 @@ function goToPage(page){
     }
 
 });
+var homeUrl = '${homeUrl}';
+     function goBack(){
+
+    var loader = document.getElementById("loader");
+    loader.style.display = "block";   // ✅ show loader
+
+    setTimeout(function(){
+        window.parent.location.href = homeUrl;
+    }, 300); // small delay for smooth UX
+}
 </script>
 `;
 

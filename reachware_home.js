@@ -21,6 +21,19 @@ function getTotalCount(){
     log.debug("Total project",count);
     return count;
 }
+function getPMProjectCount(empId){
+
+    if(!empId) return 0;
+
+    var projectSearch = search.create({
+        type: 'customrecord_rw_portal_access',
+        filters: [
+            ['custrecord_rw_portal_projectmanager','anyof', empId]
+        ]
+    });
+
+    return projectSearch.runPaged().count;
+}
 function getTotalTicketCount(){
     var ticketSearch =search.create({
         type:'customrecord_rw_ticket',
@@ -50,14 +63,14 @@ function getEmployeeInternalId(email){
 
     return null;
 }
-function getAssignedTicketCount(empInternalId){
+function getAssignedTicketCount(empId){
 
-    if(!empInternalId) return 0;
+    if(!empId) return 0;
 
     var ticketSearch = search.create({
         type: 'customrecord_rw_ticket',
         filters: [
-            ['custrecord_rw_ticket_assignedto','anyof', empInternalId] // ⚠️ change field if needed
+            ['custrecord_rw_ticket_assignedto','anyof', empId]
         ]
     });
 
@@ -80,7 +93,9 @@ function getKickOffCount(){
     var projectSearch = search.create({
         type:'customrecord_rw_portal_access',
         filters:[
-            ['custrecord_rw_portal_status','anyof','6']
+             ['isinactive','is','F'],
+             'AND',
+            ['custrecord_rw_portal_status','anyof',['6']]
         ],
         columns:[],
         
@@ -141,12 +156,33 @@ function getGoliveCount(){
     log.debug("Total project in progress",count);
     return count;
 }
+var debugSearch = search.create({
+    type:'customrecord_rw_portal_access',
+    filters:[
+        ['isinactive','is','F']
+    ],
+    columns:[
+        'internalid',
+        'custrecord_rw_portal_status'
+    ]
+});
+
+debugSearch.run().each(function(res){
+
+    log.debug("ID", res.getValue('internalid'));
+    log.debug("STATUS VALUE", res.getValue('custrecord_rw_portal_status'));
+    log.debug("STATUS TEXT", res.getText('custrecord_rw_portal_status'));
+
+    return true;
+});
 var empRoleMap = {};
 function getCOCCount(){
     var projectSearch = search.create({
         type:'customrecord_rw_portal_access',
         filters:[
-            ['custrecord_rw_portal_status','anyof','10']
+            ['isinactive','is','F'],
+             'AND',
+            ['custrecord_rw_portal_status','is','10']
         ],
         columns:[],
         
@@ -159,7 +195,9 @@ function getSupportCount(){
     var projectSearch = search.create({
         type:'customrecord_rw_portal_access',
         filters:[
-            ['custrecord_rw_portal_status','anyof','11']
+            ['isinactive','is','F'],
+             'AND',
+            ['custrecord_rw_portal_status','anyof',['11']]
         ],
         columns:[],
         
@@ -188,7 +226,7 @@ function getEmployeeRole(empInternalId){
         columns: ['role']
     });
 
-    // ✅ SAFE CHECK
+    
     if (empSearch.role && empSearch.role.length > 0) {
         return empSearch.role[0].text || '';
     }
@@ -266,13 +304,14 @@ var openTickets=getOpenTicketCount();
 var empInternalId = getEmployeeInternalId(email);
 var empRole = getEmployeeRole(empInternalId);
 log.debug("Employee Role", empRole);
-var assignedTickets = getAssignedTicketCount(empInternalId);
+var assignedTickets = getAssignedTicketCount(empId);
 var kickOffCount=getKickOffCount();
 var bussinesCount=getBussinessCount();
 var training=getTrainingCount();
 var uatCount=getUATCount();
 var golive=getGoliveCount();
 var coc=getCOCCount();
+var pmProjectCount = getPMProjectCount(empId);
 var support=getSupportCount();
 function getRoleType(roleName){
     if (!roleName) return 'OTHER';
@@ -316,7 +355,7 @@ var roleType = getRoleType(empRole);
 
 let statsHeader = '';
 let statsValues = '';
-if(roleType === 'PMO'){
+if(roleType === 'PMO'|| roleType === 'DEV'){
     statsHeader = `
         <div>Total Projects</div>
         <div>Open Projects</div>
@@ -331,37 +370,41 @@ if(roleType === 'PMO'){
     `;
 
    statsValues = `
-    <div class="data-val" onclick="openProjects('total')">${projectCount}</div>
-    <div class="data-val" onclick="openProjects('open')">${openProjects}</div>
-    <div class="data-val" onclick="openProjects('inprogress')">${inProgressCount}</div>
-    <div class="data-val" onclick="openProjects('kickof')">${kickOffCount}</div>
-    <div class="data-val" onclick="openProjects('bussinessrequirement')">${bussinesCount}</div>
-    <div class="data-val" onclick="openProjects('training')">${training}</div>
-    <div class="data-val" onclick="openProjects('uat')">${uatCount}</div>
-    <div class="data-val" onclick="openProjects('golive')">${golive}</div>
-    <div class="data-val" onclick="openProjects('coc')">${coc}</div>
-    <div class="data-val" onclick="openProjects('support')">${support}</div>
+    <div class="data-val" id="tit" onclick="openProjects('total')">${projectCount}</div>
+    <div class="data-val" id="tit" onclick="openProjects('open')">${openProjects}</div>
+    <div class="data-val" id="tit" onclick="openProjects('inprogress')">${inProgressCount}</div>
+    <div class="data-val" id="tit" onclick="openProjects('kickof')">${kickOffCount}</div>
+    <div class="data-val" id="tit" onclick="openProjects('bussinessrequirement')">${bussinesCount}</div>
+    <div class="data-val" id="tit" onclick="openProjects('training')">${training}</div>
+    <div class="data-val" id="tit" onclick="openProjects('uat')">${uatCount}</div>
+    <div class="data-val" id="tit" onclick="openProjects('golive')">${golive}</div>
+    <div class="data-val" id="tit" onclick="openProjects('coc')">${coc}</div>
+    <div class="data-val" id="tit" onclick="openProjects('support')">${support}</div>
 `;
 }
 else if(roleType === 'PM'){
     statsHeader = `
         <div>Total projects</div>
-        <div>In Progress</div>
+        
         <div>Open projects</div>
+        <div>In Progress</div>
         <div>Total Tickets</div>
+        <div>My Projects</div>
         <div>Open Tickets</div>
         
         <div>Assigned Tickets</div>
     `;
 
     statsValues = `
-        <div class="data-val" onclick="openProjects('total')">${projectCount}</div>
-        <div class="data-val" onclick="openProjects('inprogress')">${inProgressCount}</div>
-        <div class="data-val" onclick="openProjects('open')">${openProjects}</div>
-        <div class="data-val" onclick="openTickets('total')">${totalTickets}</div>
-        <div class="data-val" onclick="openTickets('open')">${myOpenCount}</div>
+        <div class="data-val" id="tit" onclick="openProjects('total')">${projectCount}</div>
         
-        <div class="data-val" onclick="openTickets('assigned')">${assignedTickets}</div>
+        <div class="data-val" id="tit" onclick="openProjects('open')">${openProjects}</div>
+        <div class="data-val" id="tit" onclick="openProjects('inprogress')">${inProgressCount}</div>
+        <div class="data-val" id="tit" onclick="openTickets('total')">${totalTickets}</div>
+        <div class="data-val" id="tit" onclick="openProjects('myprojects')">${pmProjectCount}</div>
+        <div class="data-val" id="tit" onclick="openTickets('open')">${myOpenCount}</div>
+        
+        <div class="data-val" id="tit" onclick="openTickets('assigned')">${assignedTickets}</div>
     `;
 }
 else if(roleType === 'DEV'){
@@ -371,9 +414,9 @@ else if(roleType === 'DEV'){
     `;
 
     statsValues = `
-       <div class="data-val" onclick="openTickets('assigned')">${assignedTickets}</div>
+       <div class="data-val" id="tit" onclick="openTickets('assigned')">${assignedTickets}</div>
     
-    <div class="data-val" onclick="openTickets('open')">${myOpenCount}</div>
+    <div class="data-val" id="tit" onclick="openTickets('open')">${myOpenCount}</div>
     `;
 }
 else{
@@ -385,9 +428,9 @@ else{
 
     
     statsValues = `
-    <div class="data-val" onclick="openTickets('assigned')">${assignedTickets}</div>
-    <div class="data-val" onclick="openTickets('open')">${myOpenCount}</div>
-    <div class="data-val" onclick="openTickets('total')">${totalTickets}</div>
+    <div class="data-val" id="tit" onclick="openTickets('assigned')">${assignedTickets}</div>
+    <div class="data-val" id="tit" onclick="openTickets('open')">${myOpenCount}</div>
+    <div class="data-val"  id="tit" onclick="openTickets('total')">${totalTickets}</div>
 `;
 }
 var avatarLetter = (empRole && empRole.length > 0) 
@@ -406,8 +449,10 @@ html, body {
     padding: 0 !important;
     width: 100% !important;
     
-   overflow-x:hidden !important;
+   overflow-x:auto !important;
     
+    overflow-y: auto !important;
+
 
 
     
@@ -415,6 +460,7 @@ html, body {
 #homeContent{
     overflow: hidden;
 }
+    
 .data-val:hover{
   background:#E6E6FA;
   color:black;
@@ -436,15 +482,11 @@ html, body {
 /* Fix container */
 .container{
     display: flex;
-    height: 100vh;   /* full screen */
+    height: calc(100vh - 60px); 
+    overflow:hidden;   /* full screen */
 }
 
-/* Fix content overflow */
-.content{
-    flex: 1;
-    padding: 0 20px;
-    overflow: hidden;   /* ✅ no scrollbar */
-}
+
     .stats-container {
     width: 100%;
 }
@@ -457,7 +499,7 @@ html, body {
 
 .stats-header div,
 .stats-values div {
-    flex: 1;   /* 🚀 THIS IS THE KEY */
+    flex: 1;   
 
     display: flex;
     justify-content: center;
@@ -478,20 +520,16 @@ html, body {
     border: 1px solid #ccc;
     font-size: 18px;
 }
-body{
-font-family: Arial;
-margin:0;
-}
+
 
 .header{
     background:#6b3fa0;
     color:white;
-    padding:15px;
-
+    height:60px;
+    padding:0 20px;
     display:flex;
     align-items:center;
 }
-
 /* Left */
 .left-section{
     flex:1;
@@ -532,16 +570,18 @@ cursor:pointer;
     width: 100% !important;
     max-width: 100% !important;
 }
-.container{
-    display:block;   
-}
+// .container{
+//     display:block;   
+// }
 .sidebar{
-    position: fixed;   /* 🚀 key change */
+
     top: 60px;
     left: 0;
 
     width: 0;
-    height: 100vh;
+    
+    height: 100%;
+
 
     background: #1667a5;
     color: white;
@@ -567,7 +607,7 @@ background:#0f4e80;
     width: 100%;
     padding: 0 20px;
     padding: 0 20px;
-    height: calc(100vh - 60px);  /* ✅ full screen minus header */
+    height: calc(100vh - 60px);  
     overflow: hidden;
 }
 .con{
@@ -577,6 +617,7 @@ margin-top:-36px;
 margin-left:-20px;
 margin-right:-20px;
 padding-right:-20px;
+
 }
 .stats-header{
 display:grid;
@@ -586,7 +627,7 @@ color:white;
 }
 .stats-header, .stats-values {
     display: flex;
-    flex-wrap: nowrap;   /* 🚀 prevents going to next line */
+    flex-wrap: nowrap;   
     width: 100%;
 }
 
@@ -596,9 +637,9 @@ color:white;
     width:100%;
     
 
-    display: flex;              /* 🔥 important */
-    justify-content: center;    /* horizontal center */
-    align-items: center;        /* vertical center */
+    display: flex;              
+    justify-content: center;    
+    align-items: center;        
 
     text-align: center;
 }
@@ -690,7 +731,7 @@ font-size:20px;
 
 /* REMOVE absolute positioning */
 .logout{
-    position:static;   /* 🚀 important */
+    position:static;   
     background:#6b3fa0;
     border:1px solid white;
     padding:6px 15px;
@@ -758,13 +799,29 @@ font-weight:bold;
 
 </div>
 
-<div class="content" style="margin-top:-20px;">
+<div class="content">
 
 <div id="projectContent" style="display:none;width:100%;height:calc(100vh - 60px);">
-<iframe id="mainFrame" style="width:100%;height:100%;border:none;display:none;margin-top:20px;" onload="hideLoader()"></iframe>
+
+  <iframe id="mainFrame"
+        style="
+        width:100%;
+        height:100%;
+        border:none;
+        display:none;
+        margin-top:60px;
+        position:absolute;
+        top:0;
+        left:0;
+        background:white;
+        overflow-y:hidden;
+        
+        "
+        onload="hideLoader()">
+</iframe>
 </div>
 
-<div id="homeContent" style="margin-top:50px;">
+<div id="homeContent" style="margin-top:40px;">
 
 <div class="stats-container">
 
@@ -851,15 +908,38 @@ document.getElementById("headerTitle").innerText = "Reachware Project Management
     document.getElementById("homeContent").style.display = "none";
     document.getElementById("loader").style.display = "block";
 
-    let url = projectUrl;
+     let title = "Projects";
 
+    if(type === "total") title = "Total Projects";
+    else if(type === "open") title = "Open Projects";
+    else if(type === "inprogress") title = "In Progress Projects";
+    else if(type === "kickof") title = "Kickof Projects";
+else if(type === "bussinessrequirement") title = "Bussiness requirement Projects";
+else if(type === "training") title = "Training Projects";
+else if(type === "coc") title = "COC Projects";
+else if(type === "uat") title = "UAT Projects";
+else if(type === "golive") title = "Golive Projects";
+else if(type === "support") title = "Support Projects";
+else if(type === "myprojects") title = "My projects";
+    let url = projectUrl;
+var frame = document.getElementById("mainFrame");
+
+
+frame.style.display = "none";
+frame.src = "";
+
+
+frame.src = url;
     if(type){
-        url += "&filter=" + type;   // 👈 pass filter
+        url += "&filter=" + type; 
+        url += "&title=" + encodeURIComponent(title);  
     }
 
     document.getElementById("mainFrame").src = url;
+
     document.getElementById("projectContent").style.display = "block";
 }
+    
 function openTasks(){
 alert("task are opening");
 setPageTitle("Task");
@@ -884,20 +964,46 @@ function openTickets(type){
 
     document.getElementById("homeContent").style.display = "none";
     document.getElementById("loader").style.display = "block";
+let title = "Tickets";
+
+    if(type === "assigned") title = "Assigned Tickets";
+    else if(type === "open") title = "Open Tickets";
+    else if(type === "total") title = "Total Tickets";
 
     let url = ticketUrl;
+    
+var frame = document.getElementById("mainFrame");
 
+
+frame.style.display = "none";
+frame.src = "";
+
+
+frame.src = url;
     if(type){
        url += "&filter=" + type;
-url += "&empid=" + localStorage.getItem("empId");   // 🔥 REQUIRED
+        url += "&title=" + encodeURIComponent(title);
+url += "&empid=" + localStorage.getItem("empId");   
     }
 
     document.getElementById("mainFrame").src = url;
     document.getElementById("projectContent").style.display = "block";
 }
-function hideLoader(){
+    
+// function hideLoader(){
+//     document.getElementById("loader").style.display = "none";
+//      document.getElementById("mainFrame").style.display = "block";
+     
+// }
+     function hideLoader(){
+    var frame = document.getElementById("mainFrame");
+
     document.getElementById("loader").style.display = "none";
-     document.getElementById("mainFrame").style.display = "block";
+
+    
+    if(frame.src){
+        frame.style.display = "block";
+    }
 }
 function openHome(){
 setPageTitle("Home");
@@ -906,7 +1012,9 @@ document.getElementById("headerTitle").innerText = "Reachware Project Management
 
 document.getElementById("loader").style.display = "none"; 
 document.getElementById("homeContent").style.display = "block";
-
+var frame = document.getElementById("mainFrame");
+    frame.src = "";              // clear old page
+    frame.style.display = "none";
 }
 var loggedRoleName = "${loggedRoleName}";
 var empRoleMap = ${JSON.stringify(empRoleMap)};

@@ -14,6 +14,7 @@ var request = context.request;
          || context.request.parameters.empId 
          || context.request.parameters.employeeId 
          || '';
+         var dynamicTitle = context.request.parameters.title || 'Projects';
 var pageParam = request.parameters.page;
 var page = parseInt(pageParam, 10) || 0;
 var filterType = context.request.parameters.filter;
@@ -28,6 +29,16 @@ deploymentId: 'customdeploy1',
 returnExternalUrl: true,
 
 });
+var homeUrl = url.resolveScript({
+                    scriptId:'customscript2874',
+                    deploymentId:'customdeploy3',
+                    returnExternalUrl:true,
+                    params:{
+        empid: empId,
+        email: email
+    }
+                });
+
 var viewProjectUrl = url.resolveScript({
 scriptId: 'customscript2892',
 deploymentId: 'customdeploy1',
@@ -74,6 +85,7 @@ else if(filterType === 'training'){
         '8'
     ]);
 }
+
 else if(filterType === 'golive'){
     filters.push([
         'custrecord1513.custrecord_rw_portal_status',
@@ -102,6 +114,14 @@ else if(filterType === 'uat'){
         '3'
     ]);
 }
+else if(filterType === 'myprojects' && empId){
+
+    filters.push([
+        'custrecord1513.custrecord_rw_portal_projectmanager',
+        'anyof',
+        empId
+    ]);
+}
 // total → no filter
 var projectSearch = search.create({
     type: 'customrecord_rw_portal_access2',
@@ -112,6 +132,7 @@ search.createColumn({
     name: 'internalid',
     sort: search.Sort.DESC 
 }),
+
        search.createColumn({
     name: 'custrecord_rw_portal_status',
     join: 'custrecord1513'
@@ -132,7 +153,7 @@ var projectMap = {};
 var start = page * pageSize;
 var end = start + pageSize;
 
-var searchResult = projectSearch.run();  // RUN ONLY ONCE
+// var searchResult = projectSearch.run();  // RUN ONLY ONCE
 
 var results = [];
 if (!pageParam) page = 0;
@@ -493,7 +514,17 @@ overflow-y:auto;
     font-weight:bold;
     font-size:18px;
 }
-
+.backBtn{
+            margin-top:20px;
+            padding:10px 15px;
+            background:#6f3ba2;
+            color:white;
+            border:none;
+            border-radius:5px;
+            display:flex;
+            align-item:left;
+            cursor:pointer;
+        }
 /* RIGHT COUNT */
 .header-right{
     flex:1;
@@ -595,6 +626,9 @@ margin:0;
 
 .content{
 padding:0px;
+margin-top:-28px;
+
+
 }
 
 /* table */
@@ -723,14 +757,14 @@ text-decoration: none;
 <iframe id="mainFrame"
         style="
         width:100%;
-        height:100vh;
+        height:100%;
         border:none;
         display:none;
         position:absolute;
         top:0;
         left:0;
         background:white;
-        overflow:hidden;
+        overflow-y:hidden;
         
         "
         onload="hideLoader()">
@@ -745,7 +779,7 @@ text-decoration: none;
     </div>
 
     <div class="header-title">
-        Projects
+       ${dynamicTitle}
     </div>
 
     <div class="header-right">
@@ -770,6 +804,7 @@ text-decoration: none;
 ${tableRows}
 
 </table>
+<button class="backBtn" type="button" onclick="goBack()">⬅ Back</button>
 ${paginationHtml}
 </div>
 </div>
@@ -868,6 +903,16 @@ function goToPage(page){
     }
 
 });
+var homeUrl = '${homeUrl}';
+     function goBack(){
+
+    var loader = document.getElementById("loader");
+    loader.style.display = "block";   // ✅ show loader
+
+    setTimeout(function(){
+        window.parent.location.href = homeUrl;
+    }, 300); // small delay for smooth UX
+}
 </script>
 `;
 

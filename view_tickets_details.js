@@ -84,7 +84,7 @@ returnExternalUrl: true,
         roleOfUser = ticketRec.getText('custrecord_rw_ticket_userrole') || '';
          formattedIssueDate = ticketRec.getText('custrecord_rw_ticket_issueoccuredon') || '';
           attachment=ticketRec.getValue('custrecord_rw_ticket_attachment')
-          status=ticketRec.getValue('custrecord_rw_ticket_ticketstatus')
+          status=ticketRec.getText('custrecord_rw_ticket_ticketstatus')
 //          var scheduled='';
 //          var golive='';
 //         if(scheduledUatDate){

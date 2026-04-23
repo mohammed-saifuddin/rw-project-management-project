@@ -132,7 +132,7 @@ function getRoleType(roleName){
 var roleType = getRoleType(empRole);
 var tableHeader = '';
 
-if(roleType === 'PMO'){
+if(roleType === 'PMO' || roleType === 'DEV'){
     tableHeader = `
         <tr style="background:#6f3ba2; color:white;">
             <th style="border:1px solid #ccc;padding:8px;">RW Product</th>
@@ -328,14 +328,25 @@ var technical    = result.getText('custrecord_rw_portal_techconsultant');
 var goliveRaw = result.getValue('custrecord_rw_portal_lineexptgolivedate');
 var linestatus = result.getText('custrecord_rw_portal_projstat'); // for display
 var linestatusId = result.getValue('custrecord_rw_portal_projstat'); // for dropdown
-statSearch.run().each(function(result){
+var statOptions = '<option value="">--Select--</option>';
 
-    var id = result.getValue('internalid');
-    var name = result.getValue('name');
+statSearch.run().each(function(res){
 
-    var isSelected = (name === 'To-Do') ? 'selected' : '';
+    var id = res.getValue('internalid');
+    var name = res.getValue('name');
 
-    statOptions += '<option value="'+id+'" '+(id == linestatusId ? 'selected' : '')+'>'+name+'</option>';
+    var selected = '';
+
+    
+    if(linestatusId){
+        selected = (id == linestatusId) ? 'selected' : '';
+    } 
+    
+    else if(name === 'To-Do'){
+        selected = 'selected';
+    }
+
+    statOptions += '<option value="'+id+'" '+selected+'>'+name+'</option>';
 
     return true;
 });
@@ -368,7 +379,7 @@ var lineId = result.id;   // 🔥 BEST WAY
  
 
 
- if(roleType === 'PMO'){
+ if(roleType === 'PMO' || roleType === 'DEV'){
     lineItemsHtml += `
 <tr data-id="${lineId}">
     <td style="border:1px solid #ccc;padding:8px;">${product}</td>
@@ -449,7 +460,28 @@ else {
 .label {
     font-weight: bold;
 }
+/* Toast Notification */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #e74c3c; /* red for warning */
+    color: white;
+    padding: 12px 18px;
+    border-radius: 25px;
+    font-size: 14px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.3s ease;
+    z-index: 100000;
+}
 
+/* show state */
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
 .value {
     background: #f9f9f9;
     padding: 8px;
@@ -620,6 +652,12 @@ else {
     <div class="spinner"></div>
     <p>Loading projects...</p>
 </div>
+<div class="toast" id="toast">
+     Project Saved Successfully
+</div>
+<span id="saveBadge" style="display:none; color:green; margin-left:10px;">
+    ✔ Saved
+</span>
     <script>
     
    document.title="project details";
@@ -638,6 +676,25 @@ else {
     var d = new Date(dateStr);
     return d.toLocaleDateString('en-GB'); // dd/mm/yyyy
 }
+    function showToast(message, color = "#28a745") {
+    const toast = document.getElementById("toast");
+
+    toast.innerText = message;
+    toast.style.background = color;
+
+   
+    toast.classList.add("show");
+
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, 3000);
+}
+    function updateCell(row, selector, value){
+    var el = row.querySelector(selector);
+    if(el){
+        el.innerText = value;
+    }
+}
   function saveData(){
 
     var rows = document.querySelectorAll("tbody tr");
@@ -648,7 +705,7 @@ else {
 
         var id = row.getAttribute("data-id");
 
-        // 🔥 skip invalid rows
+        
         if(!id){
             console.log("Skipping row without ID");
             return;
@@ -693,7 +750,7 @@ var status     = row.querySelector("select.edit-mode.status")?.value;
     console.log("SERVER RESPONSE:", res);
 
     if(res === "success"){
-
+showToast("Project Saved Successfully ");
         // ✅ Update UI with new values
         document.querySelectorAll("tbody tr").forEach(function(row){
 
@@ -703,34 +760,41 @@ var status     = row.querySelector("select.edit-mode.status")?.value;
             var golInp  = row.querySelector("input.edit-mode.golive");
             var statSel = row.querySelector("select.edit-mode.status");
 
-            // 👉 Update view spans
+            
             if(funcSel){
-                var txt = funcSel.options[funcSel.selectedIndex]?.text || '';
-                row.querySelector("td:nth-child(4) .view-mode").innerText = txt;
-            }
+    var txt = funcSel.options[funcSel.selectedIndex]?.text || '';
+    updateCell(row, "td:nth-child(4) .view-mode", txt);
+}
+
+if(techSel){
+    var txt = techSel.options[techSel.selectedIndex]?.text || '';
+    updateCell(row, "td:nth-child(5) .view-mode", txt);
+}
+
+if(uatInp){
+    updateCell(row, "td:nth-child(6) .view-mode", formatDate(uatInp.value));
+}
+
+if(golInp){
+    updateCell(row, "td:nth-child(7) .view-mode", formatDate(golInp.value));
+}
+
+if(statSel){
+    var txt = statSel.options[statSel.selectedIndex]?.text || '';
+
+    // for PMO/DEV
+    updateCell(row, "td:nth-child(3) .view-mode", txt);
+
+    // for OTHER roles
+    updateCell(row, "td:nth-child(8) .view-mode", txt);
+}
 var statusSelect = document.getElementById("projectStatus");
 
 if(statusSelect){
     var selectedText = statusSelect.options[statusSelect.selectedIndex]?.text || '';
     document.querySelector("#projectStatus").previousElementSibling.innerText = selectedText;
 }
-            if(techSel){
-                var txt = techSel.options[techSel.selectedIndex]?.text || '';
-                row.querySelector("td:nth-child(5) .view-mode").innerText = txt;
-            }
-
-            if(uatInp){
-                row.querySelector("td:nth-child(6) .view-mode").innerText = formatDate(uatInp.value);
-            }
-
-            if(golInp){
-                row.querySelector("td:nth-child(7) .view-mode").innerText = formatDate(golInp.value);
-            }
-
-            if(statSel){
-                var txt = statSel.options[statSel.selectedIndex]?.text || '';
-                row.querySelector("td:nth-child(8) .view-mode").innerText = txt;
-            }
+            
 
         });
 
@@ -747,6 +811,11 @@ if(statusSelect){
 
 });
 }
+document.getElementById("saveBadge").style.display = "inline";
+
+setTimeout(()=>{
+    document.getElementById("saveBadge").style.display = "none";
+}, 2000);
 function enableEdit(){
 
     document.querySelectorAll(".view-mode").forEach(function(el){
