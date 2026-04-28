@@ -23,26 +23,8 @@ var statSearch = search.create({
 
 var empId = context.request.parameters.empid;
 var email = context.request.parameters.email;
-
-statSearch.run().each(function(result){
-
-    var id = result.getValue('internalid');
-    var name = result.getValue('name');
-
-    var isSelected = (name === 'To-Do') ? 'selected' : '';
-
-    statOptions += '<option value="'+id+'" '+isSelected+'>'+name+'</option>';
-
-    return true;
-});
-var statOptions1 ='<option value="">--Select--</option>';
-var statSearch = search.create({
-    type: 'customlist_rw_portal_statuslist',
-    columns: ['internalid','name']
-});
-
-
-
+var from = context.request.parameters.from || '';
+var isFromHome = (from === 'home');
 statSearch.run().each(function(result){
 
     var id = result.getValue('internalid');
@@ -50,7 +32,28 @@ statSearch.run().each(function(result){
 
     var isSelected = (name === 'To Do') ? 'selected' : '';
 
-    statOptions1 += '<option value="'+id+'" '+isSelected+'>'+name+'</option>';
+
+statOptions += '<option value="'+id+'" '+isSelected+'>'+name+'</option>';
+
+    
+
+    return true;
+});
+var statOptions1 ='<option value="">--Select--</option>';
+var statSearch1 = search.create({
+    type: 'customlist_rw_portal_statuslist',
+    columns: ['internalid','name']
+});
+
+statSearch1.run().each(function(result){
+
+    var id = result.getValue('internalid');
+    var name = result.getValue('name');
+
+     var isSelected = (name === 'To Do') ? 'selected' : '';
+var isDisabled = (name !== 'To Do') ? 'disabled' : '';
+
+statOptions1 += '<option value="'+id+'" '+isSelected+' '+isDisabled+'>'+name+'</option>';
 
     return true;
 });
@@ -176,13 +179,51 @@ var empRole = getEmployeeRole(empInternalId);
 log.debug("Employee Role", empRole);
 var roleType = getRoleType(empRole);
 var tableHeader = '';
+function getEmployeeDMSRole(empId){
 
-if(roleType === 'PMO' || roleType === 'DEV'){
+    if(!empId) return '';
+
+    var emp = search.lookupFields({
+        type: search.Type.EMPLOYEE,
+        id: empId,
+        columns: ['custentityrw_dms_role']   // ✅ correct field
+    });
+
+    log.debug("DMS ROLE RAW", emp);
+
+    if(emp.custentityrw_dms_role && emp.custentityrw_dms_role.length > 0){
+        return emp.custentityrw_dms_role[0].text;   // "RW PMO"
+    }
+
+    return '';
+}
+function getRoleTypeFromDMS(roleName){
+
+    if(!roleName) return 'OTHER';
+
+    roleName = roleName.toLowerCase();
+
+    if(roleName.includes('pmo')) return 'PMO';
+    if(roleName.includes('developer')) return 'DEV';
+    if(roleName.includes('project manager')) return 'PM';
+
+    return 'OTHER';
+}
+var dmsRole = getEmployeeDMSRole(empInternalId);
+var roleType = getRoleTypeFromDMS(dmsRole);
+
+log.debug("DMS ROLE", dmsRole);
+log.debug("ROLE TYPE", roleType);
+if(roleType === 'PMO'){
     tableHeader = `
         <tr>
             <th>RW Product</th>
-            <th>Additional Comments</th>
+            <th>PMO Comments</th>
             <th>Status</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Updated Deadline</th>
+            
             <th></th>
         </tr>
     `;
@@ -190,7 +231,7 @@ if(roleType === 'PMO' || roleType === 'DEV'){
     tableHeader = `
         <tr>
             <th>RW Product</th>
-            <th>Additional Comments</th>
+            <th>PMO Comments</th>
             <th>Project Manager</th>
             <th>Functional Consultant</th>
             <th>Technical Consultant</th>
@@ -201,16 +242,21 @@ if(roleType === 'PMO' || roleType === 'DEV'){
         </tr>
     `;
 }
+
 var rowHtml = '';
 
-if(roleType === 'PMO' || roleType === 'DEV'){
+if(roleType === 'PMO'){
     rowHtml = `
     <tr>
         <td><select name="rwproduct[]">${rwOptions}</select></td>
         <td><input type="text" name="comments[]"></td>
         <td>
-            <select name="linestatus[]">${statOptions}</select>
+            <select name="linestatus[]">${statOptions1}</select>
         </td>
+    <td> <input type="date" id="stdate" name="stdate[]"></td>
+<td><input type="date" id="eddate" name="eddate[]"></td>
+<td><input type="date" id="updateddeadline" name="updateddeadline[]"></td>
+        
         <td><button type="button" onclick="removeRow(this)">❌</button></td>
     </tr>
     `;
@@ -219,12 +265,12 @@ if(roleType === 'PMO' || roleType === 'DEV'){
     <tr>
         <td><select name="rwproduct[]">${rwOptions}</select></td>
         <td><input type="text" name="comments[]"></td>
-        <td><select name="rwpm[]">${empOptions}</select></td>
+        <td><select name="rwpm[]" class="linePM">${empOptions}</select></td>
         <td><select name="functional[]">${empOptions}</select></td>
         <td><select name="technical[]">${empOptions}</select></td>
         <td><input type="date" name="expuat[]"></td>
         <td><input type="date" name="expgolive[]"></td>
-        <td><select name="linestatus[]">${statOptions}</select></td>
+        <td><select name="linestatus[]">${statOptions1}</select></td>
         <td><button type="button" onclick="removeRow(this)">❌</button></td>
     </tr>
     `;
@@ -729,7 +775,7 @@ ${empOptions}
 <input type="date" name="uatdate" required>
 
 <label class="required">Project Manager</label>
-<select name="projectmanager">
+<select name="projectmanager" id="headerPM">
 ${empOptions}
 </select>
 
@@ -762,7 +808,16 @@ ${dpOptions}
 <select name="status" required>
 ${statOptions1}
 </select>
-
+<label class="required">Start Date</label>
+<input type="date" name="startdate" id="startdate" required>
+<label class="required">End Date</label>
+<input type="date" name="enddate" id="enddate" required>
+<label class="required">Updated end date</label>
+<input type="date" name="updatedenddate" id="updatedenddate" required>
+<label class="required">Duration</label>
+<input type="type" name="duration" id="duration" required>
+<label class="required">PMO Comments</label>
+<input type="type" name="pmocomments" id="pmocomments" required>
 </div>
 <button type="button" onclick="addRow()" class="addBtn" style="margin-top:10px;">
 ➕ 
@@ -861,6 +916,40 @@ function showToast(message){
         toast.classList.remove("show");
     }, 3000); // disappears after 3 sec
 }
+    document.addEventListener("DOMContentLoaded", function(){
+
+    var startInput = document.getElementById("startdate");
+    var endInput = document.getElementById("enddate");
+    var durationInput = document.getElementById("duration");
+
+    function calculateDuration(){
+
+        var start = startInput.value;
+        var end = endInput.value;
+
+        if(start && end){
+
+            var startDate = new Date(start);
+            var endDate = new Date(end);
+
+            var diffTime = endDate - startDate;
+
+            if(diffTime >= 0){
+
+                var days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                durationInput.value = days + " days";
+
+            } else {
+                durationInput.value = "Invalid";
+            }
+        }
+    }
+
+    startInput.addEventListener("change", calculateDuration);
+    endInput.addEventListener("change", calculateDuration);
+
+});
 function saveCustomer(){
 
     var name = document.getElementById("newCustomerName").value;
@@ -926,6 +1015,16 @@ function addRow() {
     var newRow = ` + JSON.stringify(rowHtml) + `;
 
     table.insertAdjacentHTML("beforeend", newRow);
+
+// 🔥 auto apply PM to new row
+var headerPM = document.getElementById("headerPM").value;
+
+var lastRow = table.lastElementChild;
+var pmField = lastRow.querySelector(".linePM");
+
+if(pmField){
+    pmField.value = headerPM;
+}
 }
    var homeUrl = '${homeUrl}';
      function goBack(){
@@ -952,7 +1051,10 @@ document.querySelector("form").addEventListener("submit", function () {
     technical: row.querySelector('[name="technical[]"]')?.value || '',
     expuat: row.querySelector('[name="expuat[]"]')?.value || '',
     expgolive: row.querySelector('[name="expgolive[]"]')?.value || '',
-    linestatus: row.querySelector('[name="linestatus[]"]')?.value || ''
+    linestatus: row.querySelector('[name="linestatus[]"]')?.value || '',
+    stdate: row.querySelector('[name="stdate[]"]')?.value || '',
+    eddate: row.querySelector('[name="eddate[]"]')?.value || '',
+    updateddeadline: row.querySelector('[name="updateddeadline[]"]')?.value || ''
 };
 
         data.push(obj);
@@ -983,7 +1085,23 @@ function showDialog() {
 function redirectPage() {
     window.location.href = window.redirectUrl;
 }
+document.addEventListener("DOMContentLoaded", function(){
 
+    var headerPM = document.getElementById("headerPM");
+
+    function syncPM(){
+
+        var selectedPM = headerPM.value;
+
+        document.querySelectorAll(".linePM").forEach(function(select){
+            select.value = selectedPM;
+        });
+    }
+
+    // when header changes
+    headerPM.addEventListener("change", syncPM);
+
+});
 document.addEventListener("DOMContentLoaded", function () {
     var form = document.querySelector("form");
     if(form){
@@ -1009,6 +1127,7 @@ document.getElementById('attachment').addEventListener('change', function(){
         //alert("File uploaded successfully!");
     });
 });
+
 window.addEventListener('storage', function(event) {
 
     if (event.key === 'logout-event') {
@@ -1087,7 +1206,24 @@ var erp = req.parameters.erp;
 var directproject = req.parameters.directproject;
 var projecttype = req.parameters.projecttype;
 var status = req.parameters.status;
+var startdate=req.parameters.startdate;
+var enddate=req.parameters.enddate;
+var updatedenddate=req.parameters.updatedenddate;
+var pmocomments=req.parameters.pmocomments;
+var duration = '';
 
+if(startdate && enddate){
+
+    var start = new Date(startdate);
+    var end = new Date(enddate);
+
+    var diff = end - start;
+
+    if(diff >= 0){
+        var days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        duration = days; // store number OR string
+    }
+}
 function normalizeArray(val) {
     if (!val) return [];
 
@@ -1111,6 +1247,11 @@ var technical = normalizeArray(req.parameters['technical[]']);
 var expuat = normalizeArray(req.parameters['expuat[]']);
 var expgolive = normalizeArray(req.parameters['expgolive[]']);
 var linestatus = normalizeArray(req.parameters['linestatus[]']);
+
+var stdate = normalizeArray(req.parameters['stdate[]']);
+var eddate = normalizeArray(req.parameters['eddate[]']);
+
+var updateddeadline = normalizeArray(req.parameters['updateddeadline[]']);
 /* Create a custom record */
 log.debug('rwproduct raw', req.parameters['rwproduct[]']);
 log.debug('rwpm raw', req.parameters['rwpm[]']);
@@ -1154,6 +1295,10 @@ rec.setValue({
 fieldId:'custrecord_rw_portal_status',
 value:status
 });
+rec.setValue({
+fieldId:'custrecord_rw_portal_pmocommnts',
+value:pmocomments
+});
 
 rec.setValue({
 fieldId:'custrecord_rw_portal_erp',
@@ -1167,6 +1312,24 @@ if(uatdate){
 rec.setValue({
 fieldId:'custrecord_rw_portal_scheduleduatdate',
 value:new Date(uatdate)
+});
+}
+if(startdate){
+rec.setValue({
+fieldId:'custrecord_rw_portal_start_date',
+value:new Date(startdate)
+});
+}
+if(enddate){
+rec.setValue({
+fieldId:'custrecord_rw_portal_end_date',
+value:new Date(enddate)
+});
+}
+if(updatedenddate){
+rec.setValue({
+fieldId:'custrecord_rw_portal_updatedenddate',
+value:new Date(updatedenddate)
 });
 }
 // rec.setValue({
@@ -1183,6 +1346,10 @@ value:new Date(golivedate)
 rec.setValue({
 fieldId:'custrecord_rw_portal_directproject',
 value:directproject
+});
+rec.setValue({
+fieldId:'custrecord_rw_portal_duration',
+value:duration
 });
 rec.setValue({
 fieldId:'custrecord_rw_portal_projecttype',
@@ -1230,6 +1397,19 @@ for (var i = 0; i < lineItems.length; i++) {
 
     if (!item.rwproduct) continue;
 
+    var lineDuration = 0;
+
+if(item.stdate && item.eddate){
+
+    var s = new Date(item.stdate);
+    var e = new Date(item.eddate);
+
+    var diff = e - s;
+
+    if(diff >= 0){
+        lineDuration = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    }
+}
     var rec1 = record.create({
         type: 'customrecord_rw_portal_access2'
     });
@@ -1277,10 +1457,28 @@ for (var i = 0; i < lineItems.length; i++) {
             value: new Date(item.expuat)
         });
     }
-     
+     if (item.stdate) {
+        rec1.setValue({
+            fieldId: 'custrecord_rw_portal_startdateline',
+            value: new Date(item.stdate)
+        });
+    }
+    if (item.eddate) {
+        rec1.setValue({
+            fieldId: 'custrecord_rw_portal_enddateline',
+            value: new Date(item.eddate)
+        });
+    }
+   
+    if (item.updateddeadline) {
+        rec1.setValue({
+            fieldId: 'custrecord_rw_portal_updateddeadline',
+            value: new Date(item.updateddeadline)
+        });
+    }
     rec1.setValue({
         fieldId: 'custrecord_rw_portal_projstat',
-        value: parseInt(item.linestatus)
+        value: item.linestatus
     });
     if (item.expgolive) {
         rec1.setValue({
@@ -1288,7 +1486,10 @@ for (var i = 0; i < lineItems.length; i++) {
             value: new Date(item.expgolive)
         });
     }
-
+rec1.setValue({
+    fieldId: 'custrecord_rw_portal_durationline',  // your duration field
+    value: lineDuration
+});
     rec1.save();
 }
 
@@ -1299,7 +1500,14 @@ for (var i = 0; i < lineItems.length; i++) {
 var projectListUrl = url.resolveScript({
     scriptId: 'customscript2876',  
     deploymentId: 'customdeploy5',
-    returnExternalUrl: true
+    returnExternalUrl: true,
+      
+          params: {
+        empid: empId,
+        email: email,
+        from: 'home'   // 🔥 IMPORTANT FIX
+          
+    }
 });
 
 context.response.write(`

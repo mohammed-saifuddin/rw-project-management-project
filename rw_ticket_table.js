@@ -219,6 +219,17 @@ if (filterType === 'open' && empId) {
         '5'   // Done
     ]);
 }
+if (filterType === 'allopen') {
+
+    if (filters.length > 0) filters.push('AND');
+
+
+    filters.push([
+        'custrecord_rw_ticket_ticketstatus',
+        'noneof',
+        '5'   // Done
+    ]);
+}
 // Total tickets → no filter (show all)
 
 var projectSearch = search.create({
@@ -890,8 +901,9 @@ text-decoration: none;
 <input type="hidden" name="mode" value="${mode || ''}">
 <input type="hidden" name="filter" value="${filterType || ''}">
 <input type="hidden" name="empid" value="${empId || ''}">
+<input type="hidden" name="email" value="${email || ''}">
 <input type="hidden" id="pageInput" name="page" value="${page}">
-<input type="hidden" id="pageInput" name="page" value="${page}">
+
 <div class="content">
 
 <iframe id="mainFrame"

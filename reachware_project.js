@@ -8,7 +8,10 @@ define(['N/ui/serverWidget','N/url','N/search','N/record','N/runtime'], (serverW
 const onRequest = (context) => {
 
 var form = serverWidget.createForm({ title:' ' });
+
 var request = context.request;
+var from = request.parameters.from || '';
+var isFromHome = (from === 'home');
   var email = context.request.parameters.email || '';
     var empId = context.request.parameters.empid 
          || context.request.parameters.empId 
@@ -54,6 +57,13 @@ if(filterType === 'open'){
     filters.push([
         'custrecord1513.custrecord_rw_portal_status',
         'noneof',
+        '5'
+    ]);
+}
+else if(filterType === 'close'){
+    filters.push([
+        'custrecord1513.custrecord_rw_portal_status',
+        'anyof',
         '5'
     ]);
 }
@@ -127,24 +137,58 @@ var projectSearch = search.create({
     type: 'customrecord_rw_portal_access2',
      filters:filters,
     columns: [
-      
-search.createColumn({
-    name: 'internalid',
-    sort: search.Sort.DESC 
-}),
+    search.createColumn({
+        name: 'internalid',
+        sort: search.Sort.DESC 
+    }),
 
-       search.createColumn({
-    name: 'custrecord_rw_portal_status',
+    // 🔥 ADD THESE 2 LINES
+    search.createColumn({
+        name: 'custrecord_rw_portal_customername',
+        join: 'custrecord1513'
+    }),
+    search.createColumn({
+        name: 'custrecord_rw_portal_status',
+        join: 'custrecord1513'
+    }),
+
+    search.createColumn({
+        name: 'custrecord_rw_portal_status',
+        join: 'custrecord1513'
+    }),
+    search.createColumn({
+    name: 'custrecord_rw_portal_start_date',
     join: 'custrecord1513'
 }),
-        'custrecord_rw_portal_rwproduct', 
-        'custrecord_rw_portal_additionalcomments',
-        'custrecord1513',
-        'custrecord_rw_portal_projstat'
-
-        
-    
-    ]
+search.createColumn({
+    name: 'custrecord_rw_portal_end_date',
+    join: 'custrecord1513'
+}),
+search.createColumn({
+    name: 'custrecord_rw_portal_updatedenddate',
+    join: 'custrecord1513'
+}),
+search.createColumn({
+    name: 'custrecord_rw_portal_duration',
+    join: 'custrecord1513'
+}),
+search.createColumn({
+    name: 'custrecord_rw_portal_projectmanager',
+    join: 'custrecord1513'
+}),
+search.createColumn({
+    name: 'custrecord_rw_portal_pmocommnts',
+    join: 'custrecord1513'
+}),
+    'custrecord_rw_portal_rwproduct', 
+    'custrecord_rw_portal_additionalcomments',
+    'custrecord1513',
+    'custrecord_rw_portal_projstat',
+    'custrecord_rw_portal_startdateline', 
+'custrecord_rw_portal_enddateline' ,
+'custrecord_rw_portal_updateddeadline',
+'custrecord_rw_portal_durationline',
+]
 });
 
 var tableRows = '';
@@ -155,49 +199,74 @@ var end = start + pageSize;
 
 // var searchResult = projectSearch.run();  // RUN ONLY ONCE
 
-var results = [];
-if (!pageParam) page = 0;
-if (page < 0) page = 0;
+// var results = [];
+// if (!pageParam) page = 0;
+// if (page < 0) page = 0;
+// var pagedData = projectSearch.runPaged({ pageSize: 1000 });
+
+// pagedData.pageRanges.forEach(function(pageRange){
+//     var page = pagedData.fetch({ index: pageRange.index });
+//     page.data.forEach(function(result){
+//         results.push(result);
+//     });
+// });
+// var totalCount = pagedData.count;
+
+//  FETCH ONLY REQUIRED DATA (BUT KEEP LOGIC SAME)
 var pagedData = projectSearch.runPaged({ pageSize: 1000 });
 
-pagedData.pageRanges.forEach(function(pageRange){
-    var page = pagedData.fetch({ index: pageRange.index });
-    page.data.forEach(function(result){
-        results.push(result);
-    });
-});
 var totalCount = pagedData.count;
 
+// load ALL but WITHOUT nested loops
+var results = [];
+for (var i = 0; i < pagedData.pageRanges.length; i++) {
+    var pageData = pagedData.fetch({ index: i });
+    results = results.concat(pageData.data);
+}
 results.forEach(function(result){
 
     var parentId = result.getValue('custrecord1513');
     var product = result.getText('custrecord_rw_portal_rwproduct');
     var productId = result.getValue('custrecord_rw_portal_rwproduct');
-
+var additionalComments=result.getValue('custrecord_rw_portal_additionalcomments') || '';
+var lineStartDate = result.getValue('custrecord_rw_portal_startdateline') || '';
+var lineEndDate = result.getValue('custrecord_rw_portal_enddateline') || '';
+var lineUpdatedDate = result.getValue('custrecord_rw_portal_updateddeadline') || '';
+var lineDuration =result.getValue('custrecord_rw_portal_durationline');
+log.debug(additionalComments)
     var status = result.getText('custrecord_rw_portal_projstat');
     log.debug(status) // ✅ ADD THIS
     if(!parentId) return;
 
-    if(!projectMap[parentId]){
-        var parentData = record.load({
-            type: 'customrecord_rw_portal_access',
-            id: parentId
-        });
+ if (!projectMap[parentId]) {
+    projectMap[parentId] = {
+        customer: result.getText({ name: 'custrecord_rw_portal_customername', join: 'custrecord1513' }) || '',
+        status: result.getText({ name: 'custrecord_rw_portal_status', join: 'custrecord1513' }) || '',
+        customerId: result.getValue({ name: 'custrecord_rw_portal_customername', join: 'custrecord1513' }),
 
-        projectMap[parentId] = {
-            customer: parentData.getText('custrecord_rw_portal_customername') || '',
-            status: parentData.getText('custrecord_rw_portal_status') || '',
-            customerId: parentData.getValue('custrecord_rw_portal_customername'),
-            products: {},
-            
-        };
-    }
+        startDate: result.getValue({ name: 'custrecord_rw_portal_start_date', join: 'custrecord1513' }) || '',
+        endDate: result.getValue({ name: 'custrecord_rw_portal_end_date', join: 'custrecord1513' }) || '',
+        updatedEndDate: result.getValue({ name: 'custrecord_rw_portal_updatedenddate', join: 'custrecord1513' }) || '',
+        duration: result.getValue({ name: 'custrecord_rw_portal_duration', join: 'custrecord1513' }) || '',
+        pm: result.getText({ name: 'custrecord_rw_portal_projectmanager', join: 'custrecord1513' }) || '',
+        pmocomments: result.getValue({ name: 'custrecord_rw_portal_pmocommnts', join: 'custrecord1513' }) || '',
+        additionalComments: result.getValue('custrecord_rw_portal_additionalcomments') || '',
+        durationline: result.getValue('custrecord_rw_portal_durationline') || '',
+        products: {}
+    };
+}
 
 if(!projectMap[parentId].products[product]){
     projectMap[parentId].products[product] = {
         count: 0,
         status: status || 'NA',
-        productId: productId
+        productId: productId,
+        comments: additionalComments,
+        startDate: lineStartDate,
+    endDate: lineEndDate,
+    updatedEndDate: lineUpdatedDate,
+    duration: lineDuration
+        
     };
 }
 
@@ -350,42 +419,181 @@ var totalClosedTickets=getClosedTicketCount();
 
     return ticketMap;
 }
+function getEmployeeRole(empId){
+    if(!empId) return '';
+
+    var empSearch = search.lookupFields({
+        type: search.Type.EMPLOYEE,
+        id: empId,
+        columns: ['role']
+    });
+
+    if (empSearch.role && empSearch.role.length > 0) {
+        return empSearch.role[0].text || '';
+    }
+
+    return '';
+}
+
+
+function getRoleType(roleName){
+    if (!roleName) return 'OTHER';
+
+    roleName = roleName.toLowerCase().trim();
+
+    if(roleName.includes('pmo')) return 'PMO';
+
+    if(roleName.includes('project manager') || roleName.includes('pm')){
+        return 'PM';
+    }
+
+    if(roleName.includes('developer') || roleName.includes('dev')){
+        return 'DEV';
+    }
+
+    return 'OTHER';
+}
+var empRole = getEmployeeRole(empId);
+// var roleType = getRoleType(empRole);
+
+
 var ticketMap = buildTicketMap();
+function getEmployeeInternalId(email){
+
+    var empSearch = search.create({
+        type: search.Type.EMPLOYEE,
+        filters: email ? [['email','is', email]] : [],
+        columns: ['internalid']
+    });
+
+    var res = empSearch.run().getRange({ start: 0, end: 1 });
+
+    return res.length > 0 ? res[0].getValue('internalid') : null;
+}
+
+function getEmployeeDMSRole(empId){
+
+    if(!empId) return '';
+
+    var emp = search.lookupFields({
+        type: search.Type.EMPLOYEE,
+        id: empId,
+        columns: ['custentityrw_dms_role']
+    });
+
+    if(emp.custentityrw_dms_role && emp.custentityrw_dms_role.length > 0){
+        return emp.custentityrw_dms_role[0].text;
+    }
+
+    return '';
+}
+
+function getRoleTypeFromDMS(roleName){
+
+    if(!roleName) return 'OTHER';
+
+    roleName = roleName.toLowerCase().trim();
+
+    if(roleName.includes('pmo')) return 'PMO';
+    if(roleName.includes('pm') || roleName.includes('pm')) return 'PM';
+    if(roleName.includes('developer') || roleName.includes('dev')) return 'DEV';
+
+    return 'OTHER';
+}
+
+// 🔥 FINAL GLOBAL ROLE
+var empInternalId = getEmployeeInternalId(email);
+var dmsRole = getEmployeeDMSRole(empInternalId);
+var roleType = getRoleTypeFromDMS(dmsRole);
+
+log.debug("FINAL ROLE TYPE (GLOBAL)", roleType);
 paginatedProjectIds.forEach(function(projectId){
 
     var data = projectMap[projectId];
 
     if(!data) return;
 var ticketData = getTicketCounts(data.customerId);
+
+var ticketCols = '';
+function getEmployeeInternalId(email){
+
+    var empSearch = search.create({
+        type: search.Type.EMPLOYEE,
+       
+            filters: email ? [['email','is', email]] : []
+            
+        ,
+        columns: ['internalid']
+    });
+
+    var res = empSearch.run().getRange({ start: 0, end: 1 });
+
+    if(res.length > 0){
+        return res[0].getValue('internalid');
+    }
+
+    return null;
+}
+
+function calculateDuration(stdate, eddate){
+
+    if(!stdate || !eddate) return '';
+
+    var startDate = new Date(stdate);
+    var endDate = new Date(eddate);
+
+    if(isNaN(startDate) || isNaN(endDate)) return '';
+
+    var diffTime = endDate - startDate;
+
+    var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays + " days";
+}
+
+log.debug("DMS ROLE", dmsRole);
+log.debug("ROLE TYPE", roleType);
+if(roleType !== 'PMO' && !isFromHome){   // ✅ correct condition
+    ticketCols = `
+        <td style="border:1px solid black;">${ticketData.total}</td>
+        <td style="border:1px solid black;">${ticketData.open}</td>
+        <td style="border:1px solid black;">${ticketData.closed}</td>
+    `;
+}
     //var products = data.products.join(", ");
 var productList = `
-<div class="product-container">
-${Object.entries(data.products)
-   .map(([name, obj]) => {
+<table style="width:100%; border-collapse:collapse; margin-top:10px;">
 
-    var customerId = data.customerId;
+    <tr style="background:#eee;">
+        <th style="border:1px solid black;">Project Status</th>
+        <th style="border:1px solid black;">Product</th>
+        <th style="border:1px solid black;">Product Status</th>
+        <th style="border:1px solid black;">Comments</th>
+        <th style="border:1px solid black;">Start Date</th>
+        <th style="border:1px solid black;">End Date</th>
+        <th style="border:1px solid black;">Updated End Date</th>
+        <th style="border:1px solid black;">Duration</th>
+    </tr>
 
-var ticketCount = 0;
+    ${Object.entries(data.products).map(([name, obj]) => {
 
-var cleanName = name.trim().toLowerCase();
-data.customerId = data.customerId.toString();
-if(ticketMap[data.customerId] && ticketMap[data.customerId][cleanName]){
-    ticketCount = ticketMap[data.customerId][cleanName];
-}
-    return `
-    <div class="product-item">
-        <div class="product-name">${name}</div>
+        return `
+        <tr>
+            <td style="border:1px solid black;">${data.status || ''}</td>
+            <td style="border:1px solid black;">${name}</td>
+            <td style="border:1px solid black;">${obj.status || ''}</td>
+            <td style="border:1px solid black;">${obj.comments || ''}</td>
+            <td style="border:1px solid black;">${obj.startDate || ''}</td>
+            <td style="border:1px solid black;">${obj.endDate || ''}</td>
+            <td style="border:1px solid black;">${obj.updatedEndDate || ''}</td>
+            <td style="border:1px solid black;">
+${obj.duration ? obj.duration + ' days' : ''}
+</td>
+        </tr>
+        `;
+    }).join("")}
 
-        <div class="product-meta">
-            <span class="count">Products: ${obj.count}</span>
-            <span class="status ${obj.status.toLowerCase().replace(/\s/g,'')}">${obj.status}</span>
-            <span class="count">Tickets: ${ticketCount}</span>
-        </div>
-    </div>
-    `;
-})
-.join("")}
-</div>
+</table>
 `;
     tableRows += `
 <tr class="project-row" >
@@ -397,15 +605,22 @@ if(ticketMap[data.customerId] && ticketMap[data.customerId][cleanName]){
     </td>
 
     <td style="border:1px solid black;" onclick="openProject('${projectId}')"><u>${data.customer}</u></td>
-    <td style="border:1px solid black;">${data.status}</td>
-   <td style="border:1px solid black;">${Object.keys(data.products).length}</td>
-    <td style="border:1px solid black;">${ticketData.total}</td>
-<td style="border:1px solid black;">${ticketData.open}</td>
-<td style="border:1px solid black;">${ticketData.closed}</td>
+    ${!isFromHome ? `<td style="border:1px solid black;">${data.status}</td>` : ``}
+   
+   <td style="border:1px solid black;">${data.startDate}</td>
+<td style="border:1px solid black;">${data.endDate}</td>
+<td style="border:1px solid black;">${data.updatedEndDate}</td>
+
+<td style="border:1px solid black;">${data.pm}</td>
+<td style="border:1px solid black;">${data.pmocomments}</td>
+<td style="border:1px solid black;">${data.duration + ' days'}</td>
+
+<td style="border:1px solid black;">${Object.keys(data.products).length}</td>
+    ${ticketCols}
 </tr>
 
 <tr id="products-${projectId}" style="display:none; background:#f9f9f9;border:1px solid black;">
-    <td colspan="7" style="padding:0;">
+    <td colspan="100" style="padding:0;">
         <div style="padding:10px;">
             ${productList}
         </div>
@@ -473,6 +688,28 @@ var paginationHtml = `
 
 </div>
 `;
+var ticketHeaderCols = '';
+
+if(roleType !== 'PMO' && !isFromHome){
+    ticketHeaderCols = `
+        <th style="border:1px solid black;">Total Tickets</th>
+        <th style="border:1px solid black;">Open</th>
+        <th style="border:1px solid black;">Closed</th>
+    `;
+}
+
+
+
+var addButton = '';
+
+if(roleType === 'PMO' || roleType === 'PM'){
+    addButton = `<button class="addBtn" type="button" onclick="listProjects()">+</button>`;
+} else {
+    
+    addButton = `<div style="height:55px;width:35px;"></div>`;
+}
+
+
 htmlField.defaultValue = `
 
 <style>
@@ -752,6 +989,10 @@ text-decoration: none;
 </style>
 <form method="GET">
 <input type="hidden" id="pageInput" name="page" value="${page}">
+
+<input type="hidden" name="empid" value="${empId}">
+<input type="hidden" name="email" value="${email}">
+<input type="hidden" name="from" value="${from}">
 <div class="content">
 
 <iframe id="mainFrame"
@@ -775,7 +1016,7 @@ text-decoration: none;
 <div class="table-header">
     
     <div class="header-left">
-        <button class="addBtn" type="button" onclick="listProjects()">+</button>
+        ${addButton}
     </div>
 
     <div class="header-title">
@@ -792,11 +1033,17 @@ text-decoration: none;
 <tr>
 <th style="border:1px solid black;">Project ID</th>
 <th style="border:1px solid black;">Customer</th>
-<th style="border:1px solid black;">Status</th>
+${!isFromHome ? `<th style="border:1px solid black;">Status</th>` : ``}
+<th style="border:1px solid black;">Start Date</th>
+<th style="border:1px solid black;">End Date</th>
+<th style="border:1px solid black;">Updated End Date</th>
+
+<th style="border:1px solid black;">PM</th>
+<th style="border:1px solid black;">PMO Comments</th>
+
+<th style="border:1px solid black;">Duration</th>
 <th style="border:1px solid black;">Total Products</th>
-<th style="border:1px solid black;">Total Tickets</th>
-<th style="border:1px solid black;">Open</th>
-<th style="border:1px solid black;">Closed</th>
+${ticketHeaderCols}
 </tr>
 
 
@@ -851,6 +1098,7 @@ function toggleProducts(projectId){
     row.style.display = "table-row";
     arrow.classList.add("rotate");
 }
+    
 function listProjects(){
     var loader = document.getElementById("loader");
     var frame = document.getElementById("mainFrame");

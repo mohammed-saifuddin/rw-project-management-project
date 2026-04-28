@@ -70,10 +70,29 @@ record.submitFields({
 }
     var form = serverWidget.createForm({ title: ' ' });
 var statOptions ='<option value="">--Select--</option>';
+var statOptions1 ='<option value="">--Select--</option>';
+var statSearch1 = search.create({
+    type: 'customlist_rw_portal_statuslist',
+    columns: ['internalid','name']
+});
+
+statSearch1.run().each(function(result){
+
+    var id = result.getValue('internalid');
+    var name = result.getValue('name');
+
+     var isSelected = (name === 'To Do') ? 'selected' : '';
+
+
+statOptions += '<option value="'+id+'" '+isSelected+'>'+name+'</option>';
+
+    return true;
+});
 var statSearch = search.create({
     type: 'customlist_rw_portal_access_pjstlist',
     columns: ['internalid','name']
 });
+
 var request = context.request;
     var projectId = request.parameters.projectId;
  var email = context.request.parameters.email || '';
@@ -123,21 +142,78 @@ function getRoleType(roleName){
     roleName = roleName.toLowerCase();
 
     if(roleName.includes('pmo')) return 'PMO';
-    if(roleName.includes('project manager')) return 'PM';
+    if(roleName.includes('pm')) return 'PM';
     if(roleName.includes('developer')) return 'DEV';
 
     return 'OTHER';
 }
-
+log.debug("role type",roleType);
 var roleType = getRoleType(empRole);
 var tableHeader = '';
+function getEmployeeInternalId(email){
 
-if(roleType === 'PMO' || roleType === 'DEV'){
+    var empSearch = search.create({
+        type: search.Type.EMPLOYEE,
+       
+            filters: email ? [['email','is', email]] : []
+            
+        ,
+        columns: ['internalid']
+    });
+
+    var res = empSearch.run().getRange({ start: 0, end: 1 });
+
+    if(res.length > 0){
+        return res[0].getValue('internalid');
+    }
+
+    return null;
+}
+function getEmployeeDMSRole(empId){
+
+    if(!empId) return '';
+
+    var emp = search.lookupFields({
+        type: search.Type.EMPLOYEE,
+        id: empId,
+        columns: ['custentityrw_dms_role']   
+    });
+
+    log.debug("DMS ROLE RAW", emp);
+
+    if(emp.custentityrw_dms_role && emp.custentityrw_dms_role.length > 0){
+        return emp.custentityrw_dms_role[0].text;   // "RW PMO"
+    }
+
+    return '';
+}
+function getRoleTypeFromDMS(roleName){
+
+    if(!roleName) return 'OTHER';
+
+    roleName = roleName.toLowerCase();
+
+    if(roleName.includes('pmo')) return 'PMO';
+    if(roleName.includes('developer')) return 'DEV';
+    if(roleName.includes('pm')) return 'PM';
+
+    return 'OTHER';
+}
+var empInternalId = getEmployeeInternalId(email);
+var dmsRole = getEmployeeDMSRole(empInternalId);
+var roleType = getRoleTypeFromDMS(dmsRole);
+
+log.debug("DMS ROLE", dmsRole);
+log.debug("ROLE TYPE", roleType);
+if(roleType === 'PMO'){
     tableHeader = `
         <tr style="background:#6f3ba2; color:white;">
             <th style="border:1px solid #ccc;padding:8px;">RW Product</th>
             <th style="border:1px solid #ccc;padding:8px;">Comments</th>
             <th style="border:1px solid #ccc;padding:8px;">Status</th>
+            <th style="border:1px solid #ccc;padding:8px;">Start Date</th>
+            <th style="border:1px solid #ccc;padding:8px;">End Date</th>
+            <th style="border:1px solid #ccc;padding:8px;">Updated Deadline</th>
         </tr>
     `;
 } else {
@@ -212,7 +288,10 @@ var userId = currentUser.id;
         goliveDate = projectRec.getValue('custrecord_rw_portal_scheduledgolivedate') || '';
         performa=projectRec.getValue('custrecord_rw_portal_proformainvoice');
   projectManagerId = projectRec.getValue('custrecord_rw_portal_projectmanager');
-
+stdate=projectRec.getValue('custrecord_rw_portal_start_date');
+eddate=projectRec.getValue('custrecord_rw_portal_end_date');
+updatedenddate=projectRec.getValue('custrecord_rw_portal_updatedenddate');
+pmoComments=projectRec.getValue('custrecord_rw_portal_pmocommnts')
   
         var isProjectManager = (empId === projectManagerId);
         log.debug("user id is",userId);
@@ -238,7 +317,7 @@ log.debug("USER", runtime.getCurrentUser().id);
 var projectStatusOptions = '<option value="">--Select--</option>';
 
 var projectStatusSearch = search.create({
-    type: 'customlist_rw_portal_access_pjstlist',
+    type: 'customlist_rw_portal_statuslist',
     columns: ['internalid','name']
 });
 
@@ -257,6 +336,9 @@ projectStatusSearch.run().each(function(res){
 });
          var scheduled='';
          var golive='';
+         var st = '';
+var ed = '';
+var upd = '';
         if(scheduledUatDate){
     scheduled = format.format({
         value: scheduledUatDate,
@@ -269,7 +351,24 @@ if(goliveDate){
         type: format.Type.DATE
     });
 }
-
+if(stdate){
+    st = format.format({
+        value: stdate,
+        type: format.Type.DATE
+    });
+}
+if(eddate){
+    ed = format.format({
+        value: eddate,
+        type: format.Type.DATE
+    });
+}
+if(updatedenddate){
+    upd = format.format({
+        value: updatedenddate,
+        type: format.Type.DATE
+    });
+}
 function toInputDate(date){
     if(!date) return '';
 
@@ -304,7 +403,12 @@ var lineSearch = search.create({
         'custrecord_rw_portal_techconsultant',
         'custrecord_rw_portal_lineexpecteduatdate',
         'custrecord_rw_portal_lineexptgolivedate',
-        'custrecord_rw_portal_projstat'
+        'custrecord_rw_portal_projstat',
+        'custrecord_rw_portal_updateddeadline',
+        'custrecord_rw_portal_enddateline',
+        'custrecord_rw_portal_startdateline'
+
+
     ]
 });
 function formatDate(date){
@@ -328,25 +432,19 @@ var technical    = result.getText('custrecord_rw_portal_techconsultant');
 var goliveRaw = result.getValue('custrecord_rw_portal_lineexptgolivedate');
 var linestatus = result.getText('custrecord_rw_portal_projstat'); // for display
 var linestatusId = result.getValue('custrecord_rw_portal_projstat'); // for dropdown
-var statOptions = '<option value="">--Select--</option>';
+var startdate=result.getValue('custrecord_rw_portal_startdateline');
+var enddate=result.getValue('custrecord_rw_portal_enddateline');
+var updateddeadline=result.getValue('custrecord_rw_portal_updateddeadline');
+var statOptions1 = '<option value="">--Select--</option>';
 
 statSearch.run().each(function(res){
 
     var id = res.getValue('internalid');
     var name = res.getValue('name');
 
-    var selected = '';
+    var selected = (id == linestatusId) ? 'selected' : '';
 
-    
-    if(linestatusId){
-        selected = (id == linestatusId) ? 'selected' : '';
-    } 
-    
-    else if(name === 'To-Do'){
-        selected = 'selected';
-    }
-
-    statOptions += '<option value="'+id+'" '+selected+'>'+name+'</option>';
+    statOptions1 += '<option value="'+id+'" '+selected+'>'+name+'</option>';
 
     return true;
 });
@@ -362,24 +460,46 @@ empSearch.run().each(function(emp){
 });
 var uat = '';
 var golive = '';
+var start = '';
+var end = '';
+var updated = '';
+
 if(uatRaw){
     uat = format.format({
         value: uatRaw,
         type: format.Type.DATE
     });
 }
-
+if(startdate){
+    start = format.format({
+        value: startdate,
+        type: format.Type.DATE
+    });
+}
+if(enddate){
+    end = format.format({
+        value: enddate,
+        type: format.Type.DATE
+    });
+}
+if(updateddeadline){
+    updated = format.format({
+        value: updateddeadline,
+        type: format.Type.DATE
+    });
+}
 if(goliveRaw){
     golive = format.format({
         value: goliveRaw,
         type: format.Type.DATE
     });
 }
+
 var lineId = result.id;   // 🔥 BEST WAY
  
 
 
- if(roleType === 'PMO' || roleType === 'DEV'){
+ if(roleType === 'PMO'){
     lineItemsHtml += `
 <tr data-id="${lineId}">
     <td style="border:1px solid #ccc;padding:8px;">${product}</td>
@@ -387,9 +507,23 @@ var lineId = result.id;   // 🔥 BEST WAY
     <td style="border:1px solid #ccc;padding:8px;">
         <span class="view-mode">${linestatus}</span>
         <select class="edit-mode status" style="display:none;">
-            ${statOptions}
+            ${statOptions1}
         </select>
     </td>
+    <td style="border:1px solid #ccc;padding:8px;">
+    <span class="view-mode">${uat}</span>
+    <input class="edit-mode uat" type="date" value="${toInputDate(startdate)}" style="display:none;" />
+</td>
+   <td style="border:1px solid #ccc;padding:8px;">
+    <span class="view-mode">${uat}</span>
+    <input class="edit-mode uat" type="date" value="${toInputDate(enddate)}" style="display:none;" />
+</td>
+   <td style="border:1px solid #ccc;padding:8px;">
+    <span class="view-mode">${uat}</span>
+    <input class="edit-mode uat" type="date" value="${toInputDate(updateddeadline)}" style="display:none;" />
+</td>
+    
+
 </tr>`;
 }
 else {
@@ -630,9 +764,15 @@ else {
         <div class="value">${scheduled}</div>
         <div class="label">Go-Live Date</div>
         <div class="value">${golive}</div>
-
+ <div class="label">Start Date</div>
+        <div class="value">${st}</div>
+         <div class="label">Updated End Date</div>
+        <div class="value">${upd}</div>
+ <div class="label">End Date</div>
+        <div class="value">${ed}</div>
+         <div class="label">PMO comments</div>
+        <div class="value">${pmoComments}</div>
     </div>
-
 
 <table style="width:100%; border-collapse:collapse; margin-top:14px;">
   <thead>

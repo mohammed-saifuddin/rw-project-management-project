@@ -10,6 +10,7 @@ const onRequest = (context) => {
 var empId = context.request.parameters.empid;
 var email = context.request.parameters.email;
 var empInternalId = getEmployeeInternalId(email);
+
 function getTotalCount(){
     var projectSearch = search.create({
         type:'customrecord_rw_portal_access',
@@ -217,6 +218,29 @@ function getOpenProjectCount(){
     log.debug("Total open projects",count);
     return count;
 }
+function getClosedProjectCount(){
+    var projectSearch=search.create({
+        type:'customrecord_rw_portal_access',
+        filters:[
+            ['custrecord_rw_portal_status','anyof','5']
+        ]
+    })
+    var count=projectSearch.runPaged().count;
+    log.debug("Total open projects",count);
+    return count;
+}
+function getOpenTicketsCount(){
+    var ticketSearch=search.create({
+        type:'customrecord_rw_ticket',
+        filters:[
+            ['custrecord_rw_ticket_ticketstatus','noneof','5']
+        ]
+    })
+    var count=ticketSearch.runPaged().count;
+    log.debug("Total open tickets",count);
+    return count;
+}
+var openTicketCount=getOpenTicketCount();
 function getEmployeeRole(empInternalId){
     if(!empInternalId) return '';
 
@@ -228,10 +252,40 @@ function getEmployeeRole(empInternalId){
 
     
     if (empSearch.role && empSearch.role.length > 0) {
-        return empSearch.role[0].text || '';
+        return empSearch.role[0].id || '';
     }
 
     return '';   // fallback
+}
+function getEmployeeDMSRole(empId){
+
+    if(!empId) return '';
+
+    var emp = search.lookupFields({
+        type: search.Type.EMPLOYEE,
+        id: empId,
+        columns: ['custentityrw_dms_role']   // ✅ correct field
+    });
+
+    log.debug("DMS ROLE RAW", emp);
+
+    if(emp.custentityrw_dms_role && emp.custentityrw_dms_role.length > 0){
+        return emp.custentityrw_dms_role[0].text;   // "RW PMO"
+    }
+
+    return '';
+}
+function getRoleTypeFromDMS(roleName){
+
+    if(!roleName) return 'OTHER';
+
+    roleName = roleName.toLowerCase();
+
+    if(roleName.includes('pmo')) return 'PMO';
+    if(roleName.includes('developer')) return 'DEV';
+    if(roleName.includes('pm')) return 'PM';
+
+    return 'OTHER';
 }
 function getOpenTicketCount(){
     var ticketSearch=search.create({
@@ -283,6 +337,7 @@ params: {
         email: email
     }
 });
+
  var selectedEmpId = empId || '';
         log.debug("FINAL EMP ID", selectedEmpId);
         var currentUser = runtime.getCurrentUser();
@@ -300,6 +355,7 @@ var projectCount=getTotalCount();
 var inProgressCount=getInProgressCount();
 var totalTickets=getTotalTicketCount();
 var openProjects=getOpenProjectCount();
+var closedProjects=getClosedProjectCount();
 var openTickets=getOpenTicketCount();
 var empInternalId = getEmployeeInternalId(email);
 var empRole = getEmployeeRole(empInternalId);
@@ -318,7 +374,7 @@ function getRoleType(roleName){
     roleName = roleName.toLowerCase();
 
     if(roleName.includes('pmo')) return 'PMO';
-    if(roleName.includes('project manager')) return 'PM';
+    if(roleName.includes('pm')) return 'PM';
     if(roleName.includes('developer')) return 'DEV';
 
     return 'OTHER';
@@ -352,14 +408,22 @@ if (!empRole || empRole.trim() === '') {
     empRole =  'Administrator';
 }
 var roleType = getRoleType(empRole);
-
+log.debug(empRole)
 let statsHeader = '';
 let statsValues = '';
-if(roleType === 'PMO'|| roleType === 'DEV'){
+var empInternalId = getEmployeeInternalId(email);
+
+var dmsRole = getEmployeeDMSRole(empInternalId);
+var roleType = getRoleTypeFromDMS(dmsRole);
+
+log.debug("DMS ROLE", dmsRole);
+log.debug("ROLE TYPE", roleType);
+if(roleType === 'PMO'){
     statsHeader = `
         <div>Total Projects</div>
         <div>Open Projects</div>
         <div>In Progress</div>
+        
         <div>Kickoff</div>
         <div>Business requirement</div>
         <div>Training</div>
@@ -367,12 +431,14 @@ if(roleType === 'PMO'|| roleType === 'DEV'){
         <div>Go live</div>
         <div>COC</div>
         <div>Support</div>
+        <div>Closed Projects</div>
     `;
 
    statsValues = `
     <div class="data-val" id="tit" onclick="openProjects('total')">${projectCount}</div>
     <div class="data-val" id="tit" onclick="openProjects('open')">${openProjects}</div>
     <div class="data-val" id="tit" onclick="openProjects('inprogress')">${inProgressCount}</div>
+   
     <div class="data-val" id="tit" onclick="openProjects('kickof')">${kickOffCount}</div>
     <div class="data-val" id="tit" onclick="openProjects('bussinessrequirement')">${bussinesCount}</div>
     <div class="data-val" id="tit" onclick="openProjects('training')">${training}</div>
@@ -380,6 +446,7 @@ if(roleType === 'PMO'|| roleType === 'DEV'){
     <div class="data-val" id="tit" onclick="openProjects('golive')">${golive}</div>
     <div class="data-val" id="tit" onclick="openProjects('coc')">${coc}</div>
     <div class="data-val" id="tit" onclick="openProjects('support')">${support}</div>
+     <div class="data-val" id="tit" onclick="openProjects('close')">${closedProjects}</div>
 `;
 }
 else if(roleType === 'PM'){
@@ -389,10 +456,13 @@ else if(roleType === 'PM'){
         <div>Open projects</div>
         <div>In Progress</div>
         <div>Total Tickets</div>
+        <div>Total Open Tickets</div>
         <div>My Projects</div>
-        <div>Open Tickets</div>
-        
         <div>Assigned Tickets</div>
+        <div>Open Tickets</div>
+        <div>Closed Projects</div>
+        
+        
     `;
 
     statsValues = `
@@ -401,10 +471,12 @@ else if(roleType === 'PM'){
         <div class="data-val" id="tit" onclick="openProjects('open')">${openProjects}</div>
         <div class="data-val" id="tit" onclick="openProjects('inprogress')">${inProgressCount}</div>
         <div class="data-val" id="tit" onclick="openTickets('total')">${totalTickets}</div>
+        <div class="data-val" id="tit" onclick="openTickets('allopen')">${openTicketCount}</div>
         <div class="data-val" id="tit" onclick="openProjects('myprojects')">${pmProjectCount}</div>
-        <div class="data-val" id="tit" onclick="openTickets('open')">${myOpenCount}</div>
-        
         <div class="data-val" id="tit" onclick="openTickets('assigned')">${assignedTickets}</div>
+        <div class="data-val" id="tit" onclick="openTickets('open')">${myOpenCount}</div>
+         <div class="data-val" id="tit" onclick="openProjects('close')">${closedProjects}</div>
+        
     `;
 }
 else if(roleType === 'DEV'){
@@ -436,8 +508,241 @@ else{
 var avatarLetter = (empRole && empRole.length > 0) 
     ? empRole.charAt(0).toUpperCase() 
     : 'U';
-let html = `
 
+var ticketMenu = '';
+
+if (roleType === 'PM' && roleType === 'DEV') {
+    ticketMenu = `<div class="menu" onclick="openTickets(); closeMenu()">Tickets</div>`;
+}
+function getCurrentMonthDates(){
+    var today = new Date();
+
+    var firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    var lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    return { firstDay, lastDay };
+}
+function getCustomersByStatus(statusId){
+
+    var today = new Date();
+
+    var month = today.getMonth() + 1;
+    var year = today.getFullYear();
+
+    var startDate = '01/' + month + '/' + year;
+    var endDate = new Date(year, month, 0).getDate() + '/' + month + '/' + year;
+
+    var customerArr = [];
+
+    try{
+
+        var searchObj = search.create({
+            type: 'customrecord_rw_portal_access',
+            filters: [
+                ['custrecord_rw_portal_status','anyof', statusId],
+                'AND',
+                ['created','within', startDate, endDate]   // ✅ string format
+            ],
+            columns: [
+                'custrecord_rw_portal_customername'   // ⚠️ replace with correct field
+            ]
+        });
+
+        searchObj.run().each(function(res){
+
+            var customer = '';
+
+            try{
+                customer = res.getText('custrecord_rw_portal_customername'); // or getValue
+            }catch(e){
+                log.error("Customer fetch error", e);
+            }
+
+            if(customer){
+                customerArr.push(customer);
+            }
+
+            return true;
+        });
+
+    }catch(e){
+        log.error("Search Error", e);
+    }
+
+    return customerArr || [];
+}
+var uatCustomers = getCustomersByStatus('3');
+var goliveCustomers = getCustomersByStatus('9');
+var cocCustomers = getCustomersByStatus('10');
+
+function buildCard(title, customers){
+    var list = customers.length 
+        ? customers.map(c => `<li>${c}</li>`).join('')
+        : '<li>No data</li>';
+
+    return `
+        <div class="card">
+            <h3>${title}</h3>
+            <ul>${list}</ul>
+        </div>
+        
+    `;
+}
+
+var specialCards = `
+<div class="card-container">
+    ${buildCard('UAT Customers', uatCustomers)}
+    ${buildCard('Go Live Customers', goliveCustomers)}
+    ${buildCard('COC Customers', cocCustomers)}
+</div>
+`;
+function formatDateForNS(date){
+    var day = date.getDate();
+    var month = date.getMonth() + 1;
+    var year = date.getFullYear();
+
+    return day + '/' + month + '/' + year;
+}
+function getCustomersByDate(fieldId, type){
+
+    var customers = [];
+
+    try{
+        var today = new Date();
+
+        function formatDateForNS(date){
+            var d = date.getDate();
+            var m = date.getMonth() + 1;
+            var y = date.getFullYear();
+            return d + '/' + m + '/' + y;
+        }
+
+        var firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        var lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+        var start = formatDateForNS(firstDay);
+        var end = formatDateForNS(lastDay);
+        var todayStr = formatDateForNS(today);
+
+        var filters = [
+            ['isinactive','is','F'],
+            'AND',
+            [fieldId, 'isnotempty', '']
+        ];
+
+        if(type === 'current'){
+            filters.push('AND', [fieldId, 'within', start, end]);
+        }
+
+        if(type === 'upcoming'){
+            filters.push('AND', [fieldId, 'after', todayStr]);
+        }
+
+        var searchObj = search.create({
+            type: 'customrecord_rw_portal_access',
+            filters: filters,
+            columns: [
+                'custrecord_rw_portal_customername',
+                fieldId
+            ]
+        });
+
+        searchObj.run().each(function(res){
+
+            var customer = res.getText('custrecord_rw_portal_customername');
+            var date = res.getValue(fieldId);
+
+            if(customer){
+                customers.push(customer + ' (' + date + ')');
+            }
+
+            return true;
+        });
+
+    }catch(e){
+        log.error("Date Search Error", e);
+    }
+
+    return customers;
+}
+// 🔹 Start Date Cards
+// UAT
+var uatCurrent = getCustomersByDate('custrecord_rw_portal_scheduleduatdate','current');
+var uatUpcoming = getCustomersByDate('custrecord_rw_portal_scheduleduatdate','upcoming');
+
+// GoLive
+var goliveCurrent = getCustomersByDate('custrecord_rw_portal_scheduledgolivedate','current');
+var goliveUpcoming = getCustomersByDate('custrecord_rw_portal_scheduledgolivedate','upcoming');
+// COC (status-based)
+var cocCurrent = getCustomersByStatus('10'); 
+var cocUpcoming = []; // optional if you have date field
+log.debug("UAT CURRENT DATA", uatCurrent);
+log.debug("GOLIVE CURRENT DATA", goliveCurrent);
+log.debug("COC CURRENT DATA", cocCurrent);
+function buildCard(title, currentList, upcomingList){
+
+    currentList = currentList || [];   // ✅ FIX
+    upcomingList = upcomingList || []; // ✅ FIX
+
+    var currentHtml = currentList.length 
+        ? currentList.map(c => `<li>${c}</li>`).join('')
+        : '<li>No data</li>';
+
+    var upcomingHtml = upcomingList.length 
+        ? upcomingList.map(c => `<li>${c}</li>`).join('')
+        : '<li>No data</li>';
+
+    return `
+        <div class="card">
+            <h3>${title}</h3>
+
+            <h4 style="color:#6b3fa0;">Current Month</h4>
+            <ul>${currentHtml}</ul>
+
+            <h4 style="color:#999;">Upcoming</h4>
+            <ul>${upcomingHtml}</ul>
+        </div>
+    `;
+}
+function buildSingleCard(title, list){
+
+    list = list || [];
+
+    var htmlList = list.length 
+        ? list.map(c => `<li>${c}</li>`).join('')
+        : '<li>No data</li>';
+
+    return `
+        <div class="card">
+            <h3>${title}</h3>
+            <ul>${htmlList}</ul>
+        </div>
+    `;
+}
+var specialCards = `
+<div class="card-container">
+
+    ${buildSingleCard('UAT - Current Month', uatCurrent)}
+    ${buildSingleCard('UAT - Upcoming', uatUpcoming)}
+
+    ${buildSingleCard('Go Live - Current Month', goliveCurrent)}
+    ${buildSingleCard('Go Live - Upcoming', goliveUpcoming)}
+    ${buildSingleCard('COC - Current Month', cocCurrent)}
+</div>
+`;
+var chartCard = `
+<div class="chart-card" id="chartCard">
+    <div class="chart-header">
+        Project Status Overview
+    </div>
+    <div class="chart-body">
+        <canvas id="statusChart"></canvas>
+    </div>
+</div>
+`;
+var chartHtml = (roleType === 'PMO') ? chartCard : '';
+let html = `
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 
 * {
@@ -457,9 +762,15 @@ html, body {
 
     
 }
-#homeContent{
-    overflow: hidden;
+    .card h4:first-of-type {
+    color: green;
 }
+.card h4:last-of-type {
+    color: orange;
+}
+// #homeContent{
+//     overflow: hidden;
+// }
     
 .data-val:hover{
   background:#E6E6FA;
@@ -482,8 +793,8 @@ html, body {
 /* Fix container */
 .container{
     display: flex;
-    height: calc(100vh - 60px); 
-    overflow:hidden;   /* full screen */
+    flex-direction: row;      /* 🔥 sidebar + content side-by-side */
+    min-height: calc(100vh - 60px);
 }
 
 
@@ -540,6 +851,7 @@ html, body {
     flex:2;
     text-align:center;
     font-size:18px;
+    font-weight:bold;
     
 }
 
@@ -574,14 +886,12 @@ cursor:pointer;
 //     display:block;   
 // }
 .sidebar{
-
-    top: 60px;
+            /* 🔥 IMPORTANT */
+    top: 60px;              /* below header */
     left: 0;
 
-    width: 0;
-    
-    height: 100%;
-
+    width: 0px;
+    height: 1470px;  /* 🔥 full height */
 
     background: #1667a5;
     color: white;
@@ -589,7 +899,7 @@ cursor:pointer;
     overflow: hidden;
     transition: 0.3s;
 
-    z-index: 1000;   /* above content */
+    z-index: 9999;          /* 🔥 ABOVE EVERYTHING */
 }
 
 .menu{
@@ -604,11 +914,11 @@ background:#0f4e80;
 
 
     .content{
-    width: 100%;
+    flex: 1;
     padding: 0 20px;
-    padding: 0 20px;
-    height: calc(100vh - 60px);  
-    overflow: hidden;
+
+    height: auto;        /* 🔥 REMOVE FIXED HEIGHT */
+    overflow: visible;   /* 🔥 NO SCROLL, NO CUT */
 }
 .con{
 
@@ -766,6 +1076,50 @@ font-weight:bold;
     font-weight: bold;
     font-size: 14px;
 }
+    .card-container{
+    display:flex;
+    gap:20px;
+    margin-top:20px;
+}
+
+.card{
+    flex:1;
+    background:#f4f4f4;
+    padding:15px;
+    border-radius:10px;
+   
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+  transition: 0.3s;
+}
+.chart-card{
+    margin:20px;
+    padding:15px;
+    background:#fff;
+    border-radius:12px;
+    box-shadow:0 4px 15px rgba(0,0,0,0.1);
+}
+
+.chart-header{
+    font-size:18px;
+    font-weight:bold;
+    margin-bottom:10px;
+    color:#6f3ba2;
+}
+
+.chart-body{
+    width:100%;
+    height:350px;
+}
+.card h3{
+    margin-bottom:10px;
+    color:#6b3fa0;
+}
+
+.card ul{
+    padding-left:20px;
+    max-height:none;   /* 🔥 remove limit */
+    overflow:visible;  /* 🔥 no scroll */
+}
 </style>
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -782,7 +1136,7 @@ font-weight:bold;
     </div>
 
     <div class="right-section">
-        <span class="role-text"> ${empRole}</span>
+        <span class="role-text"> ${dmsRole || empRole}</span>
         <button class="logout" onclick="logout()">Logout</button>
     </div>
 
@@ -794,14 +1148,14 @@ font-weight:bold;
 
 <div class="menu" onclick="openHome()">Home</div>
 <div class="menu" onclick="openProjects(); closeMenu()">Projects</div>
-<div class="menu" onclick="openTickets(); closeMenu()">Tickets</div>
+${ticketMenu}
 
 
 </div>
 
 <div class="content">
 
-<div id="projectContent" style="display:none;width:100%;height:calc(100vh - 60px);">
+<div id="projectContent" style="display:none;width:100%;height:100%;">
 
   <iframe id="mainFrame"
         style="
@@ -834,12 +1188,14 @@ font-weight:bold;
     </div>
 
 </div>
+${roleType === 'PMO' ? specialCards : ''}
 
+</div>
+${chartHtml}
 </div>
 
 </div>
 
-</div>
 </div>
 
 <div id="loader">
@@ -879,6 +1235,7 @@ console.log("Stored EmpId:", localStorage.getItem("empId"));
 
 function openMenu(){
     document.getElementById("sidebar").style.width="180px";
+    
 }
 
 function closeMenu(){
@@ -890,17 +1247,38 @@ function setPageTitle(title){
 var projectUrl = '${projectUrl}';
 var ticketUrl ='${ticketUrl}';
 var taskUrl ='${taskUrl}';
-// function openProjects(){
-// setPageTitle("Projects");
-// document.getElementById("headerTitle").innerText = "Reachware Project Management Portal";
-//  document.getElementById("homeContent").style.display = "none";
-// document.getElementById("loader").style.display = "block"; 
-// document.getElementById("mainFrame").src = projectUrl  ;
-// document.getElementById("projectContent").style.display = "block";
+function openProjects(){
+setPageTitle("Projects");
+document.getElementById("headerTitle").innerText = "Reachware Project Management Portal";
+ document.getElementById("homeContent").style.display = "none";
+document.getElementById("loader").style.display = "block"; 
+document.getElementById("mainFrame").src = projectUrl  ;
+document.getElementById("projectContent").style.display = "block";
+toggleChartVisibility();
 
 
+}
+function toggleChartVisibility(){
 
-// }
+    var chart = document.getElementById("chartCard");
+    var home = document.getElementById("homeContent");
+
+    if(!chart || !home) return;
+
+    var roleType = "${roleType}";
+
+    // Show ONLY when:
+    // - PMO
+    // - Home is visible
+    if(roleType === "PMO" && home.style.display !== "none"){
+        chart.style.display = "block";
+    }else{
+        chart.style.display = "none";
+    }
+}
+
+// run on page load
+document.addEventListener("DOMContentLoaded", toggleChartVisibility);
 function openProjects(type){
 
     setPageTitle("Projects");
@@ -912,6 +1290,7 @@ document.getElementById("headerTitle").innerText = "Reachware Project Management
 
     if(type === "total") title = "Total Projects";
     else if(type === "open") title = "Open Projects";
+    else if(type === "close") title = "Closed Projects";
     else if(type === "inprogress") title = "In Progress Projects";
     else if(type === "kickof") title = "Kickof Projects";
 else if(type === "bussinessrequirement") title = "Bussiness requirement Projects";
@@ -931,13 +1310,16 @@ frame.src = "";
 
 frame.src = url;
     if(type){
-        url += "&filter=" + type; 
+        
+        url += "&filter=" + type;
+url += "&from=home";   // ✅ ADD THIS
         url += "&title=" + encodeURIComponent(title);  
     }
 
     document.getElementById("mainFrame").src = url;
 
     document.getElementById("projectContent").style.display = "block";
+    toggleChartVisibility();
 }
     
 function openTasks(){
@@ -968,6 +1350,7 @@ let title = "Tickets";
 
     if(type === "assigned") title = "Assigned Tickets";
     else if(type === "open") title = "Open Tickets";
+    else if(type === "allopen") title = "All Open Tickets";
     else if(type === "total") title = "Total Tickets";
 
     let url = ticketUrl;
@@ -988,6 +1371,7 @@ url += "&empid=" + localStorage.getItem("empId");
 
     document.getElementById("mainFrame").src = url;
     document.getElementById("projectContent").style.display = "block";
+    toggleChartVisibility();
 }
     
 // function hideLoader(){
@@ -995,6 +1379,7 @@ url += "&empid=" + localStorage.getItem("empId");
 //      document.getElementById("mainFrame").style.display = "block";
      
 // }
+
      function hideLoader(){
     var frame = document.getElementById("mainFrame");
 
@@ -1015,6 +1400,7 @@ document.getElementById("homeContent").style.display = "block";
 var frame = document.getElementById("mainFrame");
     frame.src = "";              // clear old page
     frame.style.display = "none";
+    toggleChartVisibility();
 }
 var loggedRoleName = "${loggedRoleName}";
 var empRoleMap = ${JSON.stringify(empRoleMap)};
@@ -1067,6 +1453,61 @@ window.addEventListener('storage', function(event) {
         window.location.replace('${loginUrl}');
     }
 
+});
+var chartData = {
+    labels: [
+    "Total Projects",
+    "Open Projects",
+        "In Progress",
+        "Kickoff",
+        "Business",
+        "Training",
+        "UAT",
+        "Go Live",
+        "COC",
+        "Support",
+        "Closed"
+    ],
+    values: [
+        ${projectCount},
+        ${openProjects},
+        ${inProgressCount},
+        ${kickOffCount},
+        ${bussinesCount},
+        ${training},
+        ${uatCount},
+        ${golive},
+        ${coc},
+        ${support},
+        ${closedProjects}
+    ]
+};
+var ctx = document.getElementById('statusChart').getContext('2d');
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: chartData.labels,
+        datasets: [{
+            label: 'Project Status Count',
+            data: chartData.values,
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
 });
 </script>
 
