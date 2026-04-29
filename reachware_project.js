@@ -702,7 +702,7 @@ if(roleType !== 'PMO' && !isFromHome){
 
 var addButton = '';
 
-if(roleType === 'PMO' || roleType === 'PM'){
+if(roleType !== 'PM' && roleType !=='DEV'){
     addButton = `<button class="addBtn" type="button" onclick="listProjects()">+</button>`;
 } else {
     

@@ -7,24 +7,58 @@ define(['N/ui/serverWidget','N/record','N/search','N/url','N/file','N/format','N
 (serverWidget, record, search, url, file, format,runtime) => {
 
 const onRequest = (context) => {
-var productOptions = '<option value="">Select Product</option>';
+// var productOptions = '<option value="">Select Product</option>';
 
-var productSearch = search.create({
-    type: 'customlist_rw_ticket_rwsuiteapplist', 
-    columns:['internalid','name']// 
-});
+// var productSearch = search.create({
+//     type: 'customlist_rw_ticket_rwsuiteapplist', 
+//     columns:['internalid','name']// 
+// });
 
-productSearch.run().each(function(result){
+// productSearch.run().each(function(result){
 
-    var id = result.getValue('internalid');
-    var name = result.getValue('name');
+//     var id = result.getValue('internalid');
+//     var name = result.getValue('name');
 
-    productOptions += `<option value="${id}" 
-    >${name}</option>`;
+//     productOptions += `<option value="${id}" 
+//     >${name}</option>`;
 
-    return true;
-});
-    
+//     return true;
+// });
+    var productOptions = '<option value="">Select Product</option>';
+     if (context.request.parameters.action === 'getProducts') {
+
+    var customerId = context.request.parameters.customerId;
+
+    if(!customerId){
+        context.response.write(JSON.stringify([]));
+        return;
+    }
+
+    var productList = [];
+
+    var mappingSearch = search.create({
+        type: 'customrecord_rw_support_',
+        filters: [
+            ['custrecord_rw_project_summary', 'anyof', customerId]
+        ],
+        columns: [
+            'custrecord_rw_support_product'
+        ]
+    });
+
+    mappingSearch.run().each(function(result) {
+
+        productList.push({
+            id: result.getValue('custrecord_rw_support_product'),
+            name: result.getText('custrecord_rw_support_product')
+        });
+
+        return true;
+    });
+
+    context.response.write(JSON.stringify(productList));
+    return;
+}
     if (context.request.method === 'GET') {
 
         var form = serverWidget.createForm({ title: ' ' });
@@ -55,35 +89,7 @@ rwSearch.run().each(function(result){
     return true;
 })
         var roleOptions = '<option value="">Select</option>';
-        if (context.request.parameters.action === 'getProducts') {
-
-    var customerId = context.request.parameters.customerId;
-
-    var productList = [];
-
-    var mappingSearch = search.create({
-        type: 'customrecord_rw_support_', // 🔥 YOUR MAPPING RECORD
-        filters: [
-            ['custrecord_customer', 'is', customerId]
-        ],
-        columns: [
-            'custrecord_product'
-        ]
-    });
-
-    mappingSearch.run().each(function(result) {
-
-        productList.push({
-            id: result.getValue('custrecord_product'),
-            name: result.getText('custrecord_product')
-        });
-
-        return true;
-    });
-
-    context.response.write(JSON.stringify(productList));
-    return;
-}
+   
 if (context.request.parameters.action === 'getTicket') {
 
    var requestType = context.request.parameters.requestType;
@@ -130,8 +136,9 @@ var customerSearch = search.create({
     type: search.Type.CUSTOMER,
     filters: [
         ['isinactive','is','F'],
-        'AND',
-    ['custentity_rw_emp_port_access','is','T']
+       
+    'AND',
+    ['custentity_is_rw_customer','is','T']
     ],
     columns: ['internalid','altname']
 });

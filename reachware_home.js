@@ -337,7 +337,15 @@ params: {
         email: email
     }
 });
-
+var viewProjectUrl = url.resolveScript({
+scriptId: 'customscript2892',
+deploymentId: 'customdeploy1',
+returnExternalUrl: true,
+params: {
+        empid: empId,
+        email: email
+    }
+});
  var selectedEmpId = empId || '';
         log.debug("FINAL EMP ID", selectedEmpId);
         var currentUser = runtime.getCurrentUser();
@@ -511,7 +519,7 @@ var avatarLetter = (empRole && empRole.length > 0)
 
 var ticketMenu = '';
 
-if (roleType === 'PM' && roleType === 'DEV') {
+if (roleType !== 'PMO') {
     ticketMenu = `<div class="menu" onclick="openTickets(); closeMenu()">Tickets</div>`;
 }
 function getCurrentMonthDates(){
@@ -541,10 +549,13 @@ function getCustomersByStatus(statusId){
             filters: [
                 ['custrecord_rw_portal_status','anyof', statusId],
                 'AND',
+                 ['custrecord_rw_portal_customername.custentity_rw_emp_port_access','is','T'],
+                 'AND',
                 ['created','within', startDate, endDate]   // ✅ string format
             ],
             columns: [
-                'custrecord_rw_portal_customername'   // ⚠️ replace with correct field
+                'custrecord_rw_portal_customername',
+                'internalid'   // ⚠️ replace with correct field
             ]
         });
 
@@ -603,7 +614,7 @@ function formatDateForNS(date){
 
     return day + '/' + month + '/' + year;
 }
-function getCustomersByDate(fieldId, type){
+function getCustomersByDate(fieldId, type, statusId){
 
     var customers = [];
 
@@ -624,11 +635,15 @@ function getCustomersByDate(fieldId, type){
         var end = formatDateForNS(lastDay);
         var todayStr = formatDateForNS(today);
 
-        var filters = [
-            ['isinactive','is','F'],
-            'AND',
-            [fieldId, 'isnotempty', '']
-        ];
+       var filters = [
+    ['isinactive','is','F'],
+    'AND',
+    ['custrecord_rw_portal_status','anyof', statusId],   // ✅ ADD THIS
+    'AND',
+    ['custrecord_rw_portal_customername.custentity_rw_emp_port_access','is','T'],
+    'AND',
+    [fieldId, 'isnotempty', '']
+];
 
         if(type === 'current'){
             filters.push('AND', [fieldId, 'within', start, end]);
@@ -643,6 +658,7 @@ function getCustomersByDate(fieldId, type){
             filters: filters,
             columns: [
                 'custrecord_rw_portal_customername',
+                'internalid',
                 fieldId
             ]
         });
@@ -651,9 +667,19 @@ function getCustomersByDate(fieldId, type){
 
             var customer = res.getText('custrecord_rw_portal_customername');
             var date = res.getValue(fieldId);
+            var projectId = res.getValue('internalid');  
 
             if(customer){
-                customers.push(customer + ' (' + date + ')');
+                // customers.push(customer + ' ' + date + '  ' + projectId);
+                customers.push(`
+    <div class="card-row">
+        <span class="cust">${customer}</span>
+        <span class="proj" onclick="openProjectView('${projectId}')">
+    ${projectId}
+</span>
+        <span class="date">${date}</span>
+    </div>
+`);
             }
 
             return true;
@@ -667,14 +693,14 @@ function getCustomersByDate(fieldId, type){
 }
 // 🔹 Start Date Cards
 // UAT
-var uatCurrent = getCustomersByDate('custrecord_rw_portal_scheduleduatdate','current');
-var uatUpcoming = getCustomersByDate('custrecord_rw_portal_scheduleduatdate','upcoming');
+var uatCurrent = getCustomersByDate('custrecord_rw_portal_start_date','current','3');
+var uatUpcoming = getCustomersByDate('custrecord_rw_portal_end_date','upcoming','3');
 
 // GoLive
-var goliveCurrent = getCustomersByDate('custrecord_rw_portal_scheduledgolivedate','current');
-var goliveUpcoming = getCustomersByDate('custrecord_rw_portal_scheduledgolivedate','upcoming');
+var goliveCurrent = getCustomersByDate('custrecord_rw_portal_start_date','current','9');
+var goliveUpcoming = getCustomersByDate('custrecord_rw_portal_end_date','upcoming','9');
 // COC (status-based)
-var cocCurrent = getCustomersByStatus('10'); 
+var cocCurrent = getCustomersByDate('custrecord_rw_portal_end_date','current','10'); 
 var cocUpcoming = []; // optional if you have date field
 log.debug("UAT CURRENT DATA", uatCurrent);
 log.debug("GOLIVE CURRENT DATA", goliveCurrent);
@@ -707,14 +733,23 @@ function buildCard(title, currentList, upcomingList){
 function buildSingleCard(title, list){
 
     list = list || [];
+    var count = list.length;
 
-    var htmlList = list.length 
+    var htmlList = count 
         ? list.map(c => `<li>${c}</li>`).join('')
         : '<li>No data</li>';
 
     return `
         <div class="card">
-            <h3>${title}</h3>
+            <h3>${title} (${count})</h3>
+
+            <!-- ✅ COLUMN HEADER -->
+            <div class="card-header-row">
+                <span class="cust">Customer</span>
+                <span class="proj">Project Id</span>
+                <span class="date">Date</span>
+            </div>
+
             <ul>${htmlList}</ul>
         </div>
     `;
@@ -762,6 +797,130 @@ html, body {
 
     
 }
+    .card-container{
+    display:flex;
+    gap:20px;
+    margin-top:25px;
+}
+
+.card{
+    flex:1;
+    background:white;
+    border-radius:14px;
+    overflow:hidden;
+
+    box-shadow:0 6px 20px rgba(0,0,0,0.08);
+    transition:all 0.3s ease;
+}
+.card-row{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+}
+.card-header-row{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+
+    padding:8px 15px;
+    font-size:10px;
+    font-weight:bold;
+    border-bottom : 1px solid #ddd;
+
+    
+    
+}
+
+.card-header-row .cust{
+    flex:1;
+}
+
+.card-header-row .proj{
+    flex:0.7;
+    text-align:center;
+}
+
+.card-header-row .date{
+    flex:0.8;
+    text-align:right;
+}
+.card-row .cust{
+    flex:1;
+    font-weight:500;
+}
+
+.card-row .proj{
+    flex:0.7;
+    color:#6b3fa0;
+    font-weight:600;
+}
+
+.card-row .date{
+    flex:0.8;
+    text-align:right;
+    color:#888;
+}
+/* hover effect */
+.card:hover{
+    transform:translateY(-5px);
+    box-shadow:0 10px 25px rgba(0,0,0,0.15);
+}
+.card-row .proj{
+    flex:0.7;
+    color:#6b3fa0;
+    font-weight:600;
+    cursor:pointer;
+}
+
+.card-row .proj:hover{
+    text-decoration:underline;
+}
+/* HEADER */
+.card h3{
+    margin:0;
+    padding:12px 15px;
+    font-size:12px;
+    font-weight:600;
+    color:white;
+
+    background: linear-gradient(135deg, #6b3fa0, #8e5cd9);
+}
+
+/* SECTION TITLE */
+.card h4{
+    margin:10px 15px 5px;
+    font-size:13px;
+    font-weight:bold;
+}
+
+/* COLORS */
+.card h4:first-of-type{
+    color:#28a745;   /* green */
+}
+.card h4:last-of-type{
+    color:#ff9800;   /* orange */
+}
+
+/* LIST */
+.card ul{
+    margin:5px 0 10px;
+    padding:0 15px 10px 25px;
+
+    max-height:160px;
+    overflow-y:auto;
+
+    font-size:13px;
+    color:#444;
+}
+
+/* scrollbar (optional nice touch) */
+.card ul::-webkit-scrollbar{
+    width:5px;
+}
+.card ul::-webkit-scrollbar-thumb{
+    background:#6b3fa0;
+    border-radius:10px;
+}
     .card h4:first-of-type {
     color: green;
 }
@@ -793,19 +952,22 @@ html, body {
 /* Fix container */
 .container{
     display: flex;
-    flex-direction: row;      /* 🔥 sidebar + content side-by-side */
+    flex-direction: row;      /*  sidebar + content side-by-side */
     min-height: calc(100vh - 60px);
 }
 
 
     .stats-container {
     width: 100%;
+    transition:all 0.3s ease;
 }
 
 .stats-header,
 .stats-values {
     display: flex;
     width: 100%;
+    transition:all 0.3s ease;
+
 }
 
 .stats-header div,
@@ -815,7 +977,7 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: center;
-
+transition:all 0.3s ease;
     text-align: center;
 }
 
@@ -886,12 +1048,12 @@ cursor:pointer;
 //     display:block;   
 // }
 .sidebar{
-            /* 🔥 IMPORTANT */
-    top: 60px;              /* below header */
+           
+    top: 60px;             
     left: 0;
 
     width: 0px;
-    height: 1470px;  /* 🔥 full height */
+    height: 1000px;  
 
     background: #1667a5;
     color: white;
@@ -899,7 +1061,7 @@ cursor:pointer;
     overflow: hidden;
     transition: 0.3s;
 
-    z-index: 9999;          /* 🔥 ABOVE EVERYTHING */
+    z-index: 9999;          
 }
 
 .menu{
@@ -1082,15 +1244,7 @@ font-weight:bold;
     margin-top:20px;
 }
 
-.card{
-    flex:1;
-    background:#f4f4f4;
-    padding:15px;
-    border-radius:10px;
-   
-    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-  transition: 0.3s;
-}
+
 .chart-card{
     margin:20px;
     padding:15px;
@@ -1110,10 +1264,7 @@ font-weight:bold;
     width:100%;
     height:350px;
 }
-.card h3{
-    margin-bottom:10px;
-    color:#6b3fa0;
-}
+
 
 .card ul{
     padding-left:20px;
@@ -1231,8 +1382,26 @@ console.log("Stored EmpId:", localStorage.getItem("empId"));
  if (localStorage.getItem("isLoggedIn") !== "true") {
     window.location.href = "https://2771600.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=2872&deploy=1&compid=2771600&ns-at=AAEJ7tMQLCBxkbOlhRyShbsZSNh6QPuKL2rt00NN091SJ6hEFho";
 }
+var viewProjectUrl = '${viewProjectUrl}';
+function openProjectView(projectId){
 
+    setPageTitle("Project Details");
+    document.getElementById("headerTitle").innerText = "Project Details";
 
+    document.getElementById("homeContent").style.display = "none";
+    document.getElementById("loader").style.display = "block";
+
+    let url = viewProjectUrl;
+
+    // 👇 pass projectId + mode=view
+    url += "&projectId=" + projectId;
+    url += "&mode=view";
+
+    document.getElementById("mainFrame").src = url;
+    document.getElementById("projectContent").style.display = "block";
+
+    toggleChartVisibility();
+}
 function openMenu(){
     document.getElementById("sidebar").style.width="180px";
     

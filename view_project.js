@@ -45,7 +45,14 @@ values['custrecord_rw_portal_lineexpecteduatdate'] =
 
 values['custrecord_rw_portal_lineexptgolivedate'] =
     line.golive ? new Date(line.golive + "T00:00:00") : null;
+values['custrecord_rw_portal_startdateline'] =
+    line.startdate ? new Date(line.startdate + "T00:00:00") : null;
 
+values['custrecord_rw_portal_enddateline'] =
+    line.enddate ? new Date(line.enddate + "T00:00:00") : null;
+
+values['custrecord_rw_portal_updateddeadline'] =
+    line.updateddeadline ? new Date(line.updateddeadline + "T00:00:00") : null;
 if(line.status){
     values['custrecord_rw_portal_projstat'] = line.status;
 }
@@ -511,16 +518,16 @@ var lineId = result.id;   // 🔥 BEST WAY
         </select>
     </td>
     <td style="border:1px solid #ccc;padding:8px;">
-    <span class="view-mode">${uat}</span>
-    <input class="edit-mode uat" type="date" value="${toInputDate(startdate)}" style="display:none;" />
+    <span class="view-mode">${start}</span>
+    <input class="edit-mode startdate" type="date" value="${toInputDate(startdate)}" style="display:none;" />
 </td>
    <td style="border:1px solid #ccc;padding:8px;">
-    <span class="view-mode">${uat}</span>
-    <input class="edit-mode uat" type="date" value="${toInputDate(enddate)}" style="display:none;" />
+    <span class="view-mode">${end}</span>
+    <input class="edit-mode enddate" type="date" value="${toInputDate(enddate)}" style="display:none;" />
 </td>
    <td style="border:1px solid #ccc;padding:8px;">
-    <span class="view-mode">${uat}</span>
-    <input class="edit-mode uat" type="date" value="${toInputDate(updateddeadline)}" style="display:none;" />
+    <span class="view-mode">${updated}</span>
+    <input class="edit-mode updateddeadline" type="date" value="${toInputDate(updateddeadline)}" style="display:none;" />
 </td>
     
 
@@ -808,7 +815,13 @@ else {
     loader.style.display = "block";   
 
     setTimeout(function(){
-        window.parent.location.href = projectUrl;
+        
+
+      if(window.parent && window.parent.openHome){
+      window.parent.document.getElementById("loader").style.display = "none";
+        window.parent.openHome();   // ✅ correct
+    }
+
     }, 300); // small delay for smooth UX
 }
     function formatDate(dateStr){
@@ -857,6 +870,9 @@ var technical  = row.querySelector("select.edit-mode.technical")?.value;
 var uat        = row.querySelector("input.edit-mode.uat")?.value;
 var golive     = row.querySelector("input.edit-mode.golive")?.value;
 var status     = row.querySelector("select.edit-mode.status")?.value;
+var startdate = row.querySelector("input.edit-mode.startdate")?.value;
+var enddate = row.querySelector("input.edit-mode.enddate")?.value;
+var updateddeadline = row.querySelector("input.edit-mode.updateddeadline")?.value;
        
 
        data.push({
@@ -865,7 +881,10 @@ var status     = row.querySelector("select.edit-mode.status")?.value;
     technical: technical || '',
     uat: uat || '',
     golive: golive || '',
-    status: status || ''
+    status: status || '',
+    startdate:startdate || '',
+    enddate:enddate || '',
+    updateddeadline:updateddeadline || '',
 });
     });
 
@@ -899,13 +918,23 @@ showToast("Project Saved Successfully ");
             var uatInp  = row.querySelector("input.edit-mode.uat");
             var golInp  = row.querySelector("input.edit-mode.golive");
             var statSel = row.querySelector("select.edit-mode.status");
-
+            var startInp = row.querySelector("input.edit-mode.startdate");
+            var endInp = row.querySelector("input.edit-mode.enddate");
+            var updInp = row.querySelector("input.edit-mode.updateddeadline");
             
             if(funcSel){
     var txt = funcSel.options[funcSel.selectedIndex]?.text || '';
     updateCell(row, "td:nth-child(4) .view-mode", txt);
 }
-
+if(startInp){
+    updateCell(row, "td:nth-child(4) .view-mode", formatDate(startInp.value));
+}
+if(endInp){
+    updateCell(row, "td:nth-child(5) .view-mode", formatDate(endInp.value));
+}
+if(updInp){
+    updateCell(row, "td:nth-child(6) .view-mode", formatDate(updInp.value));
+}
 if(techSel){
     var txt = techSel.options[techSel.selectedIndex]?.text || '';
     updateCell(row, "td:nth-child(5) .view-mode", txt);

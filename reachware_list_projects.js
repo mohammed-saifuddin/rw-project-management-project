@@ -10,7 +10,8 @@ const onRequest = (context) => {
 if(context.request.method === 'GET'){
 
 var form = serverWidget.createForm({ title: ' ' });
-
+var projectId = context.request.parameters.projectId;
+var isEdit = !!projectId;   // true = edit, false = create
 form.hideNavBar = true;
 var empOptions = '<option value="">--Select--</option>';
 var dpOptions = '<option value="">--Select--</option>';
@@ -72,7 +73,7 @@ var customerSearch = search.create({
     filters: [
     ['isinactive','is','F'],
     'AND',
-    ['custentity_rw_emp_port_access','is','T']
+    ['custentity_is_rw_customer','is','T']
 ],
     columns: ['internalid','altname']
 });
@@ -220,10 +221,13 @@ if(roleType === 'PMO'){
             <th>RW Product</th>
             <th>PMO Comments</th>
             <th>Status</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-            <th>Updated Deadline</th>
-            
+
+            ${isEdit ? `
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Updated Deadline</th>
+            ` : ``}
+
             <th></th>
         </tr>
     `;
@@ -245,7 +249,8 @@ if(roleType === 'PMO'){
 
 var rowHtml = '';
 
-if(roleType === 'PMO'){
+
+    if(roleType === 'PMO'){
     rowHtml = `
     <tr>
         <td><select name="rwproduct[]">${rwOptions}</select></td>
@@ -253,13 +258,17 @@ if(roleType === 'PMO'){
         <td>
             <select name="linestatus[]">${statOptions1}</select>
         </td>
-    <td> <input type="date" id="stdate" name="stdate[]"></td>
+
+        ${isEdit ? `
+        <td> <input type="date" id="stdate" name="stdate[]"></td>
 <td><input type="date" id="eddate" name="eddate[]"></td>
 <td><input type="date" id="updateddeadline" name="updateddeadline[]"></td>
-        
+        ` : ``}
+
         <td><button type="button" onclick="removeRow(this)">❌</button></td>
     </tr>
     `;
+
 } else {
     rowHtml = `
     <tr>
