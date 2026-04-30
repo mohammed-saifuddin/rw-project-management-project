@@ -51,15 +51,39 @@ empSearch.run().each(function(result){
 
     return true;
 });
+// var customerSearch = search.create({
+//     type: search.Type.CUSTOMER,
+//     filters: [
+//         ['isinactive','is','F'],
+//       'AND',
+//     ['custentity_is_rw_customer','is','T']
+//     ],
+//     columns: ['internalid','altname']
+// });
+// customerSearch.run().each(function(result){
+//     var id = result.getValue('internalid');
+//     var name = result.getValue('altname');
+
+//     customerOptions += `<option value="${id}" ${
+//         request.parameters.clientName == id ? 'selected' : ''
+//     }>${name}</option>`;
+    
+//      return true;
+// });
+var customerOptions = '<option value="">--Select--</option>';
+
 var customerSearch = search.create({
     type: search.Type.CUSTOMER,
     filters: [
         ['isinactive','is','F'],
-        'AND',
-    ['custentity_rw_emp_port_access','is','T']
+       
+    'AND',
+    ['custentity_is_rw_customer','is','T']
     ],
-    columns: ['internalid','altname']
+    columns: ['internalid','altname'],
 });
+     
+
 customerSearch.run().each(function(result){
     var id = result.getValue('internalid');
     var name = result.getValue('altname');
@@ -70,24 +94,59 @@ customerSearch.run().each(function(result){
     
      return true;
 });
-var productOptions = '<option value="">All</option>';
+// var productOptions = '<option value="">All</option>';
 
-var productSearch = search.create({
-    type: 'customlist_rw_ticket_rwsuiteapplist', 
-    columns:['internalid','name']
-});
+// var productSearch = search.create({
+//     type: 'customlist_rw_ticket_rwsuiteapplist', 
+//     columns:['internalid','name']
+// });
 
-productSearch.run().each(function(result){
+// productSearch.run().each(function(result){
 
-    var id = result.getValue('internalid');
-    var name = result.getValue('name');
+//     var id = result.getValue('internalid');
+//     var name = result.getValue('name');
 
-    productOptions += `<option value="${id}" ${
-        request.parameters.rwProduct == id ? 'selected' : ''
-    }>${name}</option>`;
+//     productOptions += `<option value="${id}" ${
+//         request.parameters.rwProduct == id ? 'selected' : ''
+//     }>${name}</option>`;
 
-    return true;
-});
+//     return true;
+// });
+var productOptions = '<option value="">Select Product</option>';
+     if (context.request.parameters.action === 'getProducts') {
+
+    var customerId = context.request.parameters.customerId;
+
+    if(!customerId){
+        context.response.write(JSON.stringify([]));
+        return;
+    }
+
+    var productList = [];
+
+    var mappingSearch = search.create({
+        type: 'customrecord_rw_support_',
+        filters: [
+            ['custrecord_rw_project_summary', 'anyof', customerId]
+        ],
+        columns: [
+            'custrecord_rw_support_product'
+        ]
+    });
+
+    mappingSearch.run().each(function(result) {
+
+        productList.push({
+            id: result.getValue('custrecord_rw_support_product'),
+            name: result.getText('custrecord_rw_support_product')
+        });
+
+        return true;
+    });
+
+    context.response.write(JSON.stringify(productList));
+    return;
+}
  var loginUrl = url.resolveScript({
 scriptId: 'customscript2872',
 deploymentId: 'customdeploy1',
@@ -420,14 +479,14 @@ if (!(mode === 'form' || request.parameters.hidefilters === 'true')){
         <label>Client Name</label>
         
 
-               <select name="clientName">
+               <select name="clientName" id="projectName">
                ${customerOptions}
                </select>
     </div>
     <div class="filter-group">
         <label>Rw Product</label>
         
-               <select name="rwProduct">
+               <select name="rwProduct" id="rwProduct">
                ${productOptions}
                </select>
     </div>
@@ -1010,6 +1069,24 @@ function openTicket(ticketId){
 
     frame.src = urlWithParam;
 }
+    document.getElementById('projectName').addEventListener('change', function () {
+
+    var customerId = this.value;
+
+    fetch(window.location.href + "&action=getProducts&customerId=" + customerId)
+    .then(res => res.json())
+    .then(data => {
+
+        var dropdown = document.getElementById('rwProduct');
+
+        dropdown.innerHTML = '<option value="">Select Product</option>';
+
+        data.forEach(function(prod){
+            dropdown.innerHTML += '<option value="' + prod.id + '">' + prod.name + '</option>';
+        });
+
+    });
+});
 function toggleProducts(projectId){
 
     var row = document.getElementById("products-" + projectId);

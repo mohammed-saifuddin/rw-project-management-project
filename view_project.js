@@ -223,7 +223,23 @@ if(roleType === 'PMO'){
             <th style="border:1px solid #ccc;padding:8px;">Updated Deadline</th>
         </tr>
     `;
-} else {
+}  else if (roleType === 'PM') {
+    tableHeader = `
+        <tr style="background:#6f3ba2; color:white;">
+            <th style="border:1px solid #ccc;padding:8px;">RW Product</th>
+            <th style="border:1px solid #ccc;padding:8px;">Comments</th>
+            <th style="border:1px solid #ccc;padding:8px;">Project Manager</th>
+            <th style="border:1px solid #ccc;padding:8px;">Functional consultant</th>
+            <th style="border:1px solid #ccc;padding:8px;">Technical consultant</th>
+            <th style="border:1px solid #ccc;padding:8px;">Expected UAT</th>
+            <th style="border:1px solid #ccc;padding:8px;">Expected Go Live</th>
+            <th style="border:1px solid #ccc;padding:8px;">Status</th>
+            <th style="border:1px solid #ccc;padding:8px;">Start Date</th>
+            <th style="border:1px solid #ccc;padding:8px;">End Date</th>
+            <th style="border:1px solid #ccc;padding:8px;">Updated Deadline</th>
+        </tr>
+    `;
+}else {
     tableHeader = `
         <tr style="background:#6f3ba2; color:white;">
             <th style="border:1px solid #ccc;padding:8px;">RW Product</th>
@@ -533,6 +549,57 @@ var lineId = result.id;   // 🔥 BEST WAY
 
 </tr>`;
 }
+else if (roleType === 'PM') {
+    lineItemsHtml += `
+<tr data-id="${lineId}">
+<td style="border:1px solid #ccc;padding:8px;">${product}</td>
+<td style="border:1px solid #ccc;padding:8px;">${comments}</td>
+<td style="border:1px solid #ccc;padding:8px;">${pm}</td>
+
+<td style="border:1px solid #ccc;padding:8px;">
+    <span class="view-mode">${functional}</span>
+    <select class="edit-mode functional" style="display:none;">
+       ${funcDropdown}
+    </select>
+</td>
+
+<td style="border:1px solid #ccc; padding:8px;">
+    <span class="view-mode">${technical}</span>
+    <select class="edit-mode technical" style="display:none;">
+       ${techDropdown}
+    </select>
+</td>
+
+<td style="border:1px solid #ccc;padding:8px;">
+    <span class="view-mode">${uat}</span>
+    <input class="edit-mode uat" type="date" value="${toInputDate(uatRaw)}" style="display:none;" />
+</td>
+
+<td style="border:1px solid #ccc;padding:8px;">
+    <span class="view-mode">${golive}</span>
+    <input class="edit-mode golive" type="date" value="${toInputDate(goliveRaw)}" style="display:none;" />
+</td>
+
+<td style="border:1px solid #ccc;padding:8px;">
+    <span class="view-mode">${linestatus}</span>
+    <select class="edit-mode status" style="display:none;">
+       ${statOptions}
+    </select>
+</td>
+ <td style="border:1px solid #ccc;padding:8px;">
+    <span class="view-mode">${start}</span>
+    <input class="edit-mode startdate" type="date" value="${toInputDate(startdate)}" style="display:none;" />
+</td>
+   <td style="border:1px solid #ccc;padding:8px;">
+    <span class="view-mode">${end}</span>
+    <input class="edit-mode enddate" type="date" value="${toInputDate(enddate)}" style="display:none;" />
+</td>
+   <td style="border:1px solid #ccc;padding:8px;">
+    <span class="view-mode">${updated}</span>
+    <input class="edit-mode updateddeadline" type="date" value="${toInputDate(updateddeadline)}" style="display:none;" />
+</td>
+</tr>`;
+}
 else {
     lineItemsHtml += `
 <tr data-id="${lineId}">
@@ -812,18 +879,13 @@ else {
      function goBack(){
 
     var loader = document.getElementById("loader");
-    loader.style.display = "block";   
+    loader.style.display = "block";   // ✅ show loader
 
     setTimeout(function(){
-        
-
-      if(window.parent && window.parent.openHome){
-      window.parent.document.getElementById("loader").style.display = "none";
-        window.parent.openHome();   // ✅ correct
-    }
-
+        window.parent.location.href = projectUrl;
     }, 300); // small delay for smooth UX
 }
+    
     function formatDate(dateStr){
     if(!dateStr) return '';
     var d = new Date(dateStr);

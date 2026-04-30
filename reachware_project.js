@@ -188,6 +188,9 @@ search.createColumn({
 'custrecord_rw_portal_enddateline' ,
 'custrecord_rw_portal_updateddeadline',
 'custrecord_rw_portal_durationline',
+'custrecord_rw_portal_funcconsultant',
+'custrecord_rw_portal_techconsultant'
+
 ]
 });
 
@@ -233,6 +236,8 @@ var lineStartDate = result.getValue('custrecord_rw_portal_startdateline') || '';
 var lineEndDate = result.getValue('custrecord_rw_portal_enddateline') || '';
 var lineUpdatedDate = result.getValue('custrecord_rw_portal_updateddeadline') || '';
 var lineDuration =result.getValue('custrecord_rw_portal_durationline');
+var functionalConsultant = result.getText({ name: 'custrecord_rw_portal_funcconsultant' }) || '';
+var technicalConsultant = result.getText({ name: 'custrecord_rw_portal_techconsultant' }) || '';
 log.debug(additionalComments)
     var status = result.getText('custrecord_rw_portal_projstat');
     log.debug(status) // ✅ ADD THIS
@@ -252,6 +257,7 @@ log.debug(additionalComments)
         pmocomments: result.getValue({ name: 'custrecord_rw_portal_pmocommnts', join: 'custrecord1513' }) || '',
         additionalComments: result.getValue('custrecord_rw_portal_additionalcomments') || '',
         durationline: result.getValue('custrecord_rw_portal_durationline') || '',
+        
         products: {}
     };
 }
@@ -265,7 +271,9 @@ if(!projectMap[parentId].products[product]){
         startDate: lineStartDate,
     endDate: lineEndDate,
     updatedEndDate: lineUpdatedDate,
-    duration: lineDuration
+    duration: lineDuration,
+    functionalConsultant:functionalConsultant,
+    technicalConsultant:technicalConsultant
         
     };
 }
@@ -550,10 +558,39 @@ function calculateDuration(stdate, eddate){
 
     return diffDays + " days";
 }
+function getProductTicketDetails(projectId, productId){
 
+    var total = 0;
+    var open = 0;
+    var closed = 0;
+
+    var ticketSearch = search.create({
+        type: 'customrecord_rw_ticket',
+        filters: [
+            ['custrecord_rw_ticket_projectname','anyof', projectId],
+            'AND',
+            ['custrecord_rw_ticket_rwsuiteapp','anyof', productId]
+        ],
+        columns: ['custrecord_rw_ticket_ticketstatus']
+    });
+
+    ticketSearch.run().each(function(result){
+
+        total++;
+
+        var status = result.getValue('custrecord_rw_ticket_ticketstatus');
+
+        if(status == '5') closed++;
+        else open++;
+
+        return true;
+    });
+
+    return { total, open, closed };
+}
 log.debug("DMS ROLE", dmsRole);
 log.debug("ROLE TYPE", roleType);
-if(roleType !== 'PMO' && !isFromHome){   // ✅ correct condition
+if(roleType === 'PM'){   // ✅ correct condition
     ticketCols = `
         <td style="border:1px solid black;">${ticketData.total}</td>
         <td style="border:1px solid black;">${ticketData.open}</td>
@@ -573,10 +610,18 @@ var productList = `
         <th style="border:1px solid black;">End Date</th>
         <th style="border:1px solid black;">Updated End Date</th>
         <th style="border:1px solid black;">Duration</th>
+       
+${roleType === 'PM' ? `
+ <th style="border:1px solid black;">Total Tickets</th>
+<th style="border:1px solid black;">Open</th>
+<th style="border:1px solid black;">Closed</th>
+<th style="border:1px solid black;">Functional Consultant</th>
+<th style="border:1px solid black;">Technical Consultant</th>
+` : ``}
     </tr>
 
     ${Object.entries(data.products).map(([name, obj]) => {
-
+  var ticketDetails = getProductTicketDetails(projectId, obj.productId);
         return `
         <tr>
             <td style="border:1px solid black;">${data.status || ''}</td>
@@ -589,6 +634,15 @@ var productList = `
             <td style="border:1px solid black;">
 ${obj.duration ? obj.duration + ' days' : ''}
 </td>
+
+        ${roleType === 'PM' ? `
+<td style="border:1px solid black;">${ticketData.total}</td>
+        <td style="border:1px solid black;">${ticketData.open}</td>
+        <td style="border:1px solid black;">${ticketData.closed}</td>
+
+        <td style="border:1px solid black;">${obj.functionalConsultant || ''}</td>
+        <td style="border:1px solid black;">${obj.technicalConsultant || ''}</td>
+` : ``}
         </tr>
         `;
     }).join("")}
@@ -690,7 +744,7 @@ var paginationHtml = `
 `;
 var ticketHeaderCols = '';
 
-if(roleType !== 'PMO' && !isFromHome){
+if(roleType === 'PM'){
     ticketHeaderCols = `
         <th style="border:1px solid black;">Total Tickets</th>
         <th style="border:1px solid black;">Open</th>
@@ -702,7 +756,7 @@ if(roleType !== 'PMO' && !isFromHome){
 
 var addButton = '';
 
-if(roleType !== 'PM' && roleType !=='DEV'){
+if(roleType === 'PM' && roleType ==='PM'){
     addButton = `<button class="addBtn" type="button" onclick="listProjects()">+</button>`;
 } else {
     

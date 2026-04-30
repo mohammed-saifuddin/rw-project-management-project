@@ -52,7 +52,8 @@ const onRequest = (context) => {
             id: result.getValue('custrecord_rw_support_product'),
             name: result.getText('custrecord_rw_support_product')
         });
-
+  log.debug("FIELD VALUE", result.getValue('custrecord_rw_project_summary'));
+    log.debug("FIELD TEXT", result.getText('custrecord_rw_project_summary'));
         return true;
     });
 
@@ -247,7 +248,7 @@ html, body {
     height:100%;
     
 }
-/* 🔥 TAKE FULL CONTROL */
+
 body > div,
 .uir-page-container,
 .uir-page-wrapper,
@@ -258,7 +259,7 @@ body > div,
     padding: 0 !important;
 }
 
-/* 🔥 CRITICAL FIX (THIS YOU MISSED) */
+
 #custpage_html_fs,
 #custpage_html_fs_lbl,
 #custpage_html_fs_val {
@@ -548,6 +549,10 @@ cursor:pointer;
         <label class="required">Deadline</label>
         <input type="date" name="deadline" required>
     </div>
+    <div class="form-row">
+        <label class="required">OverDues days</label>
+        <input type="text" name="overdueDays" required>
+    </div>
 </div>
 
 </div>
@@ -599,7 +604,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (empDropdown) {
         empDropdown.addEventListener("change", setRole);
-        setRole(); // 🔥 auto on load
+        setRole(); 
     }
 
 });
@@ -768,6 +773,7 @@ function convertToNetSuiteDate(dateStr) {
       var formattedDate = convertToNetSuiteDate(date);
 var formattedDeadline = convertToNetSuiteDate(deadline);
 var formattedIssueDate = convertToNetSuiteDate(issueOccurredOn);
+var overdueDays =req.parameters.overdueDays;
         var ticketNo =req.parameters.ticketNo;
 
         var rec = record.create({
@@ -847,7 +853,10 @@ var formattedIssueDate = convertToNetSuiteDate(issueOccurredOn);
              value: suiteApp 
             });
        
-          
+               rec.setValue({ 
+            fieldId: 'custrecord_rw_ticket_overduedays',
+             value: overdueDays 
+            });
             if (formattedDate) {
     rec.setValue({
         fieldId: 'custrecord_rw_ticket_date',

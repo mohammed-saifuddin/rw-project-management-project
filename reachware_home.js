@@ -359,6 +359,33 @@ params: {
         email: email
     }
 });
+function getHighPriorityTicketList(){
+
+    var tickets = [];
+
+    var ticketSearch = search.create({
+        type: 'customrecord_rw_ticket',
+        filters: [
+            ['custrecord_rw_ticket_priority','anyof','1'] // ⚠️ adjust if needed
+        ],
+        columns: [
+            'custrecord_rw_ticket_ticketno', // Ticket Number
+            'custrecord_rw_ticket_deadline'
+        ]
+    });
+
+    ticketSearch.run().each(function(result){
+
+        tickets.push({
+            number: result.getValue('custrecord_rw_ticket_ticketno'),
+            deadline: result.getValue('custrecord_rw_ticket_deadline')
+        });
+
+        return true;
+    });
+
+    return tickets;
+}
 var projectCount=getTotalCount();
 var inProgressCount=getInProgressCount();
 var totalTickets=getTotalTicketCount();
@@ -368,6 +395,7 @@ var openTickets=getOpenTicketCount();
 var empInternalId = getEmployeeInternalId(email);
 var empRole = getEmployeeRole(empInternalId);
 log.debug("Employee Role", empRole);
+var highPriorityTickets = getHighPriorityTicketList();
 var assignedTickets = getAssignedTicketCount(empId);
 var kickOffCount=getKickOffCount();
 var bussinesCount=getBussinessCount();
@@ -414,6 +442,33 @@ if (empId) {
 }
 if (!empRole || empRole.trim() === '') {
     empRole =  'Administrator';
+}
+function getCurrentGoLiveProducts(){
+
+    var products = [];
+
+    var searchObj = search.create({
+        type: 'customrecord_rw_portal_access2',
+        filters: [
+            ['custrecord1513.custrecord_rw_portal_status','anyof','9'] // Go-Live
+        ],
+        columns: [
+            'custrecord_rw_portal_rwproduct'
+        ]
+    });
+
+    searchObj.run().each(function(result){
+
+        var product = result.getText('custrecord_rw_portal_rwproduct');
+
+        if(product && !products.includes(product)){
+            products.push(product); // avoid duplicates
+        }
+
+        return true;
+    });
+
+    return products;
 }
 var roleType = getRoleType(empRole);
 log.debug(empRole)
@@ -513,6 +568,67 @@ else{
     <div class="data-val"  id="tit" onclick="openTickets('total')">${totalTickets}</div>
 `;
 }
+var highPriorityCard = `
+<div style="display:flex; gap:15px; margin:10px;">
+
+    <div style="
+        width:320px;
+        background:#fff;
+        border-radius:10px;
+        box-shadow:0 4px 10px rgba(0,0,0,0.1);
+        overflow:hidden;
+    ">
+
+        <!-- HEADER (same as table header) -->
+        <div style="
+            background:#6f3ba2;
+            color:white;
+            padding:10px;
+            font-weight:bold;
+            font-size:14px;
+        ">
+             High Priority
+        </div>
+
+        <div style="padding:10px;">
+
+            <!-- COLUMN NAMES -->
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                font-weight:bold;
+                border-bottom:2px solid #ddd;
+                padding-bottom:5px;
+                font-size:13px;
+            ">
+                <span>Ticket No</span>
+                <span>Deadline</span>
+            </div>
+
+            <!-- DATA -->
+            <div style="max-height:200px; overflow-y:auto;">
+
+                ${highPriorityTickets.map(t => `
+                    <div style="
+                        display:flex;
+                        justify-content:space-between;
+                        padding:6px 0;
+                        border-bottom:1px solid #eee;
+                        font-size:13px;
+                    ">
+                        <span>${t.number}</span>
+                        <span>${t.deadline || '-'}</span>
+                    </div>
+                `).join('')}
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+`;
 var avatarLetter = (empRole && empRole.length > 0) 
     ? empRole.charAt(0).toUpperCase() 
     : 'U';
@@ -614,6 +730,7 @@ function formatDateForNS(date){
 
     return day + '/' + month + '/' + year;
 }
+var goLiveProducts = getCurrentGoLiveProducts();
 function getCustomersByDate(fieldId, type, statusId){
 
     var customers = [];
@@ -705,6 +822,34 @@ var cocUpcoming = []; // optional if you have date field
 log.debug("UAT CURRENT DATA", uatCurrent);
 log.debug("GOLIVE CURRENT DATA", goliveCurrent);
 log.debug("COC CURRENT DATA", cocCurrent);
+
+function getOverdueTickets(){
+
+    var tickets = [];
+
+    var ticketSearch = search.create({
+        type: 'customrecord_rw_ticket',
+        filters: [
+            ['custrecord_rw_ticket_overduedays','isnotempty',''] // ✅ only overdue
+        ],
+        columns: [
+            'custrecord_rw_ticket_ticketno',
+            'custrecord_rw_ticket_overduedays'
+        ]
+    });
+
+    ticketSearch.run().each(function(result){
+
+        tickets.push({
+            number: result.getValue('custrecord_rw_ticket_ticketno'),
+            days: result.getValue('custrecord_rw_ticket_overduedays')
+        });
+
+        return true;
+    });
+
+    return tickets;
+}
 function buildCard(title, currentList, upcomingList){
 
     currentList = currentList || [];   // ✅ FIX
@@ -775,7 +920,253 @@ var chartCard = `
     </div>
 </div>
 `;
+var pieChartCard =`
+
+<div class="chart-card" id="pieChartCard">
+
+    <div class="chart-header">
+        Dashboard Overview
+    </div>
+
+    <div style="
+        display:flex;
+        justify-content:space-around;
+        align-items:center;
+        gap:20px;
+        flex-wrap:wrap;
+    ">
+
+        <div style="width:250px; text-align:center;">
+            <h3>Projects</h3>
+            <canvas id="projectPie"></canvas>
+        </div>
+
+        <div style="width:250px; text-align:center;">
+            <h3>Tickets</h3>
+            <canvas id="ticketPie"></canvas>
+        </div>
+
+        <div style="width:250px; text-align:center;">
+            <h3>My Data</h3>
+            <canvas id="myPie"></canvas>
+        </div>
+
+    </div>
+
+</div>
+
+`
 var chartHtml = (roleType === 'PMO') ? chartCard : '';
+var goLiveCard = `
+<div style="display:flex; gap:15px; margin:10px;">
+
+    <div style="
+        width:320px;
+        background:#fff;
+        border-radius:10px;
+        box-shadow:0 4px 10px rgba(0,0,0,0.1);
+        overflow:hidden;
+    ">
+
+        <!-- HEADER -->
+        <div style="
+            background:#6f3ba2;
+            color:white;
+            padding:10px;
+            font-weight:bold;
+            font-size:14px;
+        ">
+             Current Go-Lives
+        </div>
+
+        <div style="padding:10px;">
+
+            <!-- COLUMN NAME -->
+            <div style="
+                font-weight:bold;
+                border-bottom:2px solid #ddd;
+                padding-bottom:5px;
+                font-size:13px;
+            ">
+                Product Name
+            </div>
+
+            <!-- DATA -->
+            <div style="max-height:200px; overflow-y:auto;">
+
+                ${goLiveProducts.map(p => `
+                    <div style="
+                        padding:6px 0;
+                        border-bottom:1px solid #eee;
+                        font-size:13px;
+                    ">
+                        ${p}
+                    </div>
+                `).join('')}
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+`;
+var overdueTickets =getOverdueTickets();
+var overdueCardInner = `
+<div style="display:flex; gap:15px; margin:10px;">
+<div style="
+    width:320px;
+    background:#fff;
+    border-radius:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    overflow:hidden;
+">
+
+    <div style="
+        background:#6f3ba2;
+        color:white;
+        padding:10px;
+        font-weight:bold;
+        font-size:14px;
+    ">
+         Overdue Tickets
+    </div>
+
+    <div style="padding:10px;">
+
+        <div style="
+            display:flex;
+            justify-content:space-between;
+            font-weight:bold;
+            border-bottom:2px solid #ddd;
+            padding-bottom:5px;
+            font-size:13px;
+        ">
+            <span>Ticket No</span>
+            <span>Days</span>
+        </div>
+
+        <div style="max-height:200px; overflow-y:auto;">
+
+            ${overdueTickets.map(t => `
+                <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    padding:6px 0;
+                    border-bottom:1px solid #eee;
+                    font-size:13px;
+                ">
+                    <span>${t.number}</span>
+                    <span style="color:red; font-weight:bold;">
+                        ${t.days}
+                    </span>
+                </div>
+            `).join('')}
+
+        </div>
+
+    </div>
+
+</div>
+</div>
+`;
+function getOverdueProjects(){
+
+    var projects = [];
+
+    var today = new Date();
+
+    var searchObj = search.create({
+        type: 'customrecord_rw_portal_access2',
+        filters: [
+            ['custrecord_rw_portal_updateddeadline','before','today'] // ✅ overdue
+        ],
+        columns: [
+            'custrecord_rw_portal_rwproduct',
+            'custrecord_rw_portal_durationline'
+        ]
+    });
+
+    searchObj.run().each(function(result){
+
+        var product = result.getText('custrecord_rw_portal_rwproduct');
+        var duration = result.getValue('custrecord_rw_portal_durationline');
+
+        if(product){
+            projects.push({
+                product: product,
+                duration: duration || 0
+            });
+        }
+
+        return true;
+    });
+
+    return projects;
+}
+var overdueProjects =getOverdueProjects();
+var overdueProjectCardInner = `
+<div style="display:flex;gap:15px;margin:10px;">
+<div style="
+    width:320px;
+    background:#fff;
+    border-radius:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    overflow:hidden;
+">
+
+    <!-- HEADER -->
+    <div style="
+        background:#6f3ba2;
+        color:white;
+        padding:10px;
+        font-weight:bold;
+        font-size:14px;
+    ">
+         Overdue Projects
+    </div>
+
+    <div style="padding:10px;">
+
+        <!-- COLUMN -->
+        <div style="
+            display:flex;
+            justify-content:space-between;
+            font-weight:bold;
+            border-bottom:2px solid #ddd;
+            padding-bottom:5px;
+            font-size:13px;
+        ">
+            <span>Product</span>
+            <span>Duration</span>
+        </div>
+
+        <!-- DATA -->
+        <div style="max-height:200px; overflow-y:auto;">
+
+            ${overdueProjects.map(p => `
+                <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    padding:6px 0;
+                    border-bottom:1px solid #eee;
+                    font-size:13px;
+                ">
+                    <span>${p.product}</span>
+                    <span style="color:red; font-weight:bold;">
+                        ${p.duration ? p.duration + 'days' : '-'}
+                    </span>
+                </div>
+            `).join('')}
+
+        </div>
+
+    </div>
+
+</div>
+</div>
+`;
 let html = `
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
@@ -1048,7 +1439,7 @@ cursor:pointer;
 //     display:block;   
 // }
 .sidebar{
-           
+     position:fixed;      
     top: 60px;             
     left: 0;
 
@@ -1340,9 +1731,17 @@ ${ticketMenu}
 
 </div>
 ${roleType === 'PMO' ? specialCards : ''}
-
+${roleType === 'PM' ? `
+<div style="display:flex; gap:20px; margin:10px;">
+    ${highPriorityCard}
+    ${goLiveCard}
+    ${overdueProjectCardInner}
+     ${overdueCardInner}
+</div>
+` : ''}
 </div>
 ${chartHtml}
+${(roleType === 'PM') ? pieChartCard : ''}
 </div>
 
 </div>
@@ -1383,6 +1782,37 @@ console.log("Stored EmpId:", localStorage.getItem("empId"));
     window.location.href = "https://2771600.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=2872&deploy=1&compid=2771600&ns-at=AAEJ7tMQLCBxkbOlhRyShbsZSNh6QPuKL2rt00NN091SJ6hEFho";
 }
 var viewProjectUrl = '${viewProjectUrl}';
+
+new Chart(document.getElementById('projectPie'), {
+    type: 'pie',
+    data: {
+        labels: ['Total Projects', 'Open Projects', 'In Progress Projects', 'Closed Projects'],
+        datasets: [{
+            data: [${projectCount}, ${openProjects}, ${inProgressCount}, ${closedProjects}],
+        }]
+    }
+});
+
+new Chart(document.getElementById('ticketPie'), {
+    type: 'pie',
+    data: {
+        labels: ['Total Tickets', 'Open Tickets', 'Closed Tickets'],
+        datasets: [{
+            data: [${totalTickets}, ${openTicketCount}, ${totalTickets - openTicketCount}],
+        }]
+    }
+});
+
+new Chart(document.getElementById('myPie'), {
+    type: 'pie',
+    data: {
+        labels: ['My Projects', 'Assigned Tickets', 'My Open Tickets'],
+        datasets: [{
+            data: [${pmProjectCount}, ${assignedTickets}, ${myOpenCount}],
+        }]
+    }
+});
+
 function openProjectView(projectId){
 
     setPageTitle("Project Details");
@@ -1445,6 +1875,22 @@ function toggleChartVisibility(){
         chart.style.display = "none";
     }
 }
+    function togglePieVisibility(){
+
+    var pie = document.getElementById("pieChartCard");
+    var home = document.getElementById("homeContent");
+
+    if(!pie || !home) return;
+
+    var roleType = "${roleType}";
+
+    // ✅ Show only for PM AND only on Home
+    if(roleType === "PM" && home.style.display !== "none"){
+        pie.style.display = "block";
+    }else{
+        pie.style.display = "none";
+    }
+}
 
 // run on page load
 document.addEventListener("DOMContentLoaded", toggleChartVisibility);
@@ -1489,8 +1935,12 @@ url += "&from=home";   // ✅ ADD THIS
 
     document.getElementById("projectContent").style.display = "block";
     toggleChartVisibility();
+    togglePieVisibility();
 }
-    
+    document.addEventListener("DOMContentLoaded", function(){
+    toggleChartVisibility();
+    togglePieVisibility();   // ✅ ADD THIS
+});
 function openTasks(){
 alert("task are opening");
 setPageTitle("Task");
@@ -1541,6 +1991,7 @@ url += "&empid=" + localStorage.getItem("empId");
     document.getElementById("mainFrame").src = url;
     document.getElementById("projectContent").style.display = "block";
     toggleChartVisibility();
+    togglePieVisibility();
 }
     
 // function hideLoader(){
@@ -1570,7 +2021,9 @@ var frame = document.getElementById("mainFrame");
     frame.src = "";              // clear old page
     frame.style.display = "none";
     toggleChartVisibility();
+    togglePieVisibility();
 }
+    
 var loggedRoleName = "${loggedRoleName}";
 var empRoleMap = ${JSON.stringify(empRoleMap)};
 window.onload = function(){

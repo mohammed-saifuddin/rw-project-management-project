@@ -178,7 +178,7 @@ function getRoleType(roleName){
 
 var empRole = getEmployeeRole(empInternalId);
 log.debug("Employee Role", empRole);
-var roleType = getRoleType(empRole);
+
 var tableHeader = '';
 function getEmployeeDMSRole(empId){
 
@@ -206,7 +206,7 @@ function getRoleTypeFromDMS(roleName){
 
     if(roleName.includes('pmo')) return 'PMO';
     if(roleName.includes('developer')) return 'DEV';
-    if(roleName.includes('project manager')) return 'PM';
+    if(roleName.includes('pm')) return 'PM';
 
     return 'OTHER';
 }
@@ -231,7 +231,26 @@ if(roleType === 'PMO'){
             <th></th>
         </tr>
     `;
-} else {
+} 
+else if(roleType === 'PM'){
+    tableHeader = `
+        <tr>
+            <th>RW Product</th>
+            <th>PMO Comments</th>
+            <th>Project Manager</th>
+            <th>Functional Consultant</th>
+            <th>Technical Consultant</th>
+            <th>Expected UAT Date</th>
+            <th>Expected Go Live Date</th>
+            <th>Status</th>
+            <th>Start Date</th>
+                <th>End Date</th>
+                <th>Updated Deadline</th>
+            <th></th>
+        </tr>
+    `;
+}
+else {
     tableHeader = `
         <tr>
             <th>RW Product</th>
@@ -269,7 +288,33 @@ var rowHtml = '';
     </tr>
     `;
 
-} else {
+}
+else if(roleType === 'PM'){
+    rowHtml = `
+    <tr>
+       <td><select name="rwproduct[]">${rwOptions}</select></td>
+        <td><input type="text" name="comments[]"></td>
+        <td><select name="rwpm[]" class="linePM">${empOptions}</select></td>
+        <td><select name="functional[]">${empOptions}</select></td>
+        <td><select name="technical[]">${empOptions}</select></td>
+        <td><input type="date" name="expuat[]"></td>
+        <td><input type="date" name="expgolive[]"></td>
+        <td><select name="linestatus[]">${statOptions1}</select></td>
+         <td> <input type="date" id="stdate" name="stdate[]"></td>
+<td><input type="date" id="eddate" name="eddate[]"></td>
+<td><input type="date" id="updateddeadline" name="updateddeadline[]"></td>
+        <td><button type="button" onclick="removeRow(this)">❌</button></td>
+
+        
+       
+       
+
+        
+    </tr>
+    `;
+ 
+}
+else {
     rowHtml = `
     <tr>
         <td><select name="rwproduct[]">${rwOptions}</select></td>
@@ -280,6 +325,7 @@ var rowHtml = '';
         <td><input type="date" name="expuat[]"></td>
         <td><input type="date" name="expgolive[]"></td>
         <td><select name="linestatus[]">${statOptions1}</select></td>
+        
         <td><button type="button" onclick="removeRow(this)">❌</button></td>
     </tr>
     `;
@@ -754,7 +800,8 @@ text-decoration: none;
 </style>
 
 <form method="POST">
-
+<input type="hidden" name="empid" value="${empId}">
+<input type="hidden" name="email" value="${email}">
 <div class="main-container">
 <div id="toast" class="toast"></div>
 <div class="form-grid">
