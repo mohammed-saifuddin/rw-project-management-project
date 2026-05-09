@@ -25,40 +25,94 @@ const onRequest = (context) => {
 //     return true;
 // });
     var productOptions = '<option value="">Select Product</option>';
-     if (context.request.parameters.action === 'getProducts') {
+    if (context.request.parameters.action === 'getProducts') {
 
     var customerId = context.request.parameters.customerId;
 
-    if(!customerId){
+    if (!customerId) {
         context.response.write(JSON.stringify([]));
         return;
     }
 
     var productList = [];
+    var uniqueProducts = {};
+log.debug("CUSTOMER ID", customerId);
 
-    var mappingSearch = search.create({
-        type: 'customrecord_rw_support_',
-        filters: [
-            ['custrecord_rw_project_summary', 'anyof', customerId]
-        ],
-        columns: [
-            'custrecord_rw_support_product'
-        ]
+var testSearch = search.create({
+    type: 'customrecord_rw_support_',
+    columns: [
+        'internalid',
+        'custrecord_rw_project_summary',
+        'custrecord_rw_support_product'
+    ]
+});
+
+testSearch.run().each(function(r){
+
+    log.debug("SUPPORT RECORD", {
+        id: r.getValue('internalid'),
+        customer: r.getValue('custrecord_rw_project_summary'),
+        product: r.getText('custrecord_rw_support_product')
     });
 
-    mappingSearch.run().each(function(result) {
+    return true;
+});
+    var mappingSearch = search.create({
+    type: 'customrecord_rw_crm_support_hierarhy_map',
+    filters: [
+        ['isinactive', 'is', 'F'],
+        'AND',
+        ['custrecord_rw_crm_support_hier_parent', 'anyof', customerId]
+    ],
+    columns: [
+        'custrecord_rw_support_producr'
+    ]
+});
+    log.debug("PRODUCT LIST", productList);
+mappingSearch.run().each(function(result) {
+
+    var productId =
+        result.getValue('custrecord_rw_support_producr');
+
+    var productName =
+        result.getText('custrecord_rw_support_producr');
+
+    log.debug("PRODUCT ID", productId);
+    log.debug("PRODUCT NAME", productName);
+
+    if (productId && !uniqueProducts[productId]) {
+
+        uniqueProducts[productId] = true;
 
         productList.push({
-            id: result.getValue('custrecord_rw_support_product'),
-            name: result.getText('custrecord_rw_support_product')
+            id: productId,
+            name: productName
         });
-  log.debug("FIELD VALUE", result.getValue('custrecord_rw_project_summary'));
-    log.debug("FIELD TEXT", result.getText('custrecord_rw_project_summary'));
-        return true;
-    });
+    }
 
+    return true;
+});
     context.response.write(JSON.stringify(productList));
     return;
+}
+function getEmployeeInternalId(email){
+
+    var empSearch = search.create({
+        type: search.Type.EMPLOYEE,
+       
+            filters: email ? [['email','is', email]] : []
+            
+        ,
+        columns: ['internalid']
+    });
+
+    var res = empSearch.run().getRange({ start: 0, end: 1 });
+
+    if(res.length > 0){
+        return res[0].getValue('internalid');
+    }
+
+    return null;
 }
     if (context.request.method === 'GET') {
 
@@ -76,8 +130,13 @@ const onRequest = (context) => {
         });
         var selectedEmpId = empId || '';
         log.debug("FINAL EMP ID", selectedEmpId);
-        var currentUser = runtime.getCurrentUser();
-var loggedRoleName = currentUser.roleCenter;  // ✅ USE NAME
+       var currentUser = runtime.getCurrentUser();
+
+var empInternalId = getEmployeeInternalId(email);
+
+var loggedRoleName = getEmployeeRole(empInternalId);
+
+log.debug("Logged Role Name", loggedRoleName); // ✅ USE NAME
 
 log.debug("Logged Role Name", loggedRoleName);
          var rwOptions ='<option value="">--Select--</option>';
@@ -130,7 +189,64 @@ var nextNumber = maxNumber + 1;
 context.response.write(JSON.stringify({ count: nextNumber }));
 return;
 }
+function getEmployeeRole(empInternalId){
 
+    if(!empInternalId) return '';
+
+    var empSearch = search.lookupFields({
+        type: search.Type.EMPLOYEE,
+        id: empInternalId,
+        columns: ['role']
+    });
+
+    log.debug("EMP ROLE", empSearch);
+
+    if(empSearch.role && empSearch.role.length > 0){
+
+        return empSearch.role[0].value; // ✅ role internal id
+    }
+
+    return '';
+}
+function getEmployeeDMSRole(empId){
+
+    if(!empId) return '';
+
+    var emp = search.lookupFields({
+        type: search.Type.EMPLOYEE,
+        id: empId,
+        columns: ['custentityrw_dms_role']   // ✅ correct field
+    });
+
+    log.debug("DMS ROLE RAW", emp);
+
+    if(emp.custentityrw_dms_role && emp.custentityrw_dms_role.length > 0){
+        return emp.custentityrw_dms_role[0].text;   // "RW PMO"
+    }
+
+    return '';
+}
+function getRoleTypeFromDMS(roleName){
+
+    if(!roleName) return 'OTHER';
+
+    roleName = roleName.toLowerCase();
+
+    if(roleName.includes('pmo')) return 'PMO';
+    if(roleName.includes('developer')) return 'DEV';
+    if(roleName.includes('pm')) return 'PM';
+    
+
+    return 'OTHER';
+}
+
+//var empInternalId = getEmployeeInternalId(email);
+
+var dmsRole = getEmployeeDMSRole(empInternalId);
+var roleType = getRoleTypeFromDMS(dmsRole);
+
+log.debug("DMS ROLE", dmsRole);
+log.debug("ROLE TYPE", roleType);
 var customerOptions = '<option value="">--Select--</option>';
 
 var customerSearch = search.create({
@@ -157,9 +273,34 @@ roleSearch.run().each(function(result){
     var id = result.getValue('internalid');
     var name = result.getValue('name');
 
-    roleOptions += '<option value="'+id+'" ' + 
-    (name === loggedRoleName ? 'selected' : '') +
-    '>' + name + '</option>';
+    var selected = '';
+
+    // ✅ match using role text
+   var roleName = name.toLowerCase().trim();
+log.debug("ROLE DROPDOWN NAME", roleName);
+if(
+    (roleType === 'PMO' && roleName === 'rw pmo') ||
+
+    (roleType === 'PM' &&
+        (roleName === 'rw pm' ||
+         roleName === 'project manager')) ||
+
+    (roleType === 'DEV' &&
+        (roleName === 'rw developer' ||
+         roleName === 'developer')) ||
+
+     (roleType === 'OTHER' &&
+(
+    roleName.includes('request')
+))
+){
+    selected = 'selected';
+}
+log.debug("selected value is ",selected);
+    roleOptions +=
+        '<option value="'+id+'" '+selected+'>' +
+        name +
+        '</option>';
 
     return true;
 });
@@ -170,7 +311,7 @@ var emp1Options = '<option value="">Select</option>';
     filters: [
         ['isinactive','is','F']
     ],
-    columns: ['internalid','firstname','lastname']
+    columns: ['internalid','firstname','lastname','custentityrw_dms_role']
 });
 
 empSearch.run().each(function(result){
@@ -208,7 +349,15 @@ var empSearch = search.create({
     ],
     columns: ['internalid','firstname','lastname','role']
 });
-
+  var homeUrl = url.resolveScript({
+                    scriptId:'customscript2874',
+                    deploymentId:'customdeploy3',
+                    returnExternalUrl:true,
+                    params:{
+        empid: empId,
+        email: email
+    }
+                });
 empSearch.run().each(function(result){
 
     var id = result.getValue('internalid');
@@ -549,10 +698,7 @@ cursor:pointer;
         <label class="required">Deadline</label>
         <input type="date" name="deadline" required>
     </div>
-    <div class="form-row">
-        <label class="required">OverDues days</label>
-        <input type="text" name="overdueDays" required>
-    </div>
+    
 </div>
 
 </div>
@@ -591,22 +737,37 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 document.addEventListener("DOMContentLoaded", function () {
 
-    const empDropdown = document.querySelector("select[name='name']");
-    const roleDropdown = document.querySelector("select[name='roleOfUser']");
+    const empDropdown =
+        document.querySelector("select[name='name']");
+
+    const roleDropdown =
+        document.querySelector("select[name='roleOfUser']");
+
+    // ✅ keep backend auto-selected role initially
+    var initialLoad = true;
 
     function setRole() {
+
+        // 🔥 skip first automatic override
+        if(initialLoad){
+            initialLoad = false;
+            return;
+        }
+
         const empId = empDropdown.value;
 
-        if (empRoleMap[empId] && roleDropdown) {
-            roleDropdown.value = empRoleMap[empId].roleId;
+        if(empRoleMap[empId] && roleDropdown){
+
+            roleDropdown.value =
+                empRoleMap[empId].roleId;
         }
     }
 
-    if (empDropdown) {
-        empDropdown.addEventListener("change", setRole);
-        setRole(); 
-    }
+    if(empDropdown){
 
+        empDropdown.addEventListener("change", setRole);
+
+    }
 });
 document.addEventListener("DOMContentLoaded", function () {
 
@@ -629,7 +790,12 @@ document.getElementById('projectName').addEventListener('change', function () {
 
     var customerId = this.value;
 
-    fetch(window.location.href + "&action=getProducts&customerId=" + customerId)
+    var url = new URL(window.location.href);
+
+url.searchParams.set("action", "getProducts");
+url.searchParams.set("customerId", customerId);
+
+fetch(url)
     .then(res => res.json())
     .then(data => {
 
@@ -883,7 +1049,15 @@ if (formattedIssueDate) {
         
         var id = rec.save();
 
-        
+          var homeUrl = url.resolveScript({
+                    scriptId:'customscript2874',
+                    deploymentId:'customdeploy3',
+                    returnExternalUrl:true,
+                    params:{
+        empid: empId,
+        email: email
+    }
+                });
         var redirectUrl = url.resolveScript({
                 scriptId: 'customscript2894',
                 deploymentId: 'customdeploy1',
@@ -1043,6 +1217,7 @@ body {
 </style>
 <script>
 window.redirectUrl = "${redirectUrl}";
+window.homeUrl = "${homeUrl}";
 </script>
 </head>
 
@@ -1084,6 +1259,7 @@ function showDialog(){
 console.log("Emp from URL:", selectedEmpId);
 function redirectPage(){
     window.location.href = window.redirectUrl;
+    //window.location.href = window.homeUrl;
 }
     document.addEventListener("DOMContentLoaded", function () {
 

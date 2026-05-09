@@ -14,9 +14,12 @@ define(['N/file'], (file) => {
                 var fileId = null;
 
                 if (fileObj) {
-                    fileObj.folder = -15; 
-                    fileId = fileObj.save();
-                }
+
+    fileObj.folder = 5842;
+    fileObj.isOnline = true;
+
+    fileId = fileObj.save();
+}
 
                 context.response.setHeader({
                     name: 'Content-Type',

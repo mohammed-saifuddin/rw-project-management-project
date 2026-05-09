@@ -121,7 +121,7 @@ div.uir-page-wrapper {
              width:100%;
             background:#6b3fa0;
             color:white;
-            
+             font-weight:bold;
             margin-left:10px;
             padding:16px;
             height:70px;

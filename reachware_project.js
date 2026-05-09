@@ -590,7 +590,7 @@ function getProductTicketDetails(projectId, productId){
 }
 log.debug("DMS ROLE", dmsRole);
 log.debug("ROLE TYPE", roleType);
-if(roleType === 'PM'){   // ✅ correct condition
+if(roleType === 'PM'){   
     ticketCols = `
         <td style="border:1px solid black;">${ticketData.total}</td>
         <td style="border:1px solid black;">${ticketData.open}</td>
@@ -605,12 +605,13 @@ var productList = `
         <th style="border:1px solid black;">Project Status</th>
         <th style="border:1px solid black;">Product</th>
         <th style="border:1px solid black;">Product Status</th>
-        <th style="border:1px solid black;">Comments</th>
+        <th style="border:1px solid black;">PMO Comments</th>
         <th style="border:1px solid black;">Start Date</th>
         <th style="border:1px solid black;">End Date</th>
+       
         <th style="border:1px solid black;">Updated End Date</th>
         <th style="border:1px solid black;">Duration</th>
-       
+      
 ${roleType === 'PM' ? `
  <th style="border:1px solid black;">Total Tickets</th>
 <th style="border:1px solid black;">Open</th>
@@ -630,6 +631,7 @@ ${roleType === 'PM' ? `
             <td style="border:1px solid black;">${obj.comments || ''}</td>
             <td style="border:1px solid black;">${obj.startDate || ''}</td>
             <td style="border:1px solid black;">${obj.endDate || ''}</td>
+        
             <td style="border:1px solid black;">${obj.updatedEndDate || ''}</td>
             <td style="border:1px solid black;">
 ${obj.duration ? obj.duration + ' days' : ''}
@@ -728,7 +730,7 @@ var paginationHtml = `
 <div style="text-align:center; margin-top:20px;">
 
     ${page > 0 ? `
-        <button onclick="goToPage(${prevPage})" style="padding:8px 15px; background:#6f3ba2; color:white; border:none; border-radius:5px; cursor:pointer;">Previous</button>
+        <button type="button" onclick="goToPage(${prevPage})" style="padding:8px 15px; background:#6f3ba2; color:white; border:none; border-radius:5px; cursor:pointer;">Previous</button>
     ` : ''}
 
     <span style="margin:0 15px; font-weight:bold;">
@@ -756,7 +758,7 @@ if(roleType === 'PM'){
 
 var addButton = '';
 
-if(roleType === 'PM' && roleType ==='PM'){
+if(roleType === 'PMO' || roleType === 'PM'){
     addButton = `<button class="addBtn" type="button" onclick="listProjects()">+</button>`;
 } else {
     
@@ -1047,6 +1049,8 @@ text-decoration: none;
 <input type="hidden" name="empid" value="${empId}">
 <input type="hidden" name="email" value="${email}">
 <input type="hidden" name="from" value="${from}">
+<input type="hidden" name="filter" value="${filterType || ''}">
+<input type="hidden" name="title" value="${dynamicTitle}">
 <div class="content">
 
 <iframe id="mainFrame"
@@ -1105,7 +1109,7 @@ ${ticketHeaderCols}
 ${tableRows}
 
 </table>
-<button class="backBtn" type="button" onclick="goBack()">⬅ Back</button>
+
 ${paginationHtml}
 </div>
 </div>
@@ -1205,6 +1209,11 @@ function goToPage(page){
     }
 
 });
+window.history.pushState(null, null, window.location.href);
+
+window.onpopstate = function () {
+    window.location.href = "${homeUrl}";
+};
 var homeUrl = '${homeUrl}';
      function goBack(){
 

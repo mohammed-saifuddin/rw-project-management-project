@@ -3,14 +3,18 @@
  * @NScriptType Suitelet
  */
 
-define(['N/ui/serverWidget','N/url','N/search','N/runtime'], (serverWidget,url,search,runtime) => {
+define(['N/ui/serverWidget','N/url','N/search','N/runtime','N/redirect'], (serverWidget,url,search,runtime,redirect) => {
 
 const onRequest = (context) => {
 
-var empId = context.request.parameters.empid;
+var empId = context.request.parameters.empid 
+         || context.request.parameters.empId 
+         || context.request.parameters.employeeId 
+         || '';
+
 var email = context.request.parameters.email;
 var empInternalId = getEmployeeInternalId(email);
-
+log.debug("Employee Internal ID", empInternalId);
 function getTotalCount(){
     var projectSearch = search.create({
         type:'customrecord_rw_portal_access',
@@ -241,6 +245,21 @@ function getOpenTicketsCount(){
     return count;
 }
 var openTicketCount=getOpenTicketCount();
+function getclosedTicketsCount(){
+    
+    var ticketSearch=search.create({
+        type:'customrecord_rw_ticket',
+        filters:[
+            ['custrecord_rw_ticket_assignedto','anyof',empId],
+            'AND',
+            ['custrecord_rw_ticket_ticketstatus','anyof','5']
+        ]
+    })
+    var count=ticketSearch.runPaged().count;
+    log.debug("Total closed tickets",count);
+    return count;
+}
+var closedTicketCount=getclosedTicketsCount();
 function getEmployeeRole(empInternalId){
     if(!empInternalId) return '';
 
@@ -445,7 +464,7 @@ if (!empRole || empRole.trim() === '') {
 }
 function getCurrentGoLiveProducts(){
 
-    var products = [];
+    var data = [];
 
     var searchObj = search.create({
         type: 'customrecord_rw_portal_access2',
@@ -453,22 +472,31 @@ function getCurrentGoLiveProducts(){
             ['custrecord1513.custrecord_rw_portal_status','anyof','9'] // Go-Live
         ],
         columns: [
-            'custrecord_rw_portal_rwproduct'
+            'custrecord_rw_portal_rwproduct',
+             search.createColumn({
+                name: 'custrecord_rw_portal_customername',
+                join: 'custrecord1513'
+            }) // 🔥 Project reference field (confirm ID)
         ]
     });
 
     searchObj.run().each(function(result){
 
         var product = result.getText('custrecord_rw_portal_rwproduct');
+        var project = result.getText({
+            name: 'custrecord_rw_portal_customername',
+            join: 'custrecord1513'
+        }); // 🔥 project name
 
-        if(product && !products.includes(product)){
-            products.push(product); // avoid duplicates
-        }
+        data.push({
+            product: product || '-',
+            project: project || '-'
+        });
 
         return true;
     });
 
-    return products;
+    return data;
 }
 var roleType = getRoleType(empRole);
 log.debug(empRole)
@@ -521,9 +549,9 @@ else if(roleType === 'PM'){
         <div>Total Tickets</div>
         <div>Total Open Tickets</div>
         <div>My Projects</div>
-        <div>Assigned Tickets</div>
-        <div>Open Tickets</div>
-        <div>Closed Projects</div>
+        <div>My Assigned Tickets</div>
+        <div>My Open Tickets</div>
+        <div>My Closed Projects</div>
         
         
     `;
@@ -544,91 +572,106 @@ else if(roleType === 'PM'){
 }
 else if(roleType === 'DEV'){
     statsHeader = `
-        <div>Assigned Tickets</div>
-        <div>Open Tickets</div>
+    <div>My Projects</div>
+        
+        
+        <div>My  Tickets</div>
+        <div>My Open Tickets</div>
+        <div>My Closed Tickets</div>
     `;
 
     statsValues = `
-       <div class="data-val" id="tit" onclick="openTickets('assigned')">${assignedTickets}</div>
-    
+    <div class="data-val" id="tit" onclick="openProjects('myprojects')">${pmProjectCount}</div>
+      
+    <div class="data-val" id="tit" onclick="openTickets('assigned')">${assignedTickets}</div>
     <div class="data-val" id="tit" onclick="openTickets('open')">${myOpenCount}</div>
+     <div class="data-val" id="tit" onclick="openTickets('closed')">${closedTicketCount}</div>
     `;
 }
 else{
      statsHeader = `
-        <div>Assigned Tickets</div>
-        <div>Open Tickets</div>
-        <div>Total Tickets</div>
+     
+        <div>My Tickets</div>
+        <div>My Open Tickets</div>
+        <div>My Closed Tickets</div>
     `;
 
     
     statsValues = `
+     
     <div class="data-val" id="tit" onclick="openTickets('assigned')">${assignedTickets}</div>
     <div class="data-val" id="tit" onclick="openTickets('open')">${myOpenCount}</div>
-    <div class="data-val"  id="tit" onclick="openTickets('total')">${totalTickets}</div>
+    <div class="data-val"  id="tit" onclick="openTickets('closed')">${closedTicketCount}</div>
 `;
 }
-var highPriorityCard = `
-<div style="display:flex; gap:15px; margin:10px;">
 
-    <div style="
-        width:320px;
-        background:#fff;
-        border-radius:10px;
-        box-shadow:0 4px 10px rgba(0,0,0,0.1);
-        overflow:hidden;
-    ">
 
-        <!-- HEADER (same as table header) -->
-        <div style="
-            background:#6f3ba2;
-            color:white;
-            padding:10px;
-            font-weight:bold;
-            font-size:14px;
-        ">
-             High Priority
-        </div>
 
-        <div style="padding:10px;">
+function getCurrentGoLiveProducts(empId, roleType){
 
-            <!-- COLUMN NAMES -->
-            <div style="
-                display:flex;
-                justify-content:space-between;
-                font-weight:bold;
-                border-bottom:2px solid #ddd;
-                padding-bottom:5px;
-                font-size:13px;
-            ">
-                <span>Ticket No</span>
-                <span>Deadline</span>
-            </div>
+    if(!empId) return [];
 
-            <!-- DATA -->
-            <div style="max-height:200px; overflow-y:auto;">
+    var data = [];
 
-                ${highPriorityTickets.map(t => `
-                    <div style="
-                        display:flex;
-                        justify-content:space-between;
-                        padding:6px 0;
-                        border-bottom:1px solid #eee;
-                        font-size:13px;
-                    ">
-                        <span>${t.number}</span>
-                        <span>${t.deadline || '-'}</span>
-                    </div>
-                `).join('')}
+    var filters = [
+        ['custrecord1513.custrecord_rw_portal_status','anyof','9']
+    ];
 
-            </div>
+    // PM → projects managed by PM
+    if(roleType === 'PM'){
 
-        </div>
+        filters.push(
+            'AND',
+            ['custrecord1513.custrecord_rw_portal_projectmanager','anyof', empId]
+        );
+    }
 
-    </div>
+    // DEV / OTHER → assigned tickets/projects
+    else{
 
-</div>
-`;
+        filters.push(
+            'AND',
+            ['custrecord1513.custrecord_rw_portal_projectmanager','anyof', empId]
+        );
+    }
+
+    var searchObj = search.create({
+        type: 'customrecord_rw_portal_access2',
+
+        filters: filters,
+
+        columns: [
+            'custrecord_rw_portal_rwproduct',
+
+            search.createColumn({
+                name: 'custrecord_rw_portal_customername',
+                join: 'custrecord1513'
+            })
+        ]
+    });
+
+    searchObj.run().each(function(result){
+
+        var product = result.getText(
+            'custrecord_rw_portal_rwproduct'
+        );
+
+        var project = result.getText({
+            name: 'custrecord_rw_portal_customername',
+            join: 'custrecord1513'
+        });
+
+        data.push({
+            product: product || '-',
+            project: project || '-'
+        });
+
+        return true;
+    });
+
+    return data;
+}
+var goLiveProductsForUser = getCurrentGoLiveProducts(empId, roleType);
 var avatarLetter = (empRole && empRole.length > 0) 
     ? empRole.charAt(0).toUpperCase() 
     : 'U';
@@ -637,6 +680,10 @@ var ticketMenu = '';
 
 if (roleType !== 'PMO') {
     ticketMenu = `<div class="menu" onclick="openTickets(); closeMenu()">Tickets</div>`;
+}
+var projectMenu = '';
+if(roleType !== 'OTHER'){
+    projectMenu = '<div class="menu" onclick="openProjects(); closeMenu()">Projects</div>';
 }
 function getCurrentMonthDates(){
     var today = new Date();
@@ -739,11 +786,13 @@ function getCustomersByDate(fieldId, type, statusId){
         var today = new Date();
 
         function formatDateForNS(date){
-            var d = date.getDate();
-            var m = date.getMonth() + 1;
-            var y = date.getFullYear();
-            return d + '/' + m + '/' + y;
-        }
+
+    var d = String(date.getDate()).padStart(2,'0');
+    var m = String(date.getMonth() + 1).padStart(2,'0');
+    var y = date.getFullYear();
+
+    return d + '/' + m + '/' + y;
+}
 
         var firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
         var lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
@@ -762,13 +811,32 @@ function getCustomersByDate(fieldId, type, statusId){
     [fieldId, 'isnotempty', '']
 ];
 
-        if(type === 'current'){
-            filters.push('AND', [fieldId, 'within', start, end]);
-        }
+      if(type === 'current'){
+
+    filters.push(
+        'AND',
+        [fieldId, 'onorafter', start],
+        'AND',
+        [fieldId, 'onorbefore', end]
+    );
+}
 
         if(type === 'upcoming'){
-            filters.push('AND', [fieldId, 'after', todayStr]);
-        }
+
+    // first day of next month
+    var nextMonthFirstDay = new Date(
+        today.getFullYear(),
+        today.getMonth() + 1,
+        1
+    );
+
+    var nextMonthStart = formatDateForNS(nextMonthFirstDay);
+
+    filters.push(
+        'AND',
+        [fieldId, 'onorafter', nextMonthStart]
+    );
+}
 
         var searchObj = search.create({
             type: 'customrecord_rw_portal_access',
@@ -810,27 +878,104 @@ function getCustomersByDate(fieldId, type, statusId){
 }
 // 🔹 Start Date Cards
 // UAT
-var uatCurrent = getCustomersByDate('custrecord_rw_portal_start_date','current','3');
-var uatUpcoming = getCustomersByDate('custrecord_rw_portal_end_date','upcoming','3');
+// UAT
+var uatCurrent = getCustomersByDate(
+    'custrecord_rw_portal_start_date',
+    'current',
+    '3'
+);
+
+var uatUpcoming = getCustomersByDate(
+    'custrecord_rw_portal_start_date',
+    'upcoming',
+    '3'
+);
 
 // GoLive
-var goliveCurrent = getCustomersByDate('custrecord_rw_portal_start_date','current','9');
-var goliveUpcoming = getCustomersByDate('custrecord_rw_portal_end_date','upcoming','9');
-// COC (status-based)
-var cocCurrent = getCustomersByDate('custrecord_rw_portal_end_date','current','10'); 
+var goliveCurrent = getCustomersByDate(
+    'custrecord_rw_portal_start_date',
+    'current',
+    '9'
+);
+
+var goliveUpcoming = getCustomersByDate(
+    'custrecord_rw_portal_start_date',
+    'upcoming',
+    '9'
+);
+
+// COC
+var cocCurrent = getCustomersByDate(
+    'custrecord_rw_portal_end_date',
+    'current',
+    '10'
+);
+
+
 var cocUpcoming = []; // optional if you have date field
 log.debug("UAT CURRENT DATA", uatCurrent);
 log.debug("GOLIVE CURRENT DATA", goliveCurrent);
 log.debug("COC CURRENT DATA", cocCurrent);
 
-function getOverdueTickets(){
+function getOverdueTickets(empId){
+
+    if(!empId) return [];
+
+    var tickets = [];
+
+    var ticketSearch = search.create({
+        type: 'customrecord_rw_ticket',
+
+        filters: [
+
+            // assigned to logged-in user
+            ['custrecord_rw_ticket_assignedto','anyof', empId],
+
+            'AND',
+
+            // not closed
+            ['custrecord_rw_ticket_ticketstatus','noneof','5'],
+
+            'AND',
+
+            // overdue
+            ['custrecord_rw_ticket_deadline','before','today']
+        ],
+
+        columns: [
+            'custrecord_rw_ticket_ticketno',
+            'custrecord_rw_ticket_deadline'
+        ]
+    });
+
+    ticketSearch.run().each(function(result){
+
+        tickets.push({
+
+            number:
+                result.getValue('custrecord_rw_ticket_ticketno'),
+
+            deadline:
+                result.getValue('custrecord_rw_ticket_deadline')
+        });
+
+        return true;
+    });
+
+    return tickets;
+}
+function getOverdueTickets(empId){
+
+    if(!empId) return [];
 
     var tickets = [];
 
     var ticketSearch = search.create({
         type: 'customrecord_rw_ticket',
         filters: [
-            ['custrecord_rw_ticket_overduedays','isnotempty',''] // ✅ only overdue
+            ['custrecord_rw_ticket_assignedto','anyof', empId],
+            'AND',
+            ['custrecord_rw_ticket_overduedays','isnotempty','']
         ],
         columns: [
             'custrecord_rw_ticket_ticketno',
@@ -850,6 +995,7 @@ function getOverdueTickets(){
 
     return tickets;
 }
+var overdueTicketsOfLoggedInUser = getOverdueTickets(empId);
 function buildCard(title, currentList, upcomingList){
 
     currentList = currentList || [];   // ✅ FIX
@@ -903,11 +1049,17 @@ var specialCards = `
 <div class="card-container">
 
     ${buildSingleCard('UAT - Current Month', uatCurrent)}
+
     ${buildSingleCard('UAT - Upcoming', uatUpcoming)}
 
     ${buildSingleCard('Go Live - Current Month', goliveCurrent)}
+
     ${buildSingleCard('Go Live - Upcoming', goliveUpcoming)}
+
     ${buildSingleCard('COC - Current Month', cocCurrent)}
+
+    
+
 </div>
 `;
 var chartCard = `
@@ -983,26 +1135,32 @@ var goLiveCard = `
 
             <!-- COLUMN NAME -->
             <div style="
+                display:flex;
+                justify-content:space-between;
                 font-weight:bold;
                 border-bottom:2px solid #ddd;
                 padding-bottom:5px;
                 font-size:13px;
             ">
-                Product Name
+                <span>Project Name</span>
+                <span>Product Name</span>
             </div>
 
             <!-- DATA -->
             <div style="max-height:200px; overflow-y:auto;">
 
                 ${goLiveProducts.map(p => `
-                    <div style="
-                        padding:6px 0;
-                        border-bottom:1px solid #eee;
-                        font-size:13px;
-                    ">
-                        ${p}
-                    </div>
-                `).join('')}
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        padding:6px 0;
+        border-bottom:1px solid #eee;
+        font-size:13px;
+    ">
+        <span>${p.project}</span>
+        <span>${p.product}</span>
+    </div>
+`).join('')}
 
             </div>
 
@@ -1012,7 +1170,69 @@ var goLiveCard = `
 
 </div>
 `;
-var overdueTickets =getOverdueTickets();
+var goLiveCardUser = `
+<div style="display:flex; gap:15px; margin:10px;">
+
+    <div style="
+        width:320px;
+        background:#fff;
+        border-radius:10px;
+        box-shadow:0 4px 10px rgba(0,0,0,0.1);
+        overflow:hidden;
+    ">
+
+        <!-- HEADER -->
+        <div style="
+            background:#6f3ba2;
+            color:white;
+            padding:10px;
+            font-weight:bold;
+            font-size:14px;
+        ">
+             Current Go-Lives(${goLiveProductsForUser.length})
+        </div>
+
+        <div style="padding:10px;">
+
+            <!-- COLUMN NAME -->
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                font-weight:bold;
+                border-bottom:2px solid #ddd;
+                padding-bottom:5px;
+                font-size:13px;
+            ">
+                <span>Project Name</span>
+                <span>Product Name</span>
+            </div>
+
+            <!-- DATA -->
+            <div style="max-height:200px; overflow-y:auto;">
+
+                ${goLiveProductsForUser.map(p => `
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        padding:6px 0;
+        border-bottom:1px solid #eee;
+        font-size:13px;
+    ">
+        <span>${p.project}</span>
+        <span>${p.product}</span>
+    </div>
+`).join('')}
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+`;
+var overdueTickets =getOverdueTickets(empId);
+
 var overdueCardInner = `
 <div style="display:flex; gap:15px; margin:10px;">
 <div style="
@@ -1049,6 +1269,469 @@ var overdueCardInner = `
 
         <div style="max-height:200px; overflow-y:auto;">
 
+            ${overdueTicketsOfLoggedInUser.map(t => `
+                <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    padding:6px 0;
+                    border-bottom:1px solid #eee;
+                    font-size:13px;
+                ">
+                    <span>${t.number}</span>
+                    <span style="color:red; font-weight:bold;">
+                        ${t.days}
+                    </span>
+                </div>
+            `).join('')}
+
+        </div>
+
+    </div>
+
+</div>
+</div>
+`;
+function getHighPriorityTicketListLoggedin(empId){
+
+    if(!empId) return [];
+
+    var tickets = [];
+
+    var ticketSearch = search.create({
+        type: 'customrecord_rw_ticket',
+
+        filters: [
+            ['custrecord_rw_ticket_assignedto','anyof', empId],
+            'AND',
+            ['custrecord_rw_ticket_priority','anyof','1']
+        ],
+
+        columns: [
+            'custrecord_rw_ticket_ticketno',
+            'custrecord_rw_ticket_deadline'
+        ]
+    });
+
+    ticketSearch.run().each(function(result){
+
+        tickets.push({
+
+            number: result.getValue(
+                'custrecord_rw_ticket_ticketno'
+            ),
+
+            deadline: result.getValue(
+                'custrecord_rw_ticket_deadline'
+            )
+        });
+
+        return true;
+    });
+
+    // ✅ SORT MANUALLY
+    tickets.sort(function(a, b){
+
+    function parseDate(str){
+
+        if(!str) return new Date(0);
+
+        var parts = str.split('/');
+
+        return new Date(
+            parts[2],      // year
+            parts[1]-1,    // month
+            parts[0]       // day
+        );
+    }
+
+    // ✅ SORT BY DEADLINE ASCENDING
+    return parseDate(a.deadline) - parseDate(b.deadline);
+
+});
+
+    log.debug("SORTED TICKETS", JSON.stringify(tickets));
+
+    return tickets;
+}
+var priorityTickets = getHighPriorityTicketListLoggedin(empId);
+var highPriorityCardOfLoggedInUser = `
+<div style="display:flex; gap:15px; margin:10px;">
+
+    <div style="
+        width:320px;
+        min-height:300px;
+        background:#fff;
+        border-radius:10px;
+        box-shadow:0 4px 10px rgba(0,0,0,0.1);
+        overflow:hidden;
+    ">
+
+        <!-- HEADER (same as table header) -->
+        <div style="
+            background:#6f3ba2;
+            color:white;
+            padding:10px;
+            font-weight:bold;
+            font-size:14px;
+        ">
+             High Priority (${priorityTickets.length})
+        </div>
+
+        <div style="padding:10px;">
+
+            <!-- COLUMN NAMES -->
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                font-weight:bold;
+                border-bottom:2px solid #ddd;
+                padding-bottom:5px;
+                font-size:13px;
+            ">
+                <span>Ticket No</span>
+                <span>Deadline</span>
+            </div>
+
+            <!-- DATA -->
+            <div style="max-height:none; overflow-y:auto;">
+
+                ${priorityTickets.map(t => `
+                    <div style="
+                        display:flex;
+                        justify-content:space-between;
+                        padding:6px 0;
+                        border-bottom:1px solid #eee;
+                        font-size:13px;
+                    ">
+                        <span>${t.number}</span>
+                        <span>${t.deadline || '-'}</span>
+                    </div>
+                `).join('')}
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+`;
+function getOverdueProjects(){
+
+    var projects = [];
+
+    var searchObj = search.create({
+        type: 'customrecord_rw_portal_access2',
+        filters: [
+            ['custrecord_rw_portal_updateddeadline','before','today']
+        ],
+        columns: [
+            'custrecord_rw_portal_rwproduct',
+            'custrecord_rw_portal_durationline',
+
+            search.createColumn({
+                name: 'custrecord_rw_portal_customername',
+                join: 'custrecord1513'
+            })
+        ]
+    });
+
+    searchObj.run().each(function(result){
+
+        var product = result.getText('custrecord_rw_portal_rwproduct');
+
+        var duration = result.getValue('custrecord_rw_portal_durationline');
+
+        // ✅ FETCH PROJECT NAME
+        var project = result.getText({
+            name: 'custrecord_rw_portal_customername',
+            join: 'custrecord1513'
+        });
+
+        projects.push({
+            project: project || '-',   // ✅ ADD THIS
+            product: product || '-',
+            duration: duration || 0
+        });
+
+        return true;
+    });
+
+    return projects;
+}
+var overdueProjects =getOverdueProjects();
+function getOverdueProjects(empId, roleType){
+
+    if(!empId) return [];
+
+    var projects = [];
+
+    var filters = [
+        ['custrecord_rw_portal_updateddeadline','before','today']
+    ];
+
+    // PM → only PM projects
+    if(roleType === 'PM'){
+
+        filters.push(
+            'AND',
+            ['custrecord1513.custrecord_rw_portal_projectmanager','anyof', empId]
+        );
+    }
+
+    // DEV / OTHER → only assigned resources
+    else{
+
+        filters.push(
+            'AND',
+             ['custrecord1513.custrecord_rw_portal_projectmanager','anyof', empId]
+        );
+    }
+
+    var searchObj = search.create({
+
+        type: 'customrecord_rw_portal_access2',
+
+        filters: filters,
+
+        columns: [
+
+            'custrecord_rw_portal_rwproduct',
+
+            'custrecord_rw_portal_durationline',
+
+            search.createColumn({
+                name: 'custrecord_rw_portal_customername',
+                join: 'custrecord1513'
+            })
+        ]
+    });
+
+    searchObj.run().each(function(result){
+
+        var product = result.getText(
+            'custrecord_rw_portal_rwproduct'
+        );
+
+        var duration = result.getValue(
+            'custrecord_rw_portal_durationline'
+        );
+
+        var project = result.getText({
+            name: 'custrecord_rw_portal_customername',
+            join: 'custrecord1513'
+        });
+
+        projects.push({
+            project: project || '-',
+            product: product || '-',
+            duration: duration || 0
+        });
+
+        return true;
+    });
+
+    return projects;
+}
+var overdueProjectsUsers = getOverdueProjects(empId, roleType);
+var overdueProjectCardInner = `
+<div style="display:flex;gap:15px;margin:10px;">
+<div style="
+    width:320px;
+    background:#fff;
+    border-radius:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    overflow:hidden;
+">
+
+    <!-- HEADER -->
+    <div style="
+        background:#6f3ba2;
+        color:white;
+        padding:10px;
+        font-weight:bold;
+        font-size:14px;
+    ">
+         Overdue Products
+    </div>
+
+    <div style="padding:10px;">
+
+        <!-- COLUMN -->
+        <div style="
+            display:flex;
+            justify-content:space-between;
+            font-weight:bold;
+            border-bottom:2px solid #ddd;
+            padding-bottom:5px;
+            font-size:13px;
+        ">
+        <span>Project</span>
+            <span>Product</span>
+            <span>Duration</span>
+        </div>
+
+        <!-- DATA -->
+        <div style="max-height:200px; overflow-y:auto;">
+
+            ${overdueProjects.map(p => `
+                <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    padding:6px 0;
+                    border-bottom:1px solid #eee;
+                    font-size:13px;
+                ">
+                <span>${p.project || '-'}</span>
+                    <span>${p.product}</span>
+                    
+                    <span style="color:red; font-weight:bold;">
+                        ${p.duration ? p.duration + 'days' : '-'}
+                    </span>
+                </div>
+            `).join('')}
+
+        </div>
+
+    </div>
+
+</div>
+</div>
+`;
+var overdueProjectCardInneruser = `
+<div style="display:flex;gap:15px;margin:10px;">
+<div style="
+    width:320px;
+    background:#fff;
+    border-radius:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    overflow:hidden;
+">
+
+    <!-- HEADER -->
+    <div style="
+        background:#6f3ba2;
+        color:white;
+        padding:10px;
+        font-weight:bold;
+        font-size:14px;
+    ">
+         Overdue Products(${overdueProjectsUsers.length})
+    </div>
+
+    <div style="padding:10px;">
+
+        <!-- COLUMN -->
+        <div style="
+            display:flex;
+            justify-content:space-between;
+            font-weight:bold;
+            border-bottom:2px solid #ddd;
+            padding-bottom:5px;
+            font-size:13px;
+        ">
+        <span>Project</span>
+            <span>Product</span>
+            <span>Duration</span>
+        </div>
+
+        <!-- DATA -->
+        <div style="max-height:200px; overflow-y:auto;">
+
+            ${overdueProjectsUsers.map(p => `
+                <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    padding:6px 0;
+                    border-bottom:1px solid #eee;
+                    font-size:13px;
+                ">
+                <span>${p.project || '-'}</span>
+                    <span>${p.product}</span>
+                    
+                    <span style="color:red; font-weight:bold;">
+                        ${p.duration ? p.duration + 'days' : '-'}
+                    </span>
+                </div>
+            `).join('')}
+
+        </div>
+
+    </div>
+
+</div>
+</div>
+`;
+var donutCard = `
+<div style="
+    margin:20px;
+    padding:15px;
+    background:#fff;
+    border-radius:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    
+">
+
+    <div style="font-weight:bold; margin-bottom:10px; color:#6f3ba2;">
+         Overview
+    </div>
+
+    <canvas id="donutChart" style="height:200px;"></canvas>
+
+</div>
+`;
+var donutTicket =`
+<div style="
+    margin:20px;
+    padding:15px;
+    background:#fff;
+    border-radius:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+">
+    <div style="font-weight:bold; margin-bottom:10px; color:#6f3ba2;">
+        My Ticket Distribution
+    </div>
+
+    <canvas id="myTicketDonut" style="height:200px;"></canvas>
+</div>
+`
+var overdueCardInner = `
+<div style="display:flex; gap:15px; margin:10px;">
+<div style="
+    width:320px;
+    min-height:300px;
+    background:#fff;
+    border-radius:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    overflow:hidden;
+">
+
+    <div style="
+        background:#6f3ba2;
+        color:white;
+        padding:10px;
+        font-weight:bold;
+        font-size:14px;
+    ">
+         Overdue Tickets(${overdueTicketsOfLoggedInUser.length})
+    </div>
+
+    <div style="padding:10px;">
+
+        <div style="
+            display:flex;
+            justify-content:space-between;
+            font-weight:bold;
+            border-bottom:2px solid #ddd;
+            padding-bottom:5px;
+            font-size:13px;
+        ">
+            <span>Ticket No</span>
+            <span>Days</span>
+        </div>
+
+        <div style="max-height:none; overflow-y:auto;">
+
             ${overdueTickets.map(t => `
                 <div style="
                     display:flex;
@@ -1071,102 +1754,71 @@ var overdueCardInner = `
 </div>
 </div>
 `;
-function getOverdueProjects(){
 
-    var projects = [];
+var highPriorityCard = `
+<div style="display:flex; gap:15px; margin:10px;">
 
-    var today = new Date();
-
-    var searchObj = search.create({
-        type: 'customrecord_rw_portal_access2',
-        filters: [
-            ['custrecord_rw_portal_updateddeadline','before','today'] // ✅ overdue
-        ],
-        columns: [
-            'custrecord_rw_portal_rwproduct',
-            'custrecord_rw_portal_durationline'
-        ]
-    });
-
-    searchObj.run().each(function(result){
-
-        var product = result.getText('custrecord_rw_portal_rwproduct');
-        var duration = result.getValue('custrecord_rw_portal_durationline');
-
-        if(product){
-            projects.push({
-                product: product,
-                duration: duration || 0
-            });
-        }
-
-        return true;
-    });
-
-    return projects;
-}
-var overdueProjects =getOverdueProjects();
-var overdueProjectCardInner = `
-<div style="display:flex;gap:15px;margin:10px;">
-<div style="
-    width:320px;
-    background:#fff;
-    border-radius:10px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.1);
-    overflow:hidden;
-">
-
-    <!-- HEADER -->
     <div style="
-        background:#6f3ba2;
-        color:white;
-        padding:10px;
-        font-weight:bold;
-        font-size:14px;
+        width:320px;
+        
+        background:#fff;
+        border-radius:10px;
+        box-shadow:0 4px 10px rgba(0,0,0,0.1);
+        overflow:hidden;
     ">
-         Overdue Projects
-    </div>
 
-    <div style="padding:10px;">
-
-        <!-- COLUMN -->
+        <!-- HEADER (same as table header) -->
         <div style="
-            display:flex;
-            justify-content:space-between;
+            background:#6f3ba2;
+            color:white;
+            padding:10px;
             font-weight:bold;
-            border-bottom:2px solid #ddd;
-            padding-bottom:5px;
-            font-size:13px;
+            font-size:14px;
         ">
-            <span>Product</span>
-            <span>Duration</span>
+             High Priority
         </div>
 
-        <!-- DATA -->
-        <div style="max-height:200px; overflow-y:auto;">
+        <div style="padding:10px;">
 
-            ${overdueProjects.map(p => `
-                <div style="
-                    display:flex;
-                    justify-content:space-between;
-                    padding:6px 0;
-                    border-bottom:1px solid #eee;
-                    font-size:13px;
-                ">
-                    <span>${p.product}</span>
-                    <span style="color:red; font-weight:bold;">
-                        ${p.duration ? p.duration + 'days' : '-'}
-                    </span>
-                </div>
-            `).join('')}
+            <!-- COLUMN NAMES -->
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                font-weight:bold;
+                border-bottom:2px solid #ddd;
+                padding-bottom:5px;
+                font-size:13px;
+            ">
+                <span>Ticket No</span>
+                <span>Deadline</span>
+            </div>
+
+            <!-- DATA -->
+            <div style="max-height:400px; overflow-y:auto;">
+
+                ${highPriorityTickets.map(t => `
+                    <div style="
+                        display:flex;
+                        justify-content:space-between;
+                        padding:6px 0;
+                        border-bottom:1px solid #eee;
+                        font-size:13px;
+                    ">
+                        <span>${t.number}</span>
+                        <span>${t.deadline || '-'}</span>
+                    </div>
+                `).join('')}
+
+            </div>
 
         </div>
 
     </div>
 
-</div>
 </div>
 `;
+
+
 let html = `
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
@@ -1689,7 +2341,8 @@ font-weight:bold;
 <div class="sidebar" id="sidebar" onmouseleave="closeMenu()">
 
 <div class="menu" onclick="openHome()">Home</div>
-<div class="menu" onclick="openProjects(); closeMenu()">Projects</div>
+
+${projectMenu}
 ${ticketMenu}
 
 
@@ -1730,18 +2383,56 @@ ${ticketMenu}
     </div>
 
 </div>
-${roleType === 'PMO' ? specialCards : ''}
+
+${roleType === 'PMO' ? `
+    ${specialCards}
+
+    <div style="margin:10px;">
+        ${chartHtml}
+    </div>
+
+    <div style="margin:10px;">
+        ${pieChartCard}
+    </div>
+` : ''}
 ${roleType === 'PM' ? `
 <div style="display:flex; gap:20px; margin:10px;">
-    ${highPriorityCard}
-    ${goLiveCard}
-    ${overdueProjectCardInner}
-     ${overdueCardInner}
+    ${highPriorityCardOfLoggedInUser}
+    ${goLiveCardUser}
+    ${overdueProjectCardInneruser}
+    ${overdueCardInner}
+</div>
+
+<div style="margin:10px;">
+    ${pieChartCard}
 </div>
 ` : ''}
+${roleType === 'DEV' ? `
+<div style="display:flex; gap:100px; margin:10px;margin-left:40px;">
+    ${highPriorityCardOfLoggedInUser}
+    ${overdueCardInner}
+    ${donutCard}
+   
 </div>
-${chartHtml}
-${(roleType === 'PM') ? pieChartCard : ''}
+  ${pieChartCard}
+` : ''}
+${roleType === 'OTHER' ? `
+<div style="display:flex; gap:100px; margin:10px;margin-left:40px;">
+    ${highPriorityCardOfLoggedInUser}
+    ${overdueCardInner}
+    ${donutTicket}
+   
+</div>
+  ${pieChartCard}
+` : ''}
+</div>
+
+
+</div>
+
+
+
+
 </div>
 
 </div>
@@ -1782,36 +2473,59 @@ console.log("Stored EmpId:", localStorage.getItem("empId"));
     window.location.href = "https://2771600.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=2872&deploy=1&compid=2771600&ns-at=AAEJ7tMQLCBxkbOlhRyShbsZSNh6QPuKL2rt00NN091SJ6hEFho";
 }
 var viewProjectUrl = '${viewProjectUrl}';
+var ticketUrl = '${ticketUrl}';
 
-new Chart(document.getElementById('projectPie'), {
-    type: 'pie',
-    data: {
-        labels: ['Total Projects', 'Open Projects', 'In Progress Projects', 'Closed Projects'],
-        datasets: [{
-            data: [${projectCount}, ${openProjects}, ${inProgressCount}, ${closedProjects}],
-        }]
-    }
-});
 
-new Chart(document.getElementById('ticketPie'), {
-    type: 'pie',
-    data: {
-        labels: ['Total Tickets', 'Open Tickets', 'Closed Tickets'],
-        datasets: [{
-            data: [${totalTickets}, ${openTicketCount}, ${totalTickets - openTicketCount}],
-        }]
-    }
-});
 
-new Chart(document.getElementById('myPie'), {
-    type: 'pie',
-    data: {
-        labels: ['My Projects', 'Assigned Tickets', 'My Open Tickets'],
-        datasets: [{
-            data: [${pmProjectCount}, ${assignedTickets}, ${myOpenCount}],
-        }]
-    }
-});
+
+function renderMyTicketDonut(){
+
+    var ctx = document.getElementById('myTicketDonut');
+
+    if (!ctx) return;
+
+    var chartCtx = ctx.getContext('2d');
+
+    new Chart(chartCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [
+                'My Tickets',
+                'My Open Tickets',
+                'My Closed Tickets'
+            ],
+            datasets: [{
+                data: [
+                    ${assignedTickets},
+                    ${myOpenCount},
+                    ${closedTicketCount}
+                ],
+                backgroundColor: [
+                    '#6f3ba2',   // purple
+                    '#ff9800',   // orange
+                    '#28a745'    // green
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '60%',   // donut thickness
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ": " + context.raw;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+    
 
 function openProjectView(projectId){
 
@@ -1844,8 +2558,8 @@ function setPageTitle(title){
     document.title = title + " | Reachware";
 }
 var projectUrl = '${projectUrl}';
-var ticketUrl ='${ticketUrl}';
 var taskUrl ='${taskUrl}';
+var ticketUrl = '${ticketUrl}';
 function openProjects(){
 setPageTitle("Projects");
 document.getElementById("headerTitle").innerText = "Reachware Project Management Portal";
@@ -1894,6 +2608,28 @@ function toggleChartVisibility(){
 
 // run on page load
 document.addEventListener("DOMContentLoaded", toggleChartVisibility);
+
+function toggleDashboardVisibility(){
+
+    var home = document.getElementById("homeContent");
+
+    var chart = document.getElementById("chartCard");
+    var pie = document.getElementById("pieChartCard");
+
+    if(!home) return;
+
+    var isHomeVisible = home.style.display !== "none";
+
+    // BAR CHART (PMO only)
+    if(chart){
+        chart.style.display = (isHomeVisible && "${roleType}" === "PMO") ? "block" : "none";
+    }
+
+    // PIE CHART (PM / DEV / OTHER)
+    if(pie){
+        pie.style.display = isHomeVisible ? "block" : "none";
+    }
+}
 function openProjects(type){
 
     setPageTitle("Projects");
@@ -1958,22 +2694,193 @@ document.getElementById("projectContent").style.display = "block";
 // document.getElementById("mainFrame").src = ticketUrl  ;
 // document.getElementById("projectContent").style.display = "block";
 // }
+// function openTickets(type){
+
+//     setPageTitle("Tickets");
+//     document.getElementById("headerTitle").innerText = "Reachware Ticketing APP - ISSUE";
+
+//     document.getElementById("homeContent").style.display = "none";
+//     document.getElementById("loader").style.display = "block";
+
+//     var frame = document.getElementById("mainFrame");
+
+//     if (!ticketUrl) {
+//         console.error("ticketUrl is undefined");
+//         return;
+//     }
+
+//     // 🔥 ALWAYS start fresh
+//     var url = ticketUrl;
+
+   
+
+//     let title = "Tickets";
+
+//     if(type === "assigned") title = "Assigned Tickets";
+//     else if(type === "open") title = "Open Tickets";
+//     else if(type === "allopen") title = "All Open Tickets";
+//     else if(type === "total") title = "Total Tickets";
+// else if(type === "closed") title = "Closed Tickets";
+//     if(type){
+//              url += "&filter=" + type;
+             
+// url += "&from=home";  
+//         url += "&title=" + encodeURIComponent(title);  
+//         //url += "&empid=" + localStorage.getItem("empId"); 
+//     }
+
+//     console.log("FINAL URL:", url);
+
+//     frame.src = "";          // reset first
+//     frame.style.display = "none";
+
+//     frame.src = url;         // set once
+
+//     document.getElementById("projectContent").style.display = "block";
+//     toggleChartVisibility();
+//     togglePieVisibility();
+// }
+function renderPieCharts(){
+
+    var pieData = {
+        project: [${projectCount}, ${openProjects}, ${inProgressCount}, ${closedProjects}],
+        ticket: [${totalTickets}, ${openTicketCount}, ${totalTickets - openTicketCount}],
+        my: [${pmProjectCount}, ${assignedTickets}, ${myOpenCount}]
+    };
+
+    // PROJECT PIE
+    var p = document.getElementById('projectPie');
+    if(p){
+        new Chart(p.getContext('2d'), {
+            type: 'pie',
+            data: {
+                labels: ['Total', 'Open', 'In Progress', 'Closed'],
+                datasets: [{ data: pieData.project }]
+            }
+        });
+    }
+
+    // TICKET PIE
+    var t = document.getElementById('ticketPie');
+    if(t){
+        new Chart(t.getContext('2d'), {
+            type: 'pie',
+            data: {
+                labels: ['Total', 'Open', 'Closed'],
+                datasets: [{ data: pieData.ticket }]
+            }
+        });
+    }
+
+    // MY PIE
+    var m = document.getElementById('myPie');
+    // MY PIE
+var m = document.getElementById('myPie');
+
+if(m){
+
+    new Chart(m.getContext('2d'), {
+
+        type: 'doughnut',
+
+        data: {
+
+            labels: [
+                'My Projects',
+                'My Tickets',
+                'Open Tickets',
+                'Closed Tickets'
+            ],
+
+            datasets: [{
+
+                data: [
+                    ${pmProjectCount},
+                    ${assignedTickets},
+                    ${myOpenCount},
+                    ${closedTicketCount}
+                ]
+            }]
+        },
+
+        options:{
+            responsive:true,
+            cutout:'60%'
+        }
+    });
+}
+}
+    function renderDonutCharts(){
+
+    var donutData = {
+        overview: [
+            ${assignedTickets},
+            ${myOpenCount},
+            ${closedTicketCount},
+            
+            ${pmProjectCount}
+        ],
+        myTickets: [
+            ${assignedTickets},
+            ${myOpenCount},
+            ${closedTicketCount},
+            
+        ]
+    };
+
+    // MAIN DONUT
+    var d = document.getElementById('donutChart');
+    if(d){
+        new Chart(d.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['My Assigned tickets','My Open tickets','My Closed tickets',' My Projects'],
+                datasets: [{ data: donutData.overview }]
+            }
+        });
+    }
+
+    // MY DONUT
+    var md = document.getElementById('myTicketDonut');
+    if(md){
+        new Chart(md.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['My Tickets','My Open Tickets','My Closed Tickets'],
+                datasets: [{ data: donutData.myTickets }]
+            }
+        });
+    }
+
+}
+  document.addEventListener("DOMContentLoaded", function(){
+
+    renderAllCharts();
+
+});
+
+function renderAllCharts(){
+
+    renderPieCharts();
+    renderDonutCharts();
+
+}  
 function openTickets(type){
 
     setPageTitle("Tickets");
-    document.getElementById("headerTitle").innerText = "Reachware Ticketing APP - ISSUE";
-
+document.getElementById("headerTitle").innerText = "Reachware Project Management Portal";
     document.getElementById("homeContent").style.display = "none";
     document.getElementById("loader").style.display = "block";
-let title = "Tickets";
 
+     let title = "Tickets";
+
+    
     if(type === "assigned") title = "Assigned Tickets";
     else if(type === "open") title = "Open Tickets";
     else if(type === "allopen") title = "All Open Tickets";
     else if(type === "total") title = "Total Tickets";
-
+else if(type === "closed") title = "Closed Tickets";
     let url = ticketUrl;
-    
 var frame = document.getElementById("mainFrame");
 
 
@@ -1983,17 +2890,19 @@ frame.src = "";
 
 frame.src = url;
     if(type){
-       url += "&filter=" + type;
-        url += "&title=" + encodeURIComponent(title);
-url += "&empid=" + localStorage.getItem("empId");   
+        
+        url += "&filter=" + type;
+url += "&from=home";   // ✅ ADD THIS
+        url += "&title=" + encodeURIComponent(title);  
+       
     }
 
     document.getElementById("mainFrame").src = url;
+
     document.getElementById("projectContent").style.display = "block";
     toggleChartVisibility();
     togglePieVisibility();
 }
-    
 // function hideLoader(){
 //     document.getElementById("loader").style.display = "none";
 //      document.getElementById("mainFrame").style.display = "block";
@@ -2106,7 +3015,7 @@ var chartData = {
 };
 var ctx = document.getElementById('statusChart').getContext('2d');
 
-new Chart(ctx, {
+var statusChart = new Chart(ctx, {
     type: 'bar',
     data: {
         labels: chartData.labels,
@@ -2119,11 +3028,57 @@ new Chart(ctx, {
     options: {
         responsive: true,
         maintainAspectRatio: false,
+
+        onClick: function(evt, elements){
+
+            if(elements.length > 0){
+
+                var index = elements[0].index;
+                var label = chartData.labels[index];
+
+                // 🔥 redirect based on clicked bar
+                if(label === "Total Projects"){
+                    openProjects('total');
+                }
+                else if(label === "Open Projects"){
+                    openProjects('open');
+                }
+                else if(label === "In Progress"){
+                    openProjects('inprogress');
+                }
+                else if(label === "Kickoff"){
+                    openProjects('kickof');
+                }
+                else if(label === "Business"){
+                    openProjects('bussinessrequirement');
+                }
+                else if(label === "Training"){
+                    openProjects('training');
+                }
+                else if(label === "UAT"){
+                    openProjects('uat');
+                }
+                else if(label === "Go Live"){
+                    openProjects('golive');
+                }
+                else if(label === "COC"){
+                    openProjects('coc');
+                }
+                else if(label === "Support"){
+                    openProjects('support');
+                }
+                else if(label === "Closed"){
+                    openProjects('close');
+                }
+            }
+        },
+
         plugins: {
             legend: {
                 display: true
             }
         },
+
         scales: {
             y: {
                 beginAtZero: true

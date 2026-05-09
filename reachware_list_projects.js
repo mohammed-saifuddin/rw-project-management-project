@@ -21,7 +21,22 @@ var statSearch = search.create({
     type: 'customlist_rw_portal_access_pjstlist',
     columns: ['internalid','name']
 });
+var erpOptions = '<option value="">--Select--</option>';
 
+var erpSearch = search.create({
+    type: 'customlist_rw_portal_erplist',
+    columns: ['internalid', 'name']
+});
+
+erpSearch.run().each(function(res){
+
+    erpOptions +=
+        '<option value="' + res.getValue('internalid') + '">' +
+        res.getValue('name') +
+        '</option>';
+
+    return true;
+});
 var empId = context.request.parameters.empid;
 var email = context.request.parameters.email;
 var from = context.request.parameters.from || '';
@@ -123,6 +138,15 @@ scriptId: 'customscript2872',
 deploymentId: 'customdeploy1',
 returnExternalUrl: true,
 
+});
+const projectUrl = url.resolveScript({
+scriptId: 'customscript2876',
+deploymentId: 'customdeploy5',
+returnExternalUrl: true,
+params: {
+        empid: empId,
+        email: email
+    }
 });
 var html = form.addField({
     id: 'custpage_html',
@@ -840,11 +864,7 @@ ${empOptions}
 
 <label class="required">ERP</label>
 <select name="erp" required>
-<option value="">--Select--</option>
-<option value="1">Netsuite</option>
-<option value="2">Odoo</option>
-<option value="3">Microsoft dynamics 365</option>
-<option value="4">SAP</option>
+${erpOptions}
 </select>
 
 <label class="required">Direct Project</label>
@@ -1042,7 +1062,7 @@ document.querySelector(".dialog-text").innerText = data.name + " added successfu
                 // ✅ REDIRECT TO SAME SUITELET (refresh page)
                 window.location.href = window.location.href;
 
-            }, 500);
+            }, 400);
 
         } else {
 
@@ -1137,9 +1157,10 @@ function showDialog() {
     document.getElementById("loader").style.display = "none";
     document.getElementById("dialog").style.display = "flex";
 }
-
 function redirectPage() {
-    window.location.href = window.redirectUrl;
+    
+    window.location.replace(window.redirectUrl);
+    
 }
 document.addEventListener("DOMContentLoaded", function(){
 
@@ -1546,6 +1567,89 @@ rec1.setValue({
     fieldId: 'custrecord_rw_portal_durationline',  // your duration field
     value: lineDuration
 });
+// =====================================
+// SAVE CUSTOMER RELATIONSHIP RECORD
+// =====================================
+
+try {
+
+    log.debug('CUSTOMER ID', customername);
+    log.debug('ERP', erp);
+    log.debug('PRODUCT', item.rwproduct);
+
+    var mapRec = record.create({
+        type: 'customrecord_rw_crm_support_hierarhy_map',
+        isDynamic: true
+    });
+
+    
+mapRec.setValue({
+        fieldId: 'custrecord_rw_crm_support_hier_parent',
+        value: parseInt(customername)
+    });
+    // ERP
+    if(erp){
+        mapRec.setValue({
+            fieldId: 'custrecord_rw_crm_support_hier_category',
+            value: parseInt(erp)
+        });
+    }
+
+    // PRODUCT
+    mapRec.setValue({
+        fieldId: 'custrecord_rw_support_producr',
+        value: parseInt(item.rwproduct)
+    });
+
+    // PM
+    if(item.rwpm){
+        mapRec.setValue({
+            fieldId: 'custrecord_rw_crm_support_hier_manager',
+            value: parseInt(item.rwpm)
+        });
+    }
+
+    // FUNCTIONAL
+    if(item.functional){
+        mapRec.setValue({
+            fieldId: 'custrecord_rw_crm_support_hier_prim_rep',
+            value: parseInt(item.functional)
+        });
+    }
+
+    // TECHNICAL
+    if(item.technical && item.technical !== ''){
+
+    try {
+
+        mapRec.setValue({
+            fieldId: 'custrecord_rw_crm_support_hier_secnd_rep',
+            value: parseInt(item.technical)
+        });
+
+    } catch(e){
+
+        log.error('INVALID TECHNICAL CONSULTANT', item.technical);
+    }
+}
+
+    // ENABLE SUPPORT
+    mapRec.setValue({
+        fieldId: 'custrecord_rw_crm_support_enable_upport',
+        value: true
+    });
+
+    var mapId = mapRec.save({
+        enableSourcing: true,
+        ignoreMandatoryFields: true
+    });
+
+    log.debug('MAPPING SAVED', mapId);
+
+} catch(e){
+
+    log.error('MAPPING ERROR', e);
+}
     rec1.save();
 }
 

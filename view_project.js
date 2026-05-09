@@ -316,24 +316,41 @@ eddate=projectRec.getValue('custrecord_rw_portal_end_date');
 updatedenddate=projectRec.getValue('custrecord_rw_portal_updatedenddate');
 pmoComments=projectRec.getValue('custrecord_rw_portal_pmocommnts')
   
-        var isProjectManager = (empId === projectManagerId);
+        // var isProjectManager = (empId === projectManagerId);
+        var canEdit = (roleType === 'PM' || roleType === 'PMO');
         log.debug("user id is",userId);
         log.debug("emp id is ",empId)
-        log.debug("project manger id is",projectManagerId)
-        log.debug(isProjectManager);
-        log.debug('pm is',projectManager)
+        //log.debug("project manger id is",projectManagerId)
+        log.debug(canEdit);
+        //log.debug('pm is',projectManager)
         log.debug("ROLE", runtime.getCurrentUser().role);
 log.debug("USER", runtime.getCurrentUser().id);
     if (performa) {
+
     try {
+
         var fileObj = file.load({
             id: performa
         });
 
         fileUrl = fileObj.url;
+
+        // force full domain
+        if(fileUrl.indexOf('http') !== 0){
+
+            fileUrl =
+                'https://' +
+                runtime.accountId.replace('_','-') +
+                '.app.netsuite.com' +
+                fileUrl;
+        }
+
         fileName = fileObj.name;
 
+        log.debug('FINAL FILE URL', fileUrl);
+
     } catch (e) {
+
         log.error("File Load Error", e);
     }
 }
@@ -813,7 +830,11 @@ else {
         <div class="value">${customer}</div>
         <div class="label">Performa Invoice</div>
         <div class="value">
-    ${fileUrl ? `<a href="${fileUrl}" target="_blank">${fileName}</a>` : 'No Attachment'}
+    ${fileUrl ? `<a href="javascript:void(0)"
+   onclick="window.open('${fileUrl}','_blank','noopener=yes,noreferrer=yes')">
+   ${fileName}
+</a>` : 'No Attachment'}
+    
 </div>
         <div class="label">Status</div>
 <div class="value">
@@ -857,8 +878,10 @@ else {
     </tbody>
 </table>
     <button class="backBtn" type="button" onclick="goBack()">⬅ Back</button>
-    ${isProjectManager ? `
-<button id="editBtn" type="button" >✏ Edit</button>
+  
+
+${canEdit ? `
+<button id="editBtn" type="button">✏ Edit</button>
 <button id="saveBtn" onclick="saveData()" style="display:none;" type="button">💾 Save</button>
 ` : ''}
 </div>
@@ -876,16 +899,43 @@ else {
     
    document.title="project details";
     var projectUrl = '${projectUrl}';
-     function goBack(){
+//      function goBack(){
+
+//     var loader = document.getElementById("loader");
+//     loader.style.display = "block";   // ✅ show loader
+
+//     setTimeout(function(){
+//         //window.parent.location.href = projectUrl;
+//         window.parent.openProjects();
+//     }, 300); // small delay for smooth UX
+// }
+    function goBack(){
 
     var loader = document.getElementById("loader");
-    loader.style.display = "block";   // ✅ show loader
 
-    setTimeout(function(){
+    if(loader){
+        loader.style.display = "block";
+    }
+
+    try{
+
+        // hide details iframe
+        window.parent.document.getElementById("projectContent").style.display = "none";
+
+        // show project list page
+        window.parent.document.getElementById("homeContent").style.display = "none";
+
+        // reopen projects page
+        window.parent.openProjects();
+
+    }catch(e){
+
+        console.log("Back Error", e);
+
+        // fallback
         window.parent.location.href = projectUrl;
-    }, 300); // small delay for smooth UX
+    }
 }
-    
     function formatDate(dateStr){
     if(!dateStr) return '';
     var d = new Date(dateStr);
