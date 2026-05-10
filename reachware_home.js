@@ -923,40 +923,67 @@ function getOverdueTickets(empId){
 
     var tickets = [];
 
+    var today = new Date();
+
     var ticketSearch = search.create({
+
         type: 'customrecord_rw_ticket',
 
         filters: [
 
-            // assigned to logged-in user
             ['custrecord_rw_ticket_assignedto','anyof', empId],
 
             'AND',
 
-            // not closed
-            ['custrecord_rw_ticket_ticketstatus','noneof','5'],
+            ['custrecord_rw_ticket_deadline','before','today'],
 
             'AND',
 
-            // overdue
-            ['custrecord_rw_ticket_deadline','before','today']
+            ['custrecord_rw_ticket_ticketstatus','noneof','5']
         ],
 
         columns: [
+
             'custrecord_rw_ticket_ticketno',
+
             'custrecord_rw_ticket_deadline'
         ]
     });
 
     ticketSearch.run().each(function(result){
 
+        var deadline = result.getValue(
+            'custrecord_rw_ticket_deadline'
+        );
+
+        var overdueDays = 0;
+
+        if(deadline){
+
+            var parts = deadline.split('/');
+
+            var deadlineDate = new Date(
+                parts[2],       // year
+                parts[1]-1,     // month
+                parts[0]        // day
+            );
+
+            var diffTime = today - deadlineDate;
+
+            overdueDays = Math.floor(
+                diffTime / (1000 * 60 * 60 * 24)
+            );
+        }
+
         tickets.push({
 
-            number:
-                result.getValue('custrecord_rw_ticket_ticketno'),
+            number: result.getValue(
+                'custrecord_rw_ticket_ticketno'
+            ),
 
-            deadline:
-                result.getValue('custrecord_rw_ticket_deadline')
+            deadline: deadline,
+
+            days: overdueDays
         });
 
         return true;
@@ -964,37 +991,37 @@ function getOverdueTickets(empId){
 
     return tickets;
 }
-function getOverdueTickets(empId){
+// function getOverdueTickets(empId){
 
-    if(!empId) return [];
+//     if(!empId) return [];
 
-    var tickets = [];
+//     var tickets = [];
 
-    var ticketSearch = search.create({
-        type: 'customrecord_rw_ticket',
-        filters: [
-            ['custrecord_rw_ticket_assignedto','anyof', empId],
-            'AND',
-            ['custrecord_rw_ticket_overduedays','isnotempty','']
-        ],
-        columns: [
-            'custrecord_rw_ticket_ticketno',
-            'custrecord_rw_ticket_overduedays'
-        ]
-    });
+//     var ticketSearch = search.create({
+//         type: 'customrecord_rw_ticket',
+//         filters: [
+//             ['custrecord_rw_ticket_assignedto','anyof', empId],
+//             'AND',
+//             ['custrecord_rw_ticket_overduedays','isnotempty','']
+//         ],
+//         columns: [
+//             'custrecord_rw_ticket_ticketno',
+//             'custrecord_rw_ticket_overduedays'
+//         ]
+//     });
 
-    ticketSearch.run().each(function(result){
+//     ticketSearch.run().each(function(result){
 
-        tickets.push({
-            number: result.getValue('custrecord_rw_ticket_ticketno'),
-            days: result.getValue('custrecord_rw_ticket_overduedays')
-        });
+//         tickets.push({
+//             number: result.getValue('custrecord_rw_ticket_ticketno'),
+//             days: result.getValue('custrecord_rw_ticket_overduedays')
+//         });
 
-        return true;
-    });
+//         return true;
+//     });
 
-    return tickets;
-}
+//     return tickets;
+// }
 var overdueTicketsOfLoggedInUser = getOverdueTickets(empId);
 function buildCard(title, currentList, upcomingList){
 
@@ -1279,7 +1306,7 @@ var overdueCardInner = `
                 ">
                     <span>${t.number}</span>
                     <span style="color:red; font-weight:bold;">
-                        ${t.days}
+                        ${t.days + ' days'} 
                     </span>
                 </div>
             `).join('')}
@@ -1650,7 +1677,7 @@ var overdueProjectCardInneruser = `
                     <span>${p.product}</span>
                     
                     <span style="color:red; font-weight:bold;">
-                        ${p.duration ? p.duration + 'days' : '-'}
+                        ${p.duration ? p.duration + ' days' : '-'}
                     </span>
                 </div>
             `).join('')}
@@ -1732,7 +1759,7 @@ var overdueCardInner = `
 
         <div style="max-height:none; overflow-y:auto;">
 
-            ${overdueTickets.map(t => `
+            ${overdueTicketsOfLoggedInUser.map(t => `
                 <div style="
                     display:flex;
                     justify-content:space-between;
@@ -1742,7 +1769,7 @@ var overdueCardInner = `
                 ">
                     <span>${t.number}</span>
                     <span style="color:red; font-weight:bold;">
-                        ${t.days}
+                        ${t.days + ' days'}
                     </span>
                 </div>
             `).join('')}

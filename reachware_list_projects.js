@@ -108,7 +108,9 @@ dpSearch.run().each(function(result){
 var empSearch = search.create({
     type: 'employee',
     filters: [
-        ['isinactive','is','F']
+        ['isinactive','is','F'],
+        //'AND',
+       // ['giveaccess','is','T']
     ],
     columns: ['internalid','firstname','lastname']
 });

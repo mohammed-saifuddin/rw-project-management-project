@@ -1158,7 +1158,7 @@ function openTicket(ticketId){
 
     frame.style.display = "block";
 
-    var urlWithParam = '${viewTicketUrl}' + '&ticketId=' + ticketId;
+    var urlWithParam = '${viewTicketUrl}' + '&ticketId=' + ticketId  +  '&empid=${empId}';
 
     frame.src = urlWithParam;
 }
