@@ -24,7 +24,7 @@ var statSearch = search.create({
 var erpOptions = '<option value="">--Select--</option>';
 
 var erpSearch = search.create({
-    type: 'customlist_rw_portal_erplist',
+    type: 'customrecord_rw_crm_support_category',
     columns: ['internalid', 'name']
 });
 
@@ -46,10 +46,12 @@ statSearch.run().each(function(result){
     var id = result.getValue('internalid');
     var name = result.getValue('name');
 
-    var isSelected = (name === 'To Do') ? 'selected' : '';
+    var isSelected = (name === 'To-Do') ? 'selected' : '';
 
 
-statOptions += '<option value="'+id+'" '+isSelected+'>'+name+'</option>';
+var isDisabled = (name !== 'To-Do') ? 'disabled' : '';
+
+statOptions += '<option value="'+id+'" '+isSelected+' '+isDisabled+'>'+name+'</option>';
 
     
 
@@ -74,7 +76,7 @@ statOptions1 += '<option value="'+id+'" '+isSelected+' '+isDisabled+'>'+name+'</
     return true;
 });
 var rwSearch=search.create({
-    type:'customlist2261',
+    type:'customrecord_rw_extend_products',
     columns:['internalid','name']
 })
 rwSearch.run().each(function(result){
@@ -105,25 +107,91 @@ dpSearch.run().each(function(result){
     dpOptions += '<option value="'+result.getValue('internalid')+'">'+result.getValue('name')+'</option>';
     return true;
 });
+// var empSearch = search.create({
+//     type: 'employee',
+//     filters: [
+//         ['isinactive','is','F'],
+//         //'AND',
+//        // ['giveaccess','is','T']
+//     ],
+//     columns: ['internalid','firstname','lastname']
+// });
+
+// empSearch.run().each(function(result){
+
+//     var id = result.getValue('internalid');
+//     var firstname = result.getValue('firstname');
+//     var lastname = result.getValue('lastname');
+
+//     empOptions += '<option value="'+id+'">'+firstname+' '+lastname+'</option>';
+
+//     return true;
+// });
+
+var uniqueEmployees = {};
+
+var employeeData = [];
+
 var empSearch = search.create({
     type: 'employee',
     filters: [
-        ['isinactive','is','F'],
-        //'AND',
-       // ['giveaccess','is','T']
+        ['isinactive','is','F']
     ],
-    columns: ['internalid','firstname','lastname']
+    columns: [
+        'internalid',
+        'firstname',
+        'lastname',
+        'role'
+    ]
 });
 
 empSearch.run().each(function(result){
 
-    var id = result.getValue('internalid');
-    var firstname = result.getValue('firstname');
-    var lastname = result.getValue('lastname');
+   var id = result.getValue('internalid');
 
-    empOptions += '<option value="'+id+'">'+firstname+' '+lastname+'</option>';
+var firstname = result.getValue('firstname') || '';
+var lastname = result.getValue('lastname') || '';
+
+var fullName =
+    (firstname + ' ' + lastname)
+    .replace(/\s+/g,' ')
+    .trim();
+
+// ✅ avoid duplicate NAMES
+var uniqueKey = fullName.toLowerCase();
+
+if(uniqueEmployees[uniqueKey]){
+    return true;
+}
+
+uniqueEmployees[uniqueKey] = true;
+    employeeData.push({
+        id: id,
+        name: fullName,
+        roleId: result.getValue('role'),
+        roleName: result.getText('role')
+    });
 
     return true;
+});
+
+
+// ✅ SORT ALPHABETICALLY
+employeeData.sort(function(a,b){
+
+    return a.name.localeCompare(b.name);
+
+});
+
+
+// ✅ BUILD DROPDOWNS
+employeeData.forEach(function(emp){
+
+    empOptions +=
+        '<option value="' + emp.id + '">' +
+        emp.name +
+        '</option>';
+
 });
 var homeUrl = url.resolveScript({
                     scriptId:'customscript2874',
@@ -301,7 +369,7 @@ var rowHtml = '';
         <td><select name="rwproduct[]">${rwOptions}</select></td>
         <td><input type="text" name="comments[]"></td>
         <td>
-            <select name="linestatus[]">${statOptions1}</select>
+            <select name="linestatus[]">${statOptions}</select>
         </td>
 
         ${isEdit ? `
@@ -325,7 +393,7 @@ else if(roleType === 'PM'){
         <td><select name="technical[]">${empOptions}</select></td>
         <td><input type="date" name="expuat[]"></td>
         <td><input type="date" name="expgolive[]"></td>
-        <td><select name="linestatus[]">${statOptions1}</select></td>
+        <td><select name="linestatus[]">${statOptions}</select></td>
          <td> <input type="date" id="stdate" name="stdate[]"></td>
 <td><input type="date" id="eddate" name="eddate[]"></td>
 <td><input type="date" id="updateddeadline" name="updateddeadline[]"></td>
@@ -350,7 +418,7 @@ else {
         <td><select name="technical[]">${empOptions}</select></td>
         <td><input type="date" name="expuat[]"></td>
         <td><input type="date" name="expgolive[]"></td>
-        <td><select name="linestatus[]">${statOptions1}</select></td>
+        <td><select name="linestatus[]">${statOptions}</select></td>
         
         <td><button type="button" onclick="removeRow(this)">❌</button></td>
     </tr>
@@ -403,7 +471,7 @@ margin:0 !important;
 .backBtn{
             margin-top:20px;
             padding:10px 15px;
-            background:#6f3ba2;
+            background:#8f50df;
             color:white;
             border:none;
             border-radius:5px;
@@ -467,7 +535,7 @@ table-layout:fixed;
 }
 
 .product-table th{
-background:#6f3ba2;
+background:#8f50df;
 color:white;
 padding:10px;
 border:1px solid #ccc;
@@ -546,7 +614,7 @@ body {
 
 
 .product-table th {
-    background: #6f3ba2;
+    background: #8f50df;
     color: white;
     padding: 10px;
     border: 1px solid #ccc;
@@ -577,7 +645,7 @@ body {
 .savebtn{
 margin-top:20px;
 padding:10px 20px;
-background:#6f3ba2;
+background:#8f50df;
 color:white;
 border:none;
 cursor:pointer;
@@ -604,7 +672,7 @@ cursor:pointer;
     width: 40px;
     height: 40px;
     border: 4px solid #ddd;
-    border-top: 4px solid #6f3ba2;
+    border-top: 4px solid #8f50df;
     border-radius: 50%;
     margin: auto;
     animation: spin 1s linear infinite;
@@ -641,7 +709,7 @@ label.required::after {
 .success-circle {
     width: 70px;
     height: 70px;
-    background: #6f3ba2;
+    background: #8f50df;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -672,7 +740,7 @@ label.required::after {
 
 /* BUTTON */
 .dialog-btn {
-    background: linear-gradient(135deg, #6f3ba2, #8a4dd1);
+    background: linear-gradient(135deg, #8f50df, #8a4dd1);
     border: none;
     color: white;
     padding: 10px 30px;
@@ -759,8 +827,8 @@ align-item:left;
 padding:0;
 }
 .addBtn:hover{
-color:#6f3ba2;
-text-shadow:0 0 5px #6f3ba2;
+color:#8f50df;
+text-shadow:0 0 5px #8f50df;
 text-decoration: none;
 
 }
@@ -777,8 +845,8 @@ align-item:center;
 padding:0;
 }
 .btnRem:hover{
-color:#6f3ba2;
-text-shadow:0 0 5px #6f3ba2;
+color:#8f50df;
+text-shadow:0 0 5px #8f50df;
 text-decoration: none;
 }
 /* Toast Notification */
@@ -854,7 +922,7 @@ ${empOptions}
 </select>
 
 <label class="required">Kick of Date</label>
-<input type="date" name="uatdate" required>
+<input type="date" name="uatdate" id="uatdate" required>
 
 <label class="required">Project Manager</label>
 <select name="projectmanager" id="headerPM">
@@ -862,7 +930,7 @@ ${empOptions}
 </select>
 
 <label class="required">Scheduled Go Live Date</label>
-<input type="date" name="golivedate" required>
+<input type="date" name="golivedate" id="golivedate" required>
 
 <label class="required">ERP</label>
 <select name="erp" required>
@@ -967,7 +1035,7 @@ ${rowHtml}
 
         <div style="display:flex; gap:10px; justify-content:center;">
             <button type="button" onclick="saveCustomer()" 
-                style="padding:8px 15px; background:#6f3ba2; color:white; border:none; border-radius:5px;">
+                style="padding:8px 15px; background:#8f50df; color:white; border:none; border-radius:5px;">
                 Save
             </button>
 
@@ -1084,6 +1152,235 @@ document.querySelector(".dialog-text").innerText = data.name + " added successfu
         alert("Error creating customer");
     });
 }
+
+document.addEventListener("DOMContentLoaded", function(){
+
+    const startDate =
+        document.getElementById("startdate");
+
+    const endDate =
+        document.getElementById("enddate");
+
+    const updatedEndDate =
+        document.getElementById("updatedenddate");
+
+    const kickoffDate =
+        document.getElementById("uatdate");
+
+    const goliveDate =
+        document.getElementById("golivedate");
+
+    function validateMainDates(){
+
+        var start = startDate.value;
+        var end = endDate.value;
+        var updated = updatedEndDate.value;
+
+        var kickoff = kickoffDate.value;
+        var golive = goliveDate.value;
+
+        // START < END
+        if(start && end){
+
+            if(
+                new Date(start) >
+                new Date(end)
+            ){
+
+                alert(
+                    "Start Date should be less than End Date"
+                );
+
+                endDate.value = '';
+
+                return;
+            }
+        }
+
+        // UPDATED > START
+        if(start && updated){
+
+            if(
+                new Date(updated) <
+                new Date(start)
+            ){
+
+                alert(
+                    "Updated End Date should be greater than Start Date"
+                );
+
+                updatedEndDate.value = '';
+
+                return;
+            }
+        }
+
+        // UPDATED > END
+        if(end && updated){
+
+            if(
+                new Date(updated) <
+                new Date(end)
+            ){
+
+                alert(
+                    "Updated End Date should be greater than End Date"
+                );
+
+                updatedEndDate.value = '';
+
+                return;
+            }
+        }
+
+        // KICKOFF < GO LIVE
+        if(kickoff && golive){
+
+            if(
+                new Date(kickoff) >
+                new Date(golive)
+            ){
+
+                alert(
+                    "Kickoff Date should be less than Scheduled Go Live Date"
+                );
+
+                goliveDate.value = '';
+
+                return;
+            }
+        }
+    }
+
+    startDate.addEventListener(
+        "input",
+        validateMainDates
+    );
+
+    endDate.addEventListener(
+        "input",
+        validateMainDates
+    );
+
+    updatedEndDate.addEventListener(
+        "input",
+        validateMainDates
+    );
+
+    kickoffDate.addEventListener(
+        "input",
+        validateMainDates
+    );
+
+    goliveDate.addEventListener(
+        "input",
+        validateMainDates
+    );
+
+});
+
+document.addEventListener('input', function(e){
+
+    var row = e.target.closest('tr');
+
+    if(!row) return;
+
+    var startField =
+        row.querySelector('[name="stdate[]"]');
+
+    var endField =
+        row.querySelector('[name="eddate[]"]');
+
+    var updatedField =
+        row.querySelector('[name="updateddeadline[]"]');
+
+    var uatField =
+        row.querySelector('[name="expuat[]"]');
+
+    var goliveField =
+        row.querySelector('[name="expgolive[]"]');
+
+    var start = startField?.value || '';
+    var end = endField?.value || '';
+    var updated = updatedField?.value || '';
+    var uat = uatField?.value || '';
+    var golive = goliveField?.value || '';
+
+    // START < END
+    if(start && end){
+
+        if(
+            new Date(start) >
+            new Date(end)
+        ){
+
+            alert(
+                'Start Date should be less than End Date'
+            );
+
+            endField.value = '';
+
+            return;
+        }
+    }
+
+    // UPDATED > START
+    if(start && updated){
+
+        if(
+            new Date(updated) <
+            new Date(start)
+        ){
+
+            alert(
+                'Updated Deadline should be greater than Start Date'
+            );
+
+            updatedField.value = '';
+
+            return;
+        }
+    }
+
+    // UPDATED > END
+    if(end && updated){
+
+        if(
+            new Date(updated) <
+            new Date(end)
+        ){
+
+            alert(
+                'Updated Deadline should be greater than End Date'
+            );
+
+            updatedField.value = '';
+
+            return;
+        }
+    }
+
+    // EXPECTED UAT < GO LIVE
+    if(uat && golive){
+
+        if(
+            new Date(uat) >
+            new Date(golive)
+        ){
+
+            alert(
+                'Expected UAT Date should be less than Expected Go Live Date'
+            );
+
+            goliveField.value = '';
+
+            return;
+        }
+    }
+
+});
+
+
 function createCustomer(){
     document.getElementById("customerModal").style.display = "flex";
 }
@@ -1596,12 +1893,24 @@ mapRec.setValue({
             value: parseInt(erp)
         });
     }
-
+log.debug('PRODUCT VALUE', item.rwproduct);
+log.debug('PRODUCT PARSED', parseInt(item.rwproduct));
     // PRODUCT
-    mapRec.setValue({
+   try {
+
+    mapRec.setText({
         fieldId: 'custrecord_rw_support_producr',
-        value: parseInt(item.rwproduct)
+        text: search.lookupFields({
+            type:'customrecord_rw_extend_products',
+            id: parseInt(item.rwproduct),
+            columns:['name']
+        }).name
     });
+
+} catch(e){
+
+    log.error('PRODUCT FIELD ERROR', e);
+}
 
     // PM
     if(item.rwpm){
@@ -1727,7 +2036,7 @@ body {
     width: 40px;
     height: 40px;
     border: 4px solid #ddd;
-    border-top: 4px solid #6f3ba2;
+    border-top: 4px solid #8f50df;
     border-radius: 50%;
     margin: auto;
     animation: spin 1s linear infinite;
@@ -1764,7 +2073,7 @@ body {
 .success-circle {
     width: 70px;
     height: 70px;
-    background: #6f3ba2;
+    background: #8f50df;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1795,7 +2104,7 @@ body {
 
 /* BUTTON */
 .dialog-btn {
-    background: linear-gradient(135deg, #6f3ba2, #8a4dd1);
+    background: linear-gradient(135deg, #8f50df, #8a4dd1);
     border: none;
     color: white;
     padding: 10px 30px;

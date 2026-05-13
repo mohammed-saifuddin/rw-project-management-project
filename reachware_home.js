@@ -503,8 +503,13 @@ log.debug(empRole)
 let statsHeader = '';
 let statsValues = '';
 var empInternalId = getEmployeeInternalId(email);
+let projectStatsHeader = '';
+let projectStatsValues = '';
 
+let ticketStatsHeader = '';
+let ticketStatsValues = '';
 var dmsRole = getEmployeeDMSRole(empInternalId);
+var loggedInUserName = getEmployeeName(empInternalId);
 var roleType = getRoleTypeFromDMS(dmsRole);
 
 log.debug("DMS ROLE", dmsRole);
@@ -541,34 +546,39 @@ if(roleType === 'PMO'){
 `;
 }
 else if(roleType === 'PM'){
-    statsHeader = `
-        <div>Total projects</div>
-        
-        <div>Open projects</div>
-        <div>In Progress</div>
-        <div>Total Tickets</div>
-        <div>Total Open Tickets</div>
-        <div>My Projects</div>
-        <div>My Assigned Tickets</div>
-        <div>My Open Tickets</div>
-        <div>My Closed Projects</div>
-        
-        
-    `;
+    
+    projectStatsHeader = `
+    <div>Total Projects</div>
+    <div>Open Projects</div>
+    <div>In Progress</div>
+    <div>My Closed Projects</div>
+    <div>My Projects</div>
+`;
 
-    statsValues = `
-        <div class="data-val" id="tit" onclick="openProjects('total')">${projectCount}</div>
+projectStatsValues = `
+    <div class="data-val" id="tit" onclick="openProjects('total')">${projectCount}</div>
         
         <div class="data-val" id="tit" onclick="openProjects('open')">${openProjects}</div>
         <div class="data-val" id="tit" onclick="openProjects('inprogress')">${inProgressCount}</div>
-        <div class="data-val" id="tit" onclick="openTickets('total')">${totalTickets}</div>
+         <div class="data-val" id="tit" onclick="openProjects('close')">${closedProjects}</div>
+         <div class="data-val" id="tit" onclick="openProjects('myprojects')">${pmProjectCount}</div>
+`;
+
+ticketStatsHeader = `
+    <div>Total Tickets</div>
+    <div>Total Open Tickets</div>
+    <div>My Assigned Tickets</div>
+    <div>My Open Tickets</div>
+`;
+
+ticketStatsValues = `
+    <div class="data-val" id="tit" onclick="openTickets('total')">${totalTickets}</div>
         <div class="data-val" id="tit" onclick="openTickets('allopen')">${openTicketCount}</div>
-        <div class="data-val" id="tit" onclick="openProjects('myprojects')">${pmProjectCount}</div>
+        
         <div class="data-val" id="tit" onclick="openTickets('assigned')">${assignedTickets}</div>
         <div class="data-val" id="tit" onclick="openTickets('open')">${myOpenCount}</div>
-         <div class="data-val" id="tit" onclick="openProjects('close')">${closedProjects}</div>
         
-    `;
+`;
 }
 else if(roleType === 'DEV'){
     statsHeader = `
@@ -744,6 +754,28 @@ function getCustomersByStatus(statusId){
     }
 
     return customerArr || [];
+}
+function getEmployeeName(empId){
+
+    if(!empId) return '';
+
+    var empData = search.lookupFields({
+        type: search.Type.EMPLOYEE,
+        id: empId,
+        columns: ['entityid','firstname','lastname']
+    });
+
+    var fullName = '';
+
+    if(empData.firstname){
+        fullName += empData.firstname;
+    }
+
+    if(empData.lastname){
+        fullName += ' ' + empData.lastname;
+    }
+
+    return fullName || empData.entityid || '';
 }
 var uatCustomers = getCustomersByStatus('3');
 var goliveCustomers = getCustomersByStatus('9');
@@ -1040,7 +1072,7 @@ function buildCard(title, currentList, upcomingList){
         <div class="card">
             <h3>${title}</h3>
 
-            <h4 style="color:#6b3fa0;">Current Month</h4>
+            <h4 style="color:#8f50df;">Current Month</h4>
             <ul>${currentHtml}</ul>
 
             <h4 style="color:#999;">Upcoming</h4>
@@ -1182,7 +1214,7 @@ var goLiveCard = `
         justify-content:space-between;
         padding:6px 0;
         border-bottom:1px solid #eee;
-        font-size:13px;
+        font-size:12px;
     ">
         <span>${p.project}</span>
         <span>${p.product}</span>
@@ -1201,7 +1233,7 @@ var goLiveCardUser = `
 <div style="display:flex; gap:15px; margin:10px;">
 
     <div style="
-        width:320px;
+        width:340px;
         background:#fff;
         border-radius:10px;
         box-shadow:0 4px 10px rgba(0,0,0,0.1);
@@ -1210,7 +1242,7 @@ var goLiveCardUser = `
 
         <!-- HEADER -->
         <div style="
-            background:#6f3ba2;
+            background:#8f50df;
             color:white;
             padding:10px;
             font-weight:bold;
@@ -1243,7 +1275,8 @@ var goLiveCardUser = `
         justify-content:space-between;
         padding:6px 0;
         border-bottom:1px solid #eee;
-        font-size:13px;
+        font-size:12px;
+        gap:12px;
     ">
         <span>${p.project}</span>
         <span>${p.product}</span>
@@ -1302,7 +1335,7 @@ var overdueCardInner = `
                     justify-content:space-between;
                     padding:6px 0;
                     border-bottom:1px solid #eee;
-                    font-size:13px;
+                    font-size:12px;
                 ">
                     <span>${t.number}</span>
                     <span style="color:red; font-weight:bold;">
@@ -1395,7 +1428,7 @@ var highPriorityCardOfLoggedInUser = `
 
         <!-- HEADER (same as table header) -->
         <div style="
-            background:#6f3ba2;
+            background:#8f50df;
             color:white;
             padding:10px;
             font-weight:bold;
@@ -1428,7 +1461,7 @@ var highPriorityCardOfLoggedInUser = `
                         justify-content:space-between;
                         padding:6px 0;
                         border-bottom:1px solid #eee;
-                        font-size:13px;
+                        font-size:12px;
                     ">
                         <span>${t.number}</span>
                         <span>${t.deadline || '-'}</span>
@@ -1443,61 +1476,21 @@ var highPriorityCardOfLoggedInUser = `
 
 </div>
 `;
-function getOverdueProjects(){
-
-    var projects = [];
-
-    var searchObj = search.create({
-        type: 'customrecord_rw_portal_access2',
-        filters: [
-            ['custrecord_rw_portal_updateddeadline','before','today']
-        ],
-        columns: [
-            'custrecord_rw_portal_rwproduct',
-            'custrecord_rw_portal_durationline',
-
-            search.createColumn({
-                name: 'custrecord_rw_portal_customername',
-                join: 'custrecord1513'
-            })
-        ]
-    });
-
-    searchObj.run().each(function(result){
-
-        var product = result.getText('custrecord_rw_portal_rwproduct');
-
-        var duration = result.getValue('custrecord_rw_portal_durationline');
-
-        // ✅ FETCH PROJECT NAME
-        var project = result.getText({
-            name: 'custrecord_rw_portal_customername',
-            join: 'custrecord1513'
-        });
-
-        projects.push({
-            project: project || '-',   // ✅ ADD THIS
-            product: product || '-',
-            duration: duration || 0
-        });
-
-        return true;
-    });
-
-    return projects;
-}
-var overdueProjects =getOverdueProjects();
 function getOverdueProjects(empId, roleType){
 
     if(!empId) return [];
 
     var projects = [];
 
+    var today = new Date();
+
     var filters = [
-        ['custrecord_rw_portal_updateddeadline','before','today']
+        ['custrecord_rw_portal_updateddeadline','before','today'],
+        'AND',
+        ['custrecord_rw_portal_projstat','noneof','5'] // exclude completed
     ];
 
-    // PM → only PM projects
+    // PM
     if(roleType === 'PM'){
 
         filters.push(
@@ -1506,12 +1499,12 @@ function getOverdueProjects(empId, roleType){
         );
     }
 
-    // DEV / OTHER → only assigned resources
+    // DEV / OTHER
     else{
 
         filters.push(
             'AND',
-             ['custrecord1513.custrecord_rw_portal_projectmanager','anyof', empId]
+            ['custrecord1513.custrecord_rw_portal_projectmanager','anyof', empId]
         );
     }
 
@@ -1525,7 +1518,7 @@ function getOverdueProjects(empId, roleType){
 
             'custrecord_rw_portal_rwproduct',
 
-            'custrecord_rw_portal_durationline',
+            'custrecord_rw_portal_updateddeadline',
 
             search.createColumn({
                 name: 'custrecord_rw_portal_customername',
@@ -1540,9 +1533,28 @@ function getOverdueProjects(empId, roleType){
             'custrecord_rw_portal_rwproduct'
         );
 
-        var duration = result.getValue(
-            'custrecord_rw_portal_durationline'
+        var deadline = result.getValue(
+            'custrecord_rw_portal_updateddeadline'
         );
+
+        var overdueDays = 0;
+
+        if(deadline){
+
+            var parts = deadline.split('/');
+
+            var deadlineDate = new Date(
+                parts[2],
+                parts[1]-1,
+                parts[0]
+            );
+
+            var diffTime = today - deadlineDate;
+
+            overdueDays = Math.floor(
+                diffTime / (1000 * 60 * 60 * 24)
+            );
+        }
 
         var project = result.getText({
             name: 'custrecord_rw_portal_customername',
@@ -1550,9 +1562,12 @@ function getOverdueProjects(empId, roleType){
         });
 
         projects.push({
+
             project: project || '-',
+
             product: product || '-',
-            duration: duration || 0
+
+            duration: overdueDays
         });
 
         return true;
@@ -1560,6 +1575,80 @@ function getOverdueProjects(empId, roleType){
 
     return projects;
 }
+var overdueProjects =getOverdueProjects();
+// function getOverdueProjects(empId, roleType){
+
+//     if(!empId) return [];
+
+//     var projects = [];
+
+//     var filters = [
+//         ['custrecord_rw_portal_updateddeadline','before','today']
+//     ];
+
+//     // PM → only PM projects
+//     if(roleType === 'PM'){
+
+//         filters.push(
+//             'AND',
+//             ['custrecord1513.custrecord_rw_portal_projectmanager','anyof', empId]
+//         );
+//     }
+
+//     // DEV / OTHER → only assigned resources
+//     else{
+
+//         filters.push(
+//             'AND',
+//              ['custrecord1513.custrecord_rw_portal_projectmanager','anyof', empId]
+//         );
+//     }
+
+//     var searchObj = search.create({
+
+//         type: 'customrecord_rw_portal_access2',
+
+//         filters: filters,
+
+//         columns: [
+
+//             'custrecord_rw_portal_rwproduct',
+
+//             'custrecord_rw_portal_durationline',
+
+//             search.createColumn({
+//                 name: 'custrecord_rw_portal_customername',
+//                 join: 'custrecord1513'
+//             })
+//         ]
+//     });
+
+//     searchObj.run().each(function(result){
+
+//         var product = result.getText(
+//             'custrecord_rw_portal_rwproduct'
+//         );
+
+//         var duration = result.getValue(
+//             'custrecord_rw_portal_durationline'
+//         );
+
+//         var project = result.getText({
+//             name: 'custrecord_rw_portal_customername',
+//             join: 'custrecord1513'
+//         });
+
+//         projects.push({
+//             project: project || '-',
+//             product: product || '-',
+//             duration: duration || 0
+//         });
+
+//         return true;
+//     });
+
+//     return projects;
+// }
 var overdueProjectsUsers = getOverdueProjects(empId, roleType);
 var overdueProjectCardInner = `
 <div style="display:flex;gap:15px;margin:10px;">
@@ -1573,7 +1662,7 @@ var overdueProjectCardInner = `
 
     <!-- HEADER -->
     <div style="
-        background:#6f3ba2;
+        background:#8f50df;
         color:white;
         padding:10px;
         font-weight:bold;
@@ -1591,7 +1680,7 @@ var overdueProjectCardInner = `
             font-weight:bold;
             border-bottom:2px solid #ddd;
             padding-bottom:5px;
-            font-size:13px;
+            font-size:12px;
         ">
         <span>Project</span>
             <span>Product</span>
@@ -1607,13 +1696,13 @@ var overdueProjectCardInner = `
                     justify-content:space-between;
                     padding:6px 0;
                     border-bottom:1px solid #eee;
-                    font-size:13px;
+                    font-size:12px;
                 ">
                 <span>${p.project || '-'}</span>
                     <span>${p.product}</span>
                     
-                    <span style="color:red; font-weight:bold;">
-                        ${p.duration ? p.duration + 'days' : '-'}
+                    <span style="color:red; font-weight:bold;font-size:11px;">
+                        ${p.duration ? p.duration + ' days' : '-'}
                     </span>
                 </div>
             `).join('')}
@@ -1628,7 +1717,7 @@ var overdueProjectCardInner = `
 var overdueProjectCardInneruser = `
 <div style="display:flex;gap:15px;margin:10px;">
 <div style="
-    width:320px;
+    width:360px;
     background:#fff;
     border-radius:10px;
     box-shadow:0 4px 10px rgba(0,0,0,0.1);
@@ -1637,7 +1726,7 @@ var overdueProjectCardInneruser = `
 
     <!-- HEADER -->
     <div style="
-        background:#6f3ba2;
+        background:#8f50df;
         color:white;
         padding:10px;
         font-weight:bold;
@@ -1670,13 +1759,14 @@ var overdueProjectCardInneruser = `
                     display:flex;
                     justify-content:space-between;
                     padding:6px 0;
+                    gap:12px;
                     border-bottom:1px solid #eee;
-                    font-size:13px;
+                    font-size:12px;
                 ">
                 <span>${p.project || '-'}</span>
                     <span>${p.product}</span>
                     
-                    <span style="color:red; font-weight:bold;">
+                    <span style="color:red; font-weight:bold;font-size:11px;">
                         ${p.duration ? p.duration + ' days' : '-'}
                     </span>
                 </div>
@@ -1734,7 +1824,7 @@ var overdueCardInner = `
 ">
 
     <div style="
-        background:#6f3ba2;
+        background:#8f50df;
         color:white;
         padding:10px;
         font-weight:bold;
@@ -1765,10 +1855,10 @@ var overdueCardInner = `
                     justify-content:space-between;
                     padding:6px 0;
                     border-bottom:1px solid #eee;
-                    font-size:13px;
+                    font-size:12px;
                 ">
                     <span>${t.number}</span>
-                    <span style="color:red; font-weight:bold;">
+                    <span style="color:red; font-weight:bold;font-size:11px;">
                         ${t.days + ' days'}
                     </span>
                 </div>
@@ -1796,7 +1886,7 @@ var highPriorityCard = `
 
         <!-- HEADER (same as table header) -->
         <div style="
-            background:#6f3ba2;
+            background:#8f50df;
             color:white;
             padding:10px;
             font-weight:bold;
@@ -1829,7 +1919,7 @@ var highPriorityCard = `
                         justify-content:space-between;
                         padding:6px 0;
                         border-bottom:1px solid #eee;
-                        font-size:13px;
+                        font-size:12px;
                     ">
                         <span>${t.number}</span>
                         <span>${t.deadline || '-'}</span>
@@ -1921,7 +2011,7 @@ html, body {
 
 .card-row .proj{
     flex:0.7;
-    color:#6b3fa0;
+    color:#8f50df;
     font-weight:600;
 }
 
@@ -1937,7 +2027,7 @@ html, body {
 }
 .card-row .proj{
     flex:0.7;
-    color:#6b3fa0;
+    color:#8f50df;
     font-weight:600;
     cursor:pointer;
 }
@@ -1953,7 +2043,7 @@ html, body {
     font-weight:600;
     color:white;
 
-    background: linear-gradient(135deg, #6b3fa0, #8e5cd9);
+    background: linear-gradient(135deg, #8f50df, #8e5cd9);
 }
 
 /* SECTION TITLE */
@@ -1988,7 +2078,7 @@ html, body {
     width:5px;
 }
 .card ul::-webkit-scrollbar-thumb{
-    background:#6b3fa0;
+    background:#8f50df;
     border-radius:10px;
 }
     .card h4:first-of-type {
@@ -2053,7 +2143,7 @@ transition:all 0.3s ease;
 
 /* Optional styling */
 .stats-header div {
-    background: #6b3fa0;
+    background: #8f50df;
     color: white;
     padding: 10px;
 }
@@ -2066,7 +2156,7 @@ transition:all 0.3s ease;
 
 
 .header{
-    background:#6b3fa0;
+    background:#8f50df;
     color:white;
     height:60px;
     padding:0 20px;
@@ -2133,7 +2223,17 @@ cursor:pointer;
 
     z-index: 9999;          
 }
+.status-section{
+    margin-bottom:25px;
+}
 
+.section-title{
+    font-size:18px;
+    font-weight:bold;
+    color:#8f50df;
+    margin-bottom:10px;
+    margin-top:10px;
+}
 .menu{
 padding:12px;
 border-bottom:1px solid #0c4f82;
@@ -2164,7 +2264,7 @@ padding-right:-20px;
 .stats-header{
 display:grid;
 grid-template-columns: repeat(6,1fr);
-background:#6b3fa0;
+background:#8f50df;
 color:white;
 }
 .stats-header, .stats-values {
@@ -2207,8 +2307,12 @@ border-right:1px solid white;
  
 }
  .stats-container{
-    display: inline-flex;
-    flex-direction: column;
+    display:flex;
+    flex-direction:column;
+
+    margin:0 !important;
+    padding:0 !important;
+    gap:0 !important;
 }
 
 .stats-header,
@@ -2263,8 +2367,8 @@ font-size:20px;
     font-weight:bold;
     background:white;
     border-radius:20px;
-    padding:6px 15px;
-        color:#6b3fa0;
+    padding:8px 17px;
+        color:#8f50df;
 }
         .role-text:hover{
         background:#1667a5;
@@ -2274,7 +2378,7 @@ font-size:20px;
 /* REMOVE absolute positioning */
 .logout{
     position:static;   
-    background:#6b3fa0;
+    background:#8f50df;
     border:1px solid white;
     padding:6px 15px;
     color:white;
@@ -2283,7 +2387,7 @@ font-size:20px;
     
 .logout:hover{
 background:white;
-color:#6b3fa0;
+color:#8f50df;
 font-weight:bold;
 
 }
@@ -2298,7 +2402,7 @@ font-weight:bold;
     height: 35px;
     border-radius: 50%;
 
-    background: #6b3fa0;
+    background: #8f50df;
     color: white;
 
     display: flex;
@@ -2335,11 +2439,223 @@ font-weight:bold;
     height:350px;
 }
 
+.user-info{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
 
+.user-name{
+    font-size:12px;
+    font-weight:bold;
+    background:white;
+    border-radius:20px;
+    padding:6px 15px;
+        color:#8f50df;
+}
+     .user-name:hover{
+        background:#1667a5;
+        color :white;
+        }
 .card ul{
     padding-left:20px;
     max-height:none;   /* 🔥 remove limit */
     overflow:visible;  /* 🔥 no scroll */
+}
+    .user-info{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.user-name-box{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+.user-name-box{
+    font-size:12px;
+    font-weight:bold;
+    background:white;
+    border-radius:20px;
+    padding:6px 15px;
+        color:#8f50df;
+}
+     .user-name-box:hover{
+        background:#1667a5;
+        color :white;
+        font-weight:bold;
+        }
+.initials{
+    width:22px;
+    height:22px;
+    border-radius:50%;
+
+    background:#8f50df;
+    color:white;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:8px;
+    font-weight:bold;
+}
+
+.full-name{
+    
+    font-size:12px;
+    font-weight:bold;
+    color:#8f50df;
+}
+.full-name:hover{
+    color:white;
+    font-weight:bold;
+
+
+    }
+    .stats-main-wrapper{
+    display:flex;
+    gap:20px;
+    width:100%;
+    margin-top:-10px;
+    align-items:flex-start;
+}
+
+.status-section{
+    flex:1;
+    min-width:0;
+}
+
+.section-title{
+    font-size:18px;
+    font-weight:bold;
+    color:#8f50df;
+    margin-bottom:10px;
+    padding-left:5px;
+}
+
+.status-section .stats-header,
+.status-section .stats-values{
+    display:flex;
+    width:100%;
+}
+
+.status-section .stats-header div,
+.status-section .stats-values div{
+    flex:1;
+    text-align:center;
+}
+    .stats-main-wrapper{
+    display:flex;
+    gap:0px;
+    width:100%;
+}
+
+.status-section{
+    flex:1;
+}
+
+/* MAIN HEADING ROW */
+.main-heading-row{
+    width:100%;
+}
+
+.main-heading{
+    background:#8f50df;
+    color:white;
+
+    padding:8px;
+    text-align:center;
+
+    font-size:16px;
+    font-weight:bold;
+
+    border-radius:6px 6px 0 0;
+    border-bottom:2px solid white;
+}
+
+/* EXISTING TABLE STYLE */
+.status-section .stats-header{
+    display:flex;
+    background:#7b4bb3;
+    color:white;
+}
+
+.status-section .stats-values{
+    display:flex;
+}
+
+.status-section .stats-header div,
+.status-section .stats-values div{
+    flex:1;
+    text-align:center;
+    padding:12px;
+    border:1px solid #ddd;
+}
+    .stats-main-wrapper{
+    display:flex;
+    gap:0px;
+    width:100%;
+}
+
+.status-section{
+    flex:1;
+}
+
+/* REMOVE GAP */
+.main-heading-row{
+    width:100%;
+    margin:0;
+    padding:0;
+}
+
+.main-heading{
+    background:#8f50df;
+    color:white;
+
+    padding:8px;
+    text-align:center;
+
+    font-size:16px;
+    font-weight:bold;
+
+    margin:0 !important;
+
+    border-radius:0;
+    border-bottom:none;
+    border:1px solid white;
+}
+.main-heading-row,
+.stats-header,
+.stats-container,
+.status-section{
+    margin:0 !important;
+    padding:0 !important;
+}
+/* REMOVE GAP BETWEEN HEADING & TABLE */
+.status-section .stats-container{
+    margin-top:0 !important;
+    padding-top:0 !important;
+}
+
+.status-section .stats-header{
+    display:flex;
+    background:#7b4bb3;
+    color:white;
+    margin-top:0 !important;
+}
+
+.status-section .stats-values{
+    display:flex;
+}
+
+.status-section .stats-header div,
+.status-section .stats-values div{
+    flex:1;
+    text-align:center;
+    padding:12px;
+    border:1px solid #ddd;
 }
 </style>
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
@@ -2357,7 +2673,28 @@ font-weight:bold;
     </div>
 
     <div class="right-section">
-        <span class="role-text"> ${dmsRole || empRole}</span>
+      <div class="user-info">
+
+    <div class="user-name-box">
+
+        <span class="initials">
+            ${loggedInUserName
+                .split(' ')
+                .map(n => n.charAt(0).toUpperCase())
+                .join('')}
+        </span>
+
+        <span class="full-name">
+            ${loggedInUserName}
+        </span>
+
+    </div>
+
+    <span class="role-text">
+        ${dmsRole || empRole}
+    </span>
+
+</div>
         <button class="logout" onclick="logout()">Logout</button>
     </div>
 
@@ -2399,14 +2736,52 @@ ${ticketMenu}
 
 <div id="homeContent" style="margin-top:40px;">
 
-<div class="stats-container">
+<div class="stats-main-wrapper">
 
-    <div class="stats-header">
-        ${statsHeader}
+    <!-- PROJECT SECTION -->
+    <div class="status-section">
+
+        <div class="main-heading-row">
+            <div class="main-heading">
+                Projects 
+            </div>
+        </div>
+
+        <div class="stats-container">
+
+            <div class="stats-header">
+                ${projectStatsHeader}
+            </div>
+
+            <div class="stats-values">
+                ${projectStatsValues}
+            </div>
+
+        </div>
+
     </div>
 
-    <div class="stats-values">
-        ${statsValues}
+    <!-- TICKET SECTION -->
+    <div class="status-section">
+
+        <div class="main-heading-row">
+            <div class="main-heading">
+                Tickets 
+            </div>
+        </div>
+
+        <div class="stats-container">
+
+            <div class="stats-header">
+                ${ticketStatsHeader}
+            </div>
+
+            <div class="stats-values">
+                ${ticketStatsValues}
+            </div>
+
+        </div>
+
     </div>
 
 </div>
@@ -2423,7 +2798,7 @@ ${roleType === 'PMO' ? `
     </div>
 ` : ''}
 ${roleType === 'PM' ? `
-<div style="display:flex; gap:20px; margin:10px;">
+<div style="display:flex; gap:10px; margin:8px;">
     ${highPriorityCardOfLoggedInUser}
     ${goLiveCardUser}
     ${overdueProjectCardInneruser}

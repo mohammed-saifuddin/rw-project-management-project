@@ -111,7 +111,8 @@ var empId = context.request.parameters.empid;
 var dynamicTitle = context.request.parameters.title || 'Tickets';
 var email = context.request.parameters.email;
 var pageIndex = 0;   // default
-
+var fromProject =
+    request.parameters.fromproject || '';
 if (request.parameters.page) {
     pageIndex = parseInt(request.parameters.page, 10);
 }
@@ -131,26 +132,65 @@ var baseUrl = url.resolveScript({
     returnExternalUrl: true
 });
 var customerOptions = '<option value="">All</option>';
-var empOptions ='<option value="">All</option>';
+var empOptions = '<option value="">All</option>';
+
+var uniqueEmployees = {};
+var employeeData = [];
+
 var empSearch = search.create({
     type: 'employee',
     filters: [
         ['isinactive','is','F']
     ],
-    columns: ['internalid','firstname','lastname']
+    columns: [
+        'internalid',
+        'firstname',
+        'lastname'
+    ]
 });
 
 empSearch.run().each(function(result){
 
     var id = result.getValue('internalid');
-    var firstname = result.getValue('firstname');
-    var lastname = result.getValue('lastname');
 
-    empOptions += `<option value="${id}" ${
-        request.parameters.requesterName == id ? 'selected' : ''
-    }>${firstname} ${lastname}</option>`;
+    var firstname = result.getValue('firstname') || '';
+    var lastname = result.getValue('lastname') || '';
+
+    var fullName = (firstname + ' ' + lastname)
+        .replace(/\s+/g,' ')
+        .trim();
+
+    // avoid duplicate names
+    var uniqueKey = fullName.toLowerCase();
+
+    if(uniqueEmployees[uniqueKey]){
+        return true;
+    }
+
+    uniqueEmployees[uniqueKey] = true;
+
+    employeeData.push({
+        id: id,
+        name: fullName
+    });
 
     return true;
+});
+
+// sort alphabetically
+employeeData.sort(function(a,b){
+    return a.name.localeCompare(b.name);
+});
+
+// build dropdown
+employeeData.forEach(function(emp){
+
+    empOptions += `
+        <option value="${emp.id}"
+            ${request.parameters.requesterName == emp.id ? 'selected' : ''}>
+            ${emp.name}
+        </option>
+    `;
 });
 // var customerSearch = search.create({
 //     type: search.Type.CUSTOMER,
@@ -173,27 +213,63 @@ empSearch.run().each(function(result){
 // });
 var customerOptions = '<option value="">--Select--</option>';
 
+var customerData = [];
+
 var customerSearch = search.create({
+
     type: search.Type.CUSTOMER,
+
     filters: [
         ['isinactive','is','F'],
-       
-    'AND',
-    ['custentity_is_rw_customer','is','T']
+        'AND',
+        ['custentity_is_rw_customer','is','T']
     ],
-    columns: ['internalid','altname'],
+
+    columns: [
+        'internalid',
+        'altname'
+    ]
 });
-     
 
 customerSearch.run().each(function(result){
-    var id = result.getValue('internalid');
-    var name = result.getValue('altname');
 
-    customerOptions += `<option value="${id}" ${
-        request.parameters.clientName == id ? 'selected' : ''
-    }>${name}</option>`;
-    
-     return true;
+    customerData.push({
+
+        id:
+            result.getValue('internalid'),
+
+        name:
+            result.getValue('altname') || ''
+    });
+
+    return true;
+});
+
+// SORT ALPHABETICALLY
+customerData.sort(function(a,b){
+
+    return a.name.localeCompare(b.name);
+});
+
+// BUILD DROPDOWN
+customerData.forEach(function(customer){
+
+    customerOptions += `
+
+        <option value="${customer.id}"
+
+            ${
+                request.parameters.clientName ==
+                customer.id
+
+                ? 'selected'
+                : ''
+            }>
+
+            ${customer.name}
+
+        </option>
+    `;
 });
 var productOptions = '<option value="">All Products</option>';
 
@@ -274,7 +350,60 @@ returnExternalUrl: true,
 
 });
 
+var projectId = request.parameters.projectId || '';
+var productId = request.parameters.productId || '';
+var ticketFilter = request.parameters.ticketFilter || '';
 
+var filters = [];
+
+if(projectId){
+
+    filters.push([
+        'custrecord_rw_ticket_projectname',
+        'anyof',
+        projectId
+    ]);
+}
+
+if(productId){
+
+    if(filters.length > 0){
+        filters.push('AND');
+    }
+
+    filters.push([
+        'custrecord_rw_ticket_rwsuiteapp',
+        'anyof',
+        productId
+    ]);
+}
+
+if(ticketFilter === 'open'){
+
+    if(filters.length > 0){
+        filters.push('AND');
+    }
+
+    filters.push([
+        'custrecord_rw_ticket_ticketstatus',
+        'noneof',
+        '5'
+    ]);
+}
+
+else if(ticketFilter === 'closed'){
+
+    if(filters.length > 0){
+        filters.push('AND');
+    }
+
+    filters.push([
+        'custrecord_rw_ticket_ticketstatus',
+        'anyof',
+        '5'
+    ]);
+}
+/* total = no status filter */
 // Ticket ID
 
 
@@ -466,14 +595,16 @@ if (!data || data.length === 0) {
 
         tableRows += `
             <tr class="ho" onclick="openTicket('${result.getValue('internalid')}')">
+            <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_ticketno') || ''}</td>
+                <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_projectname') || ''}</td>
+                <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_rwsuiteapp') || ''}</td>
                 <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_requesttype') || ''}</td>
                 <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_name') || ''}</td>
                 <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_date') || ''}</td>
-                <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_ticketno') || ''}</td>
-                <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_projectname') || ''}</td>
-                <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_rwsuiteapp') || ''}</td>
-                <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_ticketstatus') || ''}</td>
+                
+                
                 <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_deadline') || ''}</td>
+                <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_ticketstatus') || ''}</td>
             </tr>
         `;
     }
@@ -544,7 +675,7 @@ var paginationHtml = `
 <div style="text-align:center; margin-top:20px;">
 
     ${pageIndex > 0 ? `
-        <button onclick="goToPage(${prevPage})" style="padding:8px 15px; background:#6f3ba2; color:white; border:none; border-radius:5px; cursor:pointer;">Previous</button>
+        <button onclick="goToPage(${prevPage})" style="padding:8px 15px; background:#8f50df; color:white; border:none; border-radius:5px; cursor:pointer;">Previous</button>
     ` : ''}
 
     <span style="margin:0 15px; font-weight:bold;">
@@ -553,7 +684,7 @@ var paginationHtml = `
 
     ${pageIndex < totalPages - 1 ? `
         
-        <button type="button" onclick="goToPage(${nextPage})" style="padding:8px 15px; background:#6f3ba2; color:white; border:none; border-radius:5px; cursor:pointer;">Next</button>
+        <button type="button" onclick="goToPage(${nextPage})" style="padding:8px 15px; background:#8f50df; color:white; border:none; border-radius:5px; cursor:pointer;">Next</button>
     ` : ''}
 
 </div>
@@ -742,7 +873,7 @@ font-weight:bold;
     text-align:right;
     font-weight:bold;
     font-size:14px;
-    color:#6f3ba2;
+    color:#8f50df;
 }
 /* dynamic colors */
 .status.todo{ background:#999; }
@@ -827,7 +958,7 @@ table{
 }
 
 th{
-    background:#6f3ba2;
+    background:#8f50df;
     color:white;
     font-size:13px;
 }
@@ -841,7 +972,7 @@ td{
 }
 
 .project-row:hover{
-    background:#6f3ba2;
+    background:#8f50df;
     cursor:pointer;
 }
 @keyframes slideDown{
@@ -889,8 +1020,8 @@ align-item:left;
 padding:0;
 }
 .addBtn:hover{
-color:#6f3ba2;
-text-shadow:0 0 5px #6f3ba2;
+color:#8f50df;
+text-shadow:0 0 5px #8f50df;
 text-decoration: none;
 
 }
@@ -932,7 +1063,7 @@ text-decoration: none;
 }
 
 .filter-group input:focus{
-    border-color:#6f3ba2;
+    border-color:#8f50df;
     box-shadow:0 0 5px rgba(111,59,162,0.3);
 }
 
@@ -942,7 +1073,7 @@ text-decoration: none;
 }
 
 .btn-primary{
-    background:#6f3ba2;
+    background:#8f50df;
     color:white;
     border:none;
     padding:8px 15px;
@@ -1011,7 +1142,7 @@ text-decoration: none;
     .backBtn{
             margin-top:20px;
             padding:10px 15px;
-            background:#6f3ba2;
+            background:#8f50df;
             color:white;
             border:none;
             border-radius:5px;
@@ -1037,7 +1168,7 @@ text-decoration: none;
 .table-count{
     font-weight:bold;
     font-size:14px;
-    color:#6f3ba2;
+    color:#8f50df;
 }
 </style>
 <form method="GET">
@@ -1101,14 +1232,16 @@ ${filterHtml}
         <table>
 
 <tr>
-<th style="border:1px solid black;">Request Type</th>
-<th style="border:1px solid black;">Requester Name</th>
-<th style="border:1px solid black;">Date</th>
 <th style="border:1px solid black;">Ticket ID</th>
 <th style="border:1px solid black;">Client Name</th>
 <th style="border:1px solid black;">RW Product</th>
-<th style="border:1px solid black;">Status</th>
+<th style="border:1px solid black;">Request Type</th>
+<th style="border:1px solid black;">Requester Name</th>
+<th style="border:1px solid black;">Date</th>
+
+
 <th style="border:1px solid black;">Deadline</th>
+<th style="border:1px solid black;">Status</th>
 </tr>
 
 
@@ -1116,7 +1249,7 @@ ${filterHtml}
 ${tableRows}
 
 </table>
-<button class="backBtn" type="button" onclick="goBack()">⬅ Back</button>
+
     </div>
 
     <div class="pagination">
@@ -1131,8 +1264,15 @@ ${tableRows}
 </div>
 </form>
 <script>
+function hideLoader(){
 
-document.title="Projects"
+    var loader = document.getElementById("loader");
+
+    if(loader){
+        loader.style.display = "none";
+    }
+}
+document.title="Tickets"
 var projectUrl = '${projectUrl}';
 var viewProjectUrl='${viewProjectUrl}';
 var viewTicketUrl ='${viewTicketUrl}';
@@ -1323,7 +1463,9 @@ var homeUrl = '${homeUrl}';
     loader.style.display = "block";   // ✅ show loader
 
     setTimeout(function(){
-        window.parent.openHome();
+         window.parent.openHome();
+        //window.parent.location.href = homeUrl;  // safer than function call
+        loader.style.display = "none";  // ✅ hide loader after returning
     }, 300); // small delay for smooth UX
 }
 </script>

@@ -214,7 +214,7 @@ log.debug("DMS ROLE", dmsRole);
 log.debug("ROLE TYPE", roleType);
 if(roleType === 'PMO'){
     tableHeader = `
-        <tr style="background:#6f3ba2; color:white;">
+        <tr style="background:#8f50df; color:white;">
             <th style="border:1px solid #ccc;padding:8px;">RW Product</th>
             <th style="border:1px solid #ccc;padding:8px;">Comments</th>
             <th style="border:1px solid #ccc;padding:8px;">Status</th>
@@ -225,7 +225,7 @@ if(roleType === 'PMO'){
     `;
 }  else if (roleType === 'PM') {
     tableHeader = `
-        <tr style="background:#6f3ba2; color:white;">
+        <tr style="background:#8f50df; color:white;">
             <th style="border:1px solid #ccc;padding:8px;">RW Product</th>
             <th style="border:1px solid #ccc;padding:8px;">Comments</th>
             <th style="border:1px solid #ccc;padding:8px;">Project Manager</th>
@@ -241,7 +241,7 @@ if(roleType === 'PMO'){
     `;
 }else {
     tableHeader = `
-        <tr style="background:#6f3ba2; color:white;">
+        <tr style="background:#8f50df; color:white;">
             <th style="border:1px solid #ccc;padding:8px;">RW Product</th>
             <th style="border:1px solid #ccc;padding:8px;">Comments</th>
             <th style="border:1px solid #ccc;padding:8px;">Project Manager</th>
@@ -485,6 +485,19 @@ statSearch.run().each(function(res){
     var selected = (id == linestatusId) ? 'selected' : '';
 
     statOptions1 += '<option value="'+id+'" '+selected+'>'+name+'</option>';
+
+    return true;
+});
+var statOptions = '<option value="">--Select--</option>';
+
+statSearch.run().each(function(res){
+
+    var id = res.getValue('internalid');
+    var name = res.getValue('name');
+
+    var selected = (id == linestatusId) ? 'selected' : '';
+
+    statOptions += '<option value="'+id+'" '+selected+'>'+name+'</option>';
 
     return true;
 });
@@ -751,7 +764,7 @@ else {
         .backBtn{
             margin-top:20px;
             padding:10px 15px;
-            background:#6f3ba2;
+            background:#8f50df;
             color:white;
             border:none;
             border-radius:5px;
@@ -772,7 +785,7 @@ else {
     left:50%;
     transform:translate(-50%,-50%);
     border:6px solid #f3f3f3;
-    border-top:6px solid #6f3ba2;
+    border-top:6px solid #8f50df;
     border-radius:50%;
     width:50px;
     height:50px;
@@ -790,12 +803,12 @@ else {
     left:50%;
     transform:translateX(-50%);
     font-weight:bold;
-    color:#6f3ba2;
+    color:#8f50df;
 }
     #editBtn{
     margin-top:20px;
             padding:10px 15px;
-            background:#6f3ba2;
+            background:#8f50df;
             color:white;
             border:none;
             border-radius:5px;
@@ -807,7 +820,7 @@ else {
             #saveBtn{
              margin-top:20px;
             padding:10px 15px;
-            background:#6f3ba2;
+            background:#8f50df;
             color:white;
             border:none;
             border-radius:5px;

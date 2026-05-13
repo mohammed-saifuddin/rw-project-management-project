@@ -19,10 +19,35 @@ log.debug("Ticket ID Received", ticketId);
         var attachment = '';
         
 var ticketId = request.parameters.ticketId;
+var updateStatus =
+    request.parameters.updateStatus;
+
+if(updateStatus){
+
+    record.submitFields({
+
+        type:'customrecord_rw_ticket',
+
+        id: ticketId,
+
+        values:{
+            custrecord_rw_ticket_ticketstatus:
+                updateStatus
+        }
+    });
+
+    context.response.write('success');
+
+    return;
+}
 if(request.method === 'POST'){
     var replyId =
     request.parameters.replyId;
-
+var uploadedFiles = [];
+var existingFiles =
+    JSON.parse(
+        request.parameters.existingFiles || '[]'
+    );
     try{
 
         log.debug("POST STARTED");
@@ -35,7 +60,41 @@ if(request.method === 'POST'){
 
         log.debug("COMMENT TEXT", commentText);
         log.debug("TICKET ID", ticketId);
+if(request.files){
 
+    Object.keys(request.files)
+        .forEach(function(key){
+
+        var uploadedFile =
+            request.files[key];
+
+        if(uploadedFile){
+
+            uploadedFile.folder = 5842;
+
+            var uploadedFileId =
+                uploadedFile.save();
+
+            var savedFile =
+                file.load({
+                    id: uploadedFileId
+                });
+
+            savedFile.isOnline = true;
+
+            savedFile.save();
+
+            uploadedFiles.push(
+                uploadedFileId
+            );
+
+            log.debug(
+                'Uploaded File ID',
+                uploadedFileId
+            );
+        }
+    });
+}
         if(commentText){
 
            var commentRec;
@@ -47,7 +106,21 @@ if(editingId){
         id: editingId,
         isDynamic:true
     });
+var currentEditCount =
+    parseInt(
+        commentRec.getValue(
+            'custrecord_rw_ticket_comment_editcount'
+        ) || 0
+    );
 
+commentRec.setValue({
+
+    fieldId:
+        'custrecord_rw_ticket_comment_editcount',
+
+    value:
+        currentEditCount + 1
+});
 }else{
 
     commentRec = record.create({
@@ -86,13 +159,120 @@ log.debug("EMP ID", empId);
                 value: new Date()
             });
 
-          
+       
 
             var commentId = commentRec.save({
                 enableSourcing:true,
                 ignoreMandatoryFields:true
             });
+            if(editingId){
 
+    var oldAttachSearch =
+        search.create({
+
+            type:'customrecord2297',
+
+            filters:[
+                [
+                    'custrecord1515',
+                    'anyof',
+                    commentId
+                ]
+            ],
+
+            columns:['internalid']
+        });
+
+    oldAttachSearch.run().each(function(r){
+
+        record.delete({
+
+            type:'customrecord2297',
+
+            id:r.getValue('internalid')
+        });
+
+        return true;
+    });
+
+    existingFiles.forEach(function(file){
+
+        var attachRec =
+            record.create({
+
+                type:'customrecord2297'
+            });
+
+        attachRec.setValue({
+            fieldId:'name',
+            value:
+                'ATT-' +
+                commentId +
+                '-' +
+                file.id
+        });
+
+        attachRec.setValue({
+            fieldId:'custrecord1515',
+            value:commentId
+        });
+
+        attachRec.setValue({
+            fieldId:
+                'custrecord_rw_ticket_comments_attachment',
+
+            value:file.id
+        });
+
+        attachRec.save({
+            ignoreMandatoryFields:true
+        });
+    });
+}
+if(uploadedFiles.length > 0){
+
+    uploadedFiles.forEach(function(fileId){
+
+        var attachRec =
+            record.create({
+
+                type:'customrecord2297'
+            });
+
+        attachRec.setValue({
+
+            fieldId:'name',
+
+            value:
+                'ATT-' +
+                commentId +
+                '-' +
+                fileId
+        });
+
+        attachRec.setValue({
+
+            fieldId:'custrecord1515',
+
+            value:commentId
+        });
+
+        attachRec.setValue({
+
+            fieldId:
+                'custrecord_rw_ticket_comments_attachment',
+
+            value:fileId
+        });
+
+        attachRec.save({
+
+            enableSourcing:true,
+            ignoreMandatoryFields:true
+        });
+
+    });
+}
             log.debug("COMMENT SAVED", commentId);
         }
 
@@ -137,6 +317,8 @@ function convertToNetSuiteDate(dateStr) {
         var issueOccurredOn = '';
         var roleOfUser = '';
         var deadline = '';
+        var coworker = '';
+        var reviewer = '';
       var formattedDate = '';
 var formattedDeadline = '';
 var formattedIssueDate = '';
@@ -174,7 +356,9 @@ returnExternalUrl: true,
         roleOfUser = ticketRec.getText('custrecord_rw_ticket_userrole') || '';
          formattedIssueDate = ticketRec.getText('custrecord_rw_ticket_issueoccuredon') || '';
           attachment=ticketRec.getValue('custrecord_rw_ticket_attachment')
-          status=ticketRec.getText('custrecord_rw_ticket_ticketstatus')
+          status=ticketRec.getText('custrecord_rw_ticket_ticketstatus');
+          coworker = ticketRec.getText('custrecord_rw_ticket_coworker') || '';
+          reviewer = ticketRec.getText('custrecord_rw_ticket_review') || '';
 //          var scheduled='';
 //          var golive='';
 //         if(scheduledUatDate){
@@ -213,7 +397,98 @@ function formatDate(date){
     var d = new Date(date);
     return d.toLocaleDateString('en-GB'); // dd/mm/yyyy
 }
+const currentUser = Number(empId);
 
+const assignedEmp = Number(
+    ticketRec.getValue(
+        'custrecord_rw_ticket_assignedto'
+    ) || 0
+);
+
+const reviewerEmp = Number(
+    ticketRec.getValue(
+        'custrecord_rw_ticket_review'
+    ) || 0
+);
+
+const pmEmp = Number(
+    ticketRec.getValue(
+        'custrecord_rw_ticket_coworker'
+    ) || 0
+);
+
+var statusId = Number(
+    ticketRec.getValue(
+        'custrecord_rw_ticket_ticketstatus'
+    ) || 0
+);
+
+log.debug('CURRENT USER', currentUser);
+log.debug('ASSIGNED EMP', assignedEmp);
+log.debug('REVIEWER', reviewerEmp);
+log.debug('PM', pmEmp);
+log.debug('STATUS', statusId);
+
+var hasAccess = false;
+
+if(
+    currentUser === assignedEmp ||
+    currentUser === reviewerEmp ||
+    currentUser === pmEmp
+){
+    hasAccess = true;
+}
+
+var statusButtonHtml = '';
+
+if(hasAccess){
+
+    if(statusId === 1){
+
+        statusButtonHtml =
+        '<button class="statusBtn" type="button" onclick="updateStatus(2)">' +
+        'Start Progress' +
+        '</button>';
+    }
+
+    else if(statusId === 2){
+
+        statusButtonHtml =
+        '<button class="statusBtn" type="button" onclick="updateStatus(3)">' +
+        'Move To CodeReview' +
+        '</button>';
+    }
+
+    else if(statusId === 3){
+
+        statusButtonHtml =
+        '<button class="statusBtn" type="button" onclick="updateStatus(4)">' +
+        'Move To UAT' +
+        '</button>';
+    }
+
+    else if(statusId === 4){
+
+        statusButtonHtml =
+        '<button class="statusBtn" type="button" onclick="updateStatus(5)">' +
+        'Mark As Done' +
+        '</button>';
+    }
+
+    else if(
+    statusId === 5 &&
+    (
+        currentUser === reviewerEmp ||
+        currentUser === pmEmp
+    )
+){
+
+    statusButtonHtml =
+    '<button class="statusBtn reopenBtn" type="button" onclick="updateStatus(2)">' +
+    'Reopen Ticket' +
+    '</button>';
+}
+}
     
 
     var htmlField = form.addField({
@@ -238,14 +513,20 @@ var commentSearch = search.create({
         }),
         'custrecord_rw_ticket_comment_employee',
         'custrecord_rw_ticket_comments_comments',
-        'custrecord_rw_ticket_comments_replycmmnt'
+        'custrecord_rw_ticket_comments_replycmmnt',
+        'custrecord_rw_ticket_comment_editcount'
+       
     ]
 });
 
 var commentsMap = {};
 var replyMap = {};
 
+var commentIndex = 0;
+
 commentSearch.run().each(function(result){
+
+    commentIndex++;
 
     var rawComment =
         result.getValue(
@@ -280,7 +561,205 @@ commentSearch.run().each(function(result){
         result.getValue(
             'custrecord_rw_ticket_comment_employee'
         );
+        var editCount =
+    parseInt(
+        result.getValue(
+            'custrecord_rw_ticket_comment_editcount'
+        ) || 0
+    );
+var attachmentId =
+    result.getValue(
+        'custrecord_rw_ticket_comments_attachment'
+    );
 
+var attachmentHtml = '';
+var existingFiles = [];
+var attachSearch = search.create({
+
+    type:
+        'customrecord2297',
+
+    filters: [
+        [
+            'custrecord1515',
+            'anyof',
+            commentId
+        ]
+    ],
+
+    columns: [
+        'custrecord_rw_ticket_comments_attachment'
+    ]
+});
+
+attachSearch.run().each(function(att){
+
+    var fileId =
+        att.getValue(
+            'custrecord_rw_ticket_comments_attachment'
+        );
+
+    if(fileId){
+
+        try{
+
+            var fileObj =
+                file.load({
+                    id:fileId
+                });
+existingFiles.push({
+
+    id:fileId,
+
+    name:fileObj.name,
+
+    url:fileObj.url
+});
+            var fileUrl =
+                fileObj.url;
+
+            var ext =
+                fileObj.name
+                    .split('.')
+                    .pop()
+                    .toLowerCase();
+
+            if(
+                ext === 'png' ||
+                ext === 'jpg' ||
+                ext === 'jpeg' ||
+                ext === 'gif' ||
+                ext === 'webp'
+            ){
+
+                attachmentHtml +=
+
+                    '<div style="margin-top:10px;">' +
+
+                    '<a href="' +
+                    fileUrl +
+                    '" target="_blank">' +
+
+                    '<img src="' +
+                    fileUrl +
+                    '" style="' +
+                    'max-width:250px;' +
+                    'border-radius:10px;' +
+                    'border:1px solid #dfe1e6;' +
+                    '">' +
+
+                    '</a></div>';
+
+            }else{
+
+                attachmentHtml +=
+
+                    '<div style="margin-top:10px;">' +
+
+                    '<a href="' +
+                    fileUrl +
+                    '" target="_blank" ' +
+
+                    'style="' +
+                    'display:inline-block;' +
+                    'padding:8px 12px;' +
+                    'background:#fff;' +
+                    'border:1px solid #dfe1e6;' +
+                    'border-radius:8px;' +
+                    'text-decoration:none;' +
+                    'font-size:13px;' +
+                    'color:#0052cc;' +
+                    '">' +
+
+                    '📎 ' + fileObj.name +
+
+                    '</a></div>';
+            }
+
+        }catch(e){
+
+            log.error(
+                'Attachment Load Error',
+                e
+            );
+        }
+    }
+
+    return true;
+});
+var createdDate =
+    result.getValue(
+        'custrecord_rw_ticket_comment_cmtdate'
+    );
+
+var diffMinutes = 0;
+
+try{
+
+    if(createdDate){
+
+        var createdTime =
+            format.parse({
+
+                value: createdDate,
+
+                type: format.Type.DATETIMETZ
+            });
+
+        var now =
+            new Date();
+
+        diffMinutes =
+            Math.floor(
+                (
+                    now.getTime() -
+                    createdTime.getTime()
+                ) / 1000 / 60
+            );
+    }
+
+}catch(e){
+
+    log.error(
+        'DATE PARSE ERROR',
+        e
+    );
+
+    diffMinutes = 999;
+}
+
+log.debug(
+    'DIFF MINUTES',
+    diffMinutes
+);
+
+var editBtn = '';
+if(
+    String(commentEmpId) === String(empId) &&
+    commentIndex <= 3 &&
+    diffMinutes <= 10 &&
+    editCount < 2
+){
+
+    editBtn = `
+    
+    <button type="button"
+        onclick='editComment(
+            "${commentId}",
+            "${rawComment
+                .replace(/"/g,"&quot;")
+                .replace(/\n/g," ")
+            }",
+            ${JSON.stringify(existingFiles)
+                .replace(/"/g,'&quot;')}
+        )'
+        class="edit-comment-btn">
+
+        Edit
+
+    </button>
+    `;
+}
     var initials = user
         ? user.split(' ')
               .map(n => n[0])
@@ -310,21 +789,7 @@ commentSearch.run().each(function(result){
 
             ${String(commentEmpId) === String(empId) ? `
 
-            <button
-                type="button"
-                class="edit-comment-btn"
-                onclick="editComment(
-                    '${commentId}',
-                    '${rawComment
-                        .replace(/'/g, "\\'")
-                        .replace(/"/g, '&quot;')
-                        .replace(/\n/g, ' ')
-                    }'
-                )">
-
-                Edit
-
-            </button>
+            ${editBtn}
 
             ` : ''}
 
@@ -343,6 +808,7 @@ commentSearch.run().each(function(result){
 
         <div class="jira-message">
     ${comment}
+    ${attachmentHtml}
 </div>
 
 <div
@@ -350,10 +816,32 @@ commentSearch.run().each(function(result){
     class="reply-input-box"
     style="display:none;">
 
+    <div class="comment-input-wrapper">
+
     <textarea
         id="replyText_${commentId}"
         class="reply-textarea"
         placeholder="Write a reply..."></textarea>
+
+    <label
+        for="replyAttachment_${commentId}"
+        class="attachment-btn">
+
+        📎
+
+    </label>
+
+    <input
+        type="file"
+        id="replyAttachment_${commentId}"
+        style="display:none;">
+
+</div>
+
+<div
+    id="replyFileName_${commentId}"
+    class="selected-file-name">
+</div>
 
     <div class="reply-actions">
 
@@ -386,37 +874,57 @@ commentSearch.run().each(function(result){
 
     if(parentComment){
 
-        if(!replyMap[parentComment]){
-            replyMap[parentComment] = [];
-        }
-
-        replyMap[parentComment].push(html);
-
-    }else{
-
-        commentsMap[commentId] = html;
+    if(!replyMap[parentComment]){
+        replyMap[parentComment] = [];
     }
+
+    replyMap[parentComment].push({
+        id: commentId,
+        html: html
+    });
+
+}else{
+
+    commentsMap[commentId] = {
+        id: commentId,
+        html: html
+    };
+}
 
     return true;
 });
 var commentsListHtml = '';
 
-Object.keys(commentsMap).forEach(function(commentId){
+function renderReplies(parentId){
 
-    commentsListHtml += commentsMap[commentId];
+    var html = '';
 
-    if(replyMap[commentId]){
+    if(replyMap[parentId]){
 
-        commentsListHtml +=
+        html +=
             '<div class="reply-wrapper">';
 
-        replyMap[commentId].forEach(function(replyHtml){
+        replyMap[parentId].forEach(function(reply){
 
-            commentsListHtml += replyHtml;
+            html += reply.html;
+
+            html += renderReplies(reply.id);
+
         });
 
-        commentsListHtml += '</div>';
+        html += '</div>';
     }
+
+    return html;
+}
+
+Object.keys(commentsMap).forEach(function(commentId){
+
+    commentsListHtml +=
+        commentsMap[commentId].html;
+
+    commentsListHtml +=
+        renderReplies(commentId);
 });
 var employeeList = [];
 
@@ -475,22 +983,43 @@ margin-bottom:15px;
     </span>
 </div>
 <div id="mentionBox"></div>
-    <textarea id="newComment"
+  <div class="comment-input-wrapper">
+
+    <textarea
+        id="newComment"
         placeholder="Add a comment..."
-        style="
-            width:100%;
-            height:80px;
-            padding:10px;
-            border-radius:8px;
-            border:1px solid #ccc;
-        ">
+        class="comment-textarea">
     </textarea>
 
+    <label
+        for="commentAttachment"
+        class="attachment-btn">
+
+        📎
+
+    </label>
+
+    <input
+    type="file"
+    id="commentAttachment"
+    multiple
+    style="display:none;">
+
+</div>
+
+<div
+    id="selectedFileName"
+    class="selected-file-name">
+</div>
+<div
+    id="existingEditFiles"
+    style="margin-top:10px;">
+</div>
     <button type="button"
         onclick="saveComment()"
         style="
             margin-top:10px;
-            background:#6f3ba2;
+            background:#8f50df;
             color:white;
             border:none;
             padding:10px 15px;
@@ -555,7 +1084,7 @@ margin-bottom:15px;
     width:42px;
     height:42px;
     border-radius:50%;
-    background:#6f3ba2;
+    background:#8f50df;
     color:white;
     display:flex;
     align-items:center;
@@ -597,7 +1126,48 @@ margin-bottom:15px;
 .jira-content{
     flex:1;
 }
+.comment-input-wrapper{
+    position:relative;
+    width:100%;
+}
 
+.comment-textarea{
+    width:100%;
+    min-height:100px;
+    border:1px solid #dfe1e6;
+    border-radius:12px;
+    padding:14px 50px 14px 14px;
+    font-size:14px;
+    resize:vertical;
+    box-sizing:border-box;
+}
+
+.comment-textarea:focus{
+    outline:none;
+    border-color:#8f50df;
+    box-shadow:0 0 0 3px rgba(111,59,162,0.15);
+}
+
+.attachment-btn{
+    position:absolute;
+    right:14px;
+    bottom:14px;
+    font-size:20px;
+    cursor:pointer;
+    color:#6b778c;
+    transition:0.2s;
+}
+
+.attachment-btn:hover{
+    color:#8f50df;
+    transform:scale(1.1);
+}
+
+.selected-file-name{
+    margin-top:6px;
+    font-size:12px;
+    color:#6b778c;
+}
 /* TOP BAR */
 
 .jira-top{
@@ -664,7 +1234,7 @@ margin-bottom:15px;
 
 #newComment:focus{
     outline:none;
-    border-color:#6f3ba2;
+    border-color:#8f50df;
     box-shadow:0 0 0 3px rgba(111,59,162,0.15);
 }
 
@@ -672,7 +1242,7 @@ margin-bottom:15px;
 
 .comment-btn{
     margin-top:12px;
-    background:#6f3ba2;
+    background:#8f50df;
     color:white;
     border:none;
     padding:10px 18px;
@@ -750,7 +1320,7 @@ margin-bottom:15px;
         .backBtn{
             margin-top:20px;
             padding:10px 15px;
-            background:#6f3ba2;
+            background:#8f50df;
             color:white;
             border:none;
             border-radius:5px;
@@ -771,7 +1341,7 @@ margin-bottom:15px;
     left:50%;
     transform:translate(-50%,-50%);
     border:6px solid #f3f3f3;
-    border-top:6px solid #6f3ba2;
+    border-top:6px solid #8f50df;
     border-radius:50%;
     width:50px;
     height:50px;
@@ -815,7 +1385,7 @@ margin-bottom:15px;
 /* SAVE */
 
 .reply-save-btn{
-    background:#6f3ba2;
+    background:#8f50df;
     color:white;
     border:none;
     padding:8px 14px;
@@ -839,12 +1409,12 @@ margin-bottom:15px;
     left:50%;
     transform:translateX(-50%);
     font-weight:bold;
-    color:#6f3ba2;
+    color:#8f50df;
 }
     #editBtn{
     margin-top:20px;
             padding:10px 15px;
-            background:#6f3ba2;
+            background:#8f50df;
             color:white;
             border:none;
             border-radius:5px;
@@ -879,6 +1449,15 @@ margin-bottom:15px;
     font-size:12px;
     margin-left:10px;
 }
+    .reply-heading{
+    font-size:12px;
+    font-weight:600;
+    color:#6b778c;
+    margin-bottom:10px;
+    margin-top:5px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+}
 .reply-wrapper{
     margin-left:65px;
     border-left:2px solid #dfe1e6;
@@ -887,6 +1466,34 @@ margin-bottom:15px;
 }
 .reply-btn:hover{
     text-decoration:underline;
+}
+    .topHeader{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:25px;
+}
+
+.statusBtn{
+    background:#8f50df;
+    color:white;
+    border:none;
+    padding:10px 16px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+    transition:0.2s;
+}
+.reopenBtn{
+    background:#e67e22;
+}
+
+.reopenBtn:hover{
+    background:#ca6b12;
+}
+.statusBtn:hover{
+    background:#5a2d87;
+    transform:translateY(-1px);
 }
 .comment-body{
     font-size:14px;
@@ -900,7 +1507,7 @@ margin-bottom:15px;
             #saveBtn{
              margin-top:20px;
             padding:10px 15px;
-            background:#6f3ba2;
+            background:#8f50df;
             color:white;
             border:none;
             border-radius:5px;
@@ -909,24 +1516,30 @@ margin-bottom:15px;
     </style>
 
     <div class="container">
-    <div class="title">Ticket Details</div>
+    <div class="topHeader">
+
+    <div class="title">
+        Ticket Details
+    </div>
+
+    <div>
+        ${statusButtonHtml}
+    </div>
+
+</div>
 
     <div class="form-grid">
-
-        <div class="label">Name</div>
+<div class="label">Ticket No</div>
+        <div class="value">${ticketNo}</div>
+        <div class="label">Requester</div>
         <div class="value">${name}</div>
 
         <div class="label">Date</div>
         <div class="value">${date}</div>
 
-        <div class="label">Ticket No</div>
-        <div class="value">${ticketNo}</div>
-        <div class="label">Attachment</div>
-        <div class="value">
-    ${fileUrl ? `<a href="${fileUrl}" target="_blank">${fileName}</a>` : 'No Attachment'}
-</div>
-        <div class="label">Ticket Status</div>
-        <div class="value">${status}</div>
+        
+       
+        
 
         <div class="label">Email</div>
         <div class="value">${email}</div>
@@ -951,6 +1564,17 @@ margin-bottom:15px;
         <div class="label">Deadline</div>
         <div class="value">${formattedDeadline}</div>
 
+        <div class="label">Project Manager</div>
+        <div class="value">${coworker}</div>
+ <div class="label">Attachment</div>
+        <div class="value">
+    ${fileUrl ? `<a href="${fileUrl}" target="_blank">${fileName}</a>` : 'No Attachment'}
+</div>
+        <div class="label">Reviewer</div>
+        <div class="value">${reviewer}</div>
+        <div class="label">Ticket Status</div>
+        <div class="value">${status}</div>
+
     </div>
 
 ${commentsHtml}
@@ -965,21 +1589,92 @@ ${commentsHtml}
    
     var ticketUrl = '${ticketUrl}';
     var employees = JSON.parse('${employeeJson}');
-function editComment(id, text){
+function editComment(
+    id,
+    text,
+    files
+){
 
-    document.getElementById("newComment").value =
+    document.getElementById(
+        "newComment"
+    ).value =
         text.replace(/<[^>]*>/g,'');
 
-    document.getElementById("editingCommentId").value =
-        id;
+    document.getElementById(
+        "editingCommentId"
+    ).value = id;
 
-    document.getElementById("newComment").focus();
+    existingEditFiles = files || [];
+
+    renderExistingFiles();
+
+    document.getElementById(
+        "newComment"
+    ).focus();
 
     window.scrollTo({
-        top: document.getElementById("newComment")
-            .offsetTop - 120,
+
+        top:
+            document.getElementById(
+                "newComment"
+            ).offsetTop - 120,
+
         behavior:'smooth'
     });
+}
+    function renderExistingFiles(){
+
+    var html = '';
+
+    existingEditFiles.forEach(function(file,index){
+
+        html +=
+
+            '<div style="' +
+            'display:flex;' +
+            'justify-content:space-between;' +
+            'align-items:center;' +
+            'background:#f4f5f7;' +
+            'padding:8px 10px;' +
+            'margin-top:6px;' +
+            'border-radius:6px;' +
+            '">' +
+
+            '<a href="' +
+            file.url +
+            '" target="_blank">' +
+
+            '📎 ' + file.name +
+
+            '</a>' +
+
+            '<span ' +
+            'style="' +
+            'color:red;' +
+            'cursor:pointer;' +
+            'font-weight:bold;' +
+            '" ' +
+
+            'onclick="removeExistingFile(' +
+            index +
+            ')">' +
+
+            '✖' +
+
+            '</span>' +
+
+            '</div>';
+    });
+
+    document.getElementById(
+        'existingEditFiles'
+    ).innerHTML = html;
+}
+    function removeExistingFile(index){
+
+    existingEditFiles.splice(index,1);
+
+    renderExistingFiles();
 }
 var textarea =
     document.getElementById("newComment");
@@ -1196,6 +1891,8 @@ function enableMentions(textareaId){
 //         newCursorPos
 //     );
 // }
+
+var selectedFiles = [];
     function openReplyBox(commentId){
 
     var box =
@@ -1207,6 +1904,25 @@ function enableMentions(textareaId){
 enableMentions(
     'replyText_' + commentId
 );
+var replyFile =
+    document.getElementById(
+        'replyAttachment_' + commentId
+    );
+
+replyFile.addEventListener(
+    'change',
+    function(){
+
+        document.getElementById(
+            'replyFileName_' + commentId
+        ).innerText =
+
+            this.files.length
+            ? '📎 ' + this.files[0].name
+            : '';
+});
+
+var existingFiles = [];
     document.getElementById(
         'replyText_' + commentId
     ).focus();
@@ -1218,35 +1934,58 @@ function cancelReply(commentId){
         'replyBox_' + commentId
     ).style.display = 'none';
 }
-    function saveReply(commentId){
+   function saveReply(commentId){
 
     var comment =
         document.getElementById(
             'replyText_' + commentId
         ).value;
 
+    var fileInput =
+        document.getElementById(
+            'replyAttachment_' + commentId
+        );
+
     if(!comment){
 
         alert('Enter reply');
-
         return;
+    }
+
+    var formData = new FormData();
+
+    formData.append(
+        'ticketId',
+        '${ticketId}'
+    );
+
+    formData.append(
+        'empid',
+        '${empId}'
+    );
+
+    formData.append(
+        'replyId',
+        commentId
+    );
+
+    formData.append(
+        'commentText',
+        comment
+    );
+
+    if(fileInput.files.length > 0){
+
+        formData.append(
+            'commentAttachment',
+            fileInput.files[0]
+        );
     }
 
     fetch(window.location.href,{
 
         method:'POST',
-
-        headers:{
-            'Content-Type':
-                'application/x-www-form-urlencoded'
-        },
-
-        body:
-            'ticketId=${ticketId}' +
-            '&empid=${empId}' +
-            '&replyId=' + commentId +
-            '&commentText=' +
-            encodeURIComponent(comment)
+        body: formData
 
     })
     .then(() => {
@@ -1254,6 +1993,76 @@ function cancelReply(commentId){
         location.reload();
     });
 }
+    document
+    .getElementById('commentAttachment')
+    .addEventListener('change', function(){
+
+        for(
+            var i = 0;
+            i < this.files.length;
+            i++
+        ){
+
+            selectedFiles.push(
+                this.files[i]
+            );
+        }
+
+        renderSelectedFiles();
+
+        this.value = '';
+});
+
+function renderSelectedFiles(){
+
+    var html = '';
+
+    selectedFiles.forEach(function(file,index){
+
+        html +=
+            '<div style="' +
+            'display:flex;' +
+            'align-items:center;' +
+            'justify-content:space-between;' +
+            'margin-top:6px;' +
+            'padding:6px 10px;' +
+            'background:#f4f5f7;' +
+            'border-radius:6px;' +
+            '">' +
+
+            '<span>📎 ' +
+            file.name +
+            '</span>' +
+
+            '<span ' +
+            'style="' +
+            'cursor:pointer;' +
+            'color:red;' +
+            'font-weight:bold;' +
+            '" ' +
+
+            'onclick="removeFile(' +
+            index +
+            ')">' +
+
+            '✖' +
+
+            '</span>' +
+
+            '</div>';
+    });
+
+    document.getElementById(
+        'selectedFileName'
+    ).innerHTML = html;
+}
+    function removeFile(index){
+
+    selectedFiles.splice(index,1);
+
+    renderSelectedFiles();
+}
+
      function goBack(){
 
     var loader = document.getElementById("loader");
@@ -1283,36 +2092,103 @@ function cancelReply(commentId){
         "commentBtn"
     ).innerText = 'Reply';
 }
+    var existingEditFiles = [];
     function saveComment(){
 
     var comment =
         document.getElementById("newComment").value;
-var editingId =
-    document.getElementById("editingCommentId").value;
-    var replyId =
-    document.getElementById(
-        "replyCommentId"
-    ).value;
-    if(!comment){
-        alert("Enter comment");
-        return;
-    }
 
+    var fileInput =
+        document.getElementById(
+            "commentAttachment"
+        );
+
+    var editingId =
+        document.getElementById(
+            "editingCommentId"
+        ).value;
+
+    if(
+    !comment ||
+    comment.trim() === ''
+){
+
+    alert(
+        'Comment cannot be empty'
+    );
+
+    return;
+}
+
+    var formData = new FormData();
+
+    formData.append(
+        'ticketId',
+        '${ticketId}'
+    );
+
+    formData.append(
+        'empid',
+        '${empId}'
+    );
+
+    formData.append(
+        'editingId',
+        editingId
+    );
+
+    formData.append(
+        'commentText',
+        comment
+    );
+
+   selectedFiles.forEach(function(file,index){
+
+    formData.append(
+        'commentAttachment_' + index,
+        file
+    );
+});
+formData.append(
+    'existingFiles',
+    JSON.stringify(existingEditFiles)
+);
     fetch(window.location.href,{
+
         method:'POST',
+        body: formData
 
-        headers:{
-            'Content-Type':'application/x-www-form-urlencoded'
-        },
-
-     body:
-    'ticketId=${ticketId}' +
-    '&empid=${empId}' +
-    '&editingId=' + editingId +
-    
-    '&commentText=' + encodeURIComponent(comment)
     })
     .then(() => {
+
+      selectedFiles = [];
+
+location.reload();
+    });
+}
+    function updateStatus(statusId){
+
+    var formData = new FormData();
+
+    formData.append(
+        'ticketId',
+        '${ticketId}'
+    );
+
+    formData.append(
+        'updateStatus',
+        statusId
+    );
+
+    fetch(window.location.href,{
+
+        method:'POST',
+
+        body: formData
+
+    })
+    .then(function(){
+
         location.reload();
     });
 }

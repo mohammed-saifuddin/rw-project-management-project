@@ -119,7 +119,7 @@ div.uir-page-wrapper {
 
         .portal{
              width:100%;
-            background:#6b3fa0;
+            background:#8f50df;
             color:white;
              font-weight:bold;
             margin-left:10px;
@@ -150,7 +150,7 @@ div.uir-page-wrapper {
     left: 50%;
     transform: translateX(-50%);
     
-    background: #6b3fa0;
+    background: #8f50df;
     color: white;
     
     padding: 16px;
@@ -190,7 +190,7 @@ div.uir-page-wrapper {
     transition: all 0.3s ease;
 }
 .btn{
-    background:#6b3fa0;
+    background:#8f50df;
     color:white;
     padding:10px 20px;
     border:none;
@@ -214,7 +214,7 @@ body{
 }
 
 .row input:focus{
-    border-color:#6b3fa0;
+    border-color:#8f50df;
     box-shadow:0 0 5px rgba(177, 117, 250, 0.91);
 }
 .btn:hover{
@@ -275,7 +275,7 @@ body{
 .card-title{
     font-size:22px;
     font-weight:700;
-    color:#6b3fa0;
+    color:#8f50df;
 }
 
 .card-subtitle{
@@ -438,7 +438,9 @@ return;
             ],
             columns:[
                 'internalid',
-                'custentity_rw_dms_portal_password'
+                'custentity_rw_dms_portal_password',
+                'custentity_rw_dms_portalaccess',
+                'custentityrw_dms_role'
             ]
         });
 
@@ -461,6 +463,13 @@ return;
             var empId = result[0].getValue({
                 name: 'internalid'
             });
+            var hasPortalAccess =
+    result[0].getValue({
+        name:'custentity_rw_dms_portalaccess'
+    });
+            var role = result[0].getValue({
+                name: 'custentityrw_dms_role'
+            });
             log.debug("Employee ID from search", empId);
             log.debug("Email from login", emailValue);
 
@@ -468,6 +477,9 @@ return;
             log.debug("Hashed Input", hashPass);
 log.debug("Stored Password", storedPassword);
            var hashPass=hashPassword(password)
+           
+
+
              log.debug("Hashed Input", hashPass);
 log.debug("Stored Password", storedPassword);
             // FIRST LOGIN → RESET PASSWORD PAGE
@@ -496,7 +508,24 @@ log.debug("Reset URL", resetUrl);
 
             // NORMAL LOGIN
             else if(hashPass === storedPassword){
+if(
+        !hasPortalAccess ||
+        !role
+    ){
 
+        context.response.write(
+
+            "<html><script>" +
+
+            "alert('Not Authorized to Access Portal');" +
+
+            "window.history.back();" +
+
+            "</script></html>"
+        );
+
+        return;
+    }
                 var homeUrl = url.resolveScript({
                     scriptId:'customscript2874',
                     deploymentId:'customdeploy3',

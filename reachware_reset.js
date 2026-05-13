@@ -102,7 +102,7 @@ body{
     font-weight:600;
 }
 .btn{
-    background:#6b3fa0;
+    background:#8f50df;
     color:white;
     padding:10px 20px;
     border:none;
@@ -124,7 +124,7 @@ body{
 }
 
 .row input:focus{
-    border-color:#6b3fa0;
+    border-color:#8f50df;
     box-shadow:0 0 5px rgba(107,63,160,0.3);
 }
 .header{
@@ -134,7 +134,7 @@ border:1px solid #2d6fa3;
 
 .portal{
 flex:1;
-background:#6b3fa0;
+background:#8f50df;
 color:white;
 height:60px;
 display:flex;
@@ -143,6 +143,7 @@ align-items:center;
 text-align:center;
 padding:12px;
 font-size:18px;
+font-weight:bold;
 }
 
 .login-box{
@@ -214,7 +215,7 @@ cursor:pointer;
 .card-title{
     font-size:22px;
     font-weight:700;
-    color:#6b3fa0;
+    color:#8f50df;
 }
 
 .card-subtitle{

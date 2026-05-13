@@ -51,6 +51,12 @@ params: {
         email: email
     }
 });
+const ticketUrl = url.resolveScript({
+scriptId: 'customscript2894',
+deploymentId: 'customdeploy1',
+returnExternalUrl: true,
+
+});
 var filters = [];
 
 if(filterType === 'open'){
@@ -563,7 +569,9 @@ function getProductTicketDetails(projectId, productId){
     var total = 0;
     var open = 0;
     var closed = 0;
-
+if(!projectId || !productId){
+        return { total:0, open:0, closed:0 };
+    }
     var ticketSearch = search.create({
         type: 'customrecord_rw_ticket',
         filters: [
@@ -622,7 +630,7 @@ ${roleType === 'PM' ? `
     </tr>
 
     ${Object.entries(data.products).map(([name, obj]) => {
-  var ticketDetails = getProductTicketDetails(projectId, obj.productId);
+  var ticketDetails = getProductTicketDetails(data.customerId, obj.productId)
         return `
         <tr>
             <td style="border:1px solid black;">${data.status || ''}</td>
@@ -638,9 +646,29 @@ ${obj.duration ? obj.duration + ' days' : ''}
 </td>
 
         ${roleType === 'PM' ? `
-<td style="border:1px solid black;">${ticketData.total}</td>
-        <td style="border:1px solid black;">${ticketData.open}</td>
-        <td style="border:1px solid black;">${ticketData.closed}</td>
+<td 
+style="border:1px solid black;cursor:pointer;color:blue;"
+onclick="openTicketDetails('${data.customerId}','${obj.productId}','total')">
+
+${ticketDetails.total}
+
+</td>
+
+<td 
+style="border:1px solid black;cursor:pointer;color:green;"
+onclick="openTicketDetails('${data.customerId}','${obj.productId}','open')">
+
+${ticketDetails.open}
+
+</td>
+
+<td 
+style="border:1px solid black;cursor:pointer;color:red;"
+onclick="openTicketDetails('${data.customerId}','${obj.productId}','closed')">
+
+${ticketDetails.closed}
+
+</td>
 
         <td style="border:1px solid black;">${obj.functionalConsultant || ''}</td>
         <td style="border:1px solid black;">${obj.technicalConsultant || ''}</td>
@@ -730,7 +758,7 @@ var paginationHtml = `
 <div style="text-align:center; margin-top:20px;">
 
     ${page > 0 ? `
-        <button type="button" onclick="goToPage(${prevPage})" style="padding:8px 15px; background:#6f3ba2; color:white; border:none; border-radius:5px; cursor:pointer;">Previous</button>
+        <button type="button" onclick="goToPage(${prevPage})" style="padding:8px 15px; background:#8f50df; color:white; border:none; border-radius:5px; cursor:pointer;">Previous</button>
     ` : ''}
 
     <span style="margin:0 15px; font-weight:bold;">
@@ -739,7 +767,7 @@ var paginationHtml = `
 
     ${page < totalPages - 1 ? `
         
-        <button type="button" onclick="goToPage(${nextPage})" style="padding:8px 15px; background:#6f3ba2; color:white; border:none; border-radius:5px; cursor:pointer;">Next</button>
+        <button type="button" onclick="goToPage(${nextPage})" style="padding:8px 15px; background:#8f50df; color:white; border:none; border-radius:5px; cursor:pointer;">Next</button>
     ` : ''}
 
 </div>
@@ -810,7 +838,7 @@ overflow-y:auto;
 .backBtn{
             margin-top:20px;
             padding:10px 15px;
-            background:#6f3ba2;
+            background:#8f50df;
             color:white;
             border:none;
             border-radius:5px;
@@ -824,7 +852,7 @@ overflow-y:auto;
     font-size:16px;
     text-align:right;
     font-weight:bold;
-    color:#6f3ba2;
+    color:#8f50df;
 }
 .product-card{
     background:#ffffff;
@@ -969,7 +997,7 @@ table{
 }
 
 th{
-    background:#6f3ba2;
+    background:#8f50df;
     color:white;
     font-size:13px;
 }
@@ -1032,8 +1060,8 @@ align-item:left;
 padding:0;
 }
 .addBtn:hover{
-color:#6f3ba2;
-text-shadow:0 0 5px #6f3ba2;
+color:#8f50df;
+text-shadow:0 0 5px #8f50df;
 text-decoration: none;
 
 }
@@ -1223,6 +1251,26 @@ var homeUrl = '${homeUrl}';
     setTimeout(function(){
         window.parent.location.href = homeUrl;
     }, 300); // small delay for smooth UX
+}
+    function openTicketDetails(projectId, productId, type){
+
+    var loader = document.getElementById("loader");
+    var frame = document.getElementById("mainFrame");
+
+    loader.style.display = "block";
+
+    document.getElementById("homeContent").style.display = "none";
+
+    frame.style.display = "block";
+
+    var ticketUrl = '${ticketUrl}';
+
+    ticketUrl += "&projectId=" + projectId;
+ticketUrl += "&productId=" + productId;
+ticketUrl += "&ticketFilter=" + type;
+ticketUrl += "&fromproject=T";
+    
+    frame.src = ticketUrl;
 }
 </script>
 `;

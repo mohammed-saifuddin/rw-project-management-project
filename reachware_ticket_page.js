@@ -134,6 +134,25 @@ function getEmployeeInternalId(email){
 
 var empInternalId = getEmployeeInternalId(email);
 
+var statOptions ='<option value="">--Select--</option>';
+
+var statSearch1 = search.create({
+    type: 'customlist_rw_ticket_ticketstatuslist',
+    columns: ['internalid','name']
+});
+
+statSearch1.run().each(function(result){
+
+    var id = result.getValue('internalid');
+    var name = result.getValue('name');
+
+     var isSelected = (name === 'To Do') ? 'selected' : '';
+
+
+statOptions += '<option value="'+id+'" '+isSelected+'>'+name+'</option>';
+
+    return true;
+});
 var loggedRoleName = getEmployeeRole(empInternalId);
 
 log.debug("Logged Role Name", loggedRoleName); // ✅ USE NAME
@@ -249,19 +268,57 @@ log.debug("DMS ROLE", dmsRole);
 log.debug("ROLE TYPE", roleType);
 var customerOptions = '<option value="">--Select--</option>';
 
+var customerOptions =
+    '<option value="">--Select--</option>';
+
+var customerData = [];
+
 var customerSearch = search.create({
+
     type: search.Type.CUSTOMER,
+
     filters: [
         ['isinactive','is','F'],
-       
-    'AND',
-    ['custentity_is_rw_customer','is','T']
+        'AND',
+        ['custentity_is_rw_customer','is','T']
     ],
-    columns: ['internalid','altname']
+
+    columns: [
+        'internalid',
+        'altname'
+    ]
 });
+
 customerSearch.run().each(function(result){
-    customerOptions += '<option value="' + result.getValue('internalid') + '">' + result.getValue('altname') + '</option>';
-     return true;
+
+    customerData.push({
+
+        id:
+            result.getValue('internalid'),
+
+        name:
+            result.getValue('altname') || ''
+    });
+
+    return true;
+});
+
+// SORT ALPHABETICALLY
+customerData.sort(function(a,b){
+
+    return a.name.localeCompare(b.name);
+
+});
+
+// BUILD OPTIONS
+customerData.forEach(function(customer){
+
+    customerOptions +=
+        '<option value="' +
+        customer.id +
+        '">' +
+        customer.name +
+        '</option>';
 });
 var roleSearch = search.create({
     type: 'role',
@@ -304,29 +361,100 @@ log.debug("selected value is ",selected);
 
     return true;
 });
+var empRoleMap = {}
 var empOptions = '<option value="">Select</option>';
 var emp1Options = '<option value="">Select</option>';
-        var empSearch = search.create({
+var uniqueEmployees = {};
+
+var employeeData = [];
+
+var empSearch = search.create({
     type: 'employee',
     filters: [
         ['isinactive','is','F']
     ],
-    columns: ['internalid','firstname','lastname','custentityrw_dms_role']
+    columns: [
+        'internalid',
+        'firstname',
+        'lastname',
+        'role'
+    ]
 });
 
 empSearch.run().each(function(result){
 
-    var id = result.getValue('internalid');
-    var firstname = result.getValue('firstname');
-    var lastname = result.getValue('lastname');
+   var id = result.getValue('internalid');
 
-    var isSelected = (String(id) === selectedEmpId) ? 'selected' : '';
+var firstname = result.getValue('firstname') || '';
+var lastname = result.getValue('lastname') || '';
 
-    empOptions += '<option value="'+id+'" '+isSelected+'>' +
-        firstname + ' ' + lastname +
-        '</option>';
+var fullName =
+    (firstname + ' ' + lastname)
+    .replace(/\s+/g,' ')
+    .trim();
+
+// ✅ avoid duplicate NAMES
+var uniqueKey = fullName.toLowerCase();
+
+if(uniqueEmployees[uniqueKey]){
+    return true;
+}
+
+uniqueEmployees[uniqueKey] = true;
+    employeeData.push({
+        id: id,
+        name: fullName,
+        roleId: result.getValue('role'),
+        roleName: result.getText('role')
+    });
 
     return true;
+});
+
+
+// ✅ SORT ALPHABETICALLY
+employeeData.sort(function(a,b){
+
+    return a.name.localeCompare(b.name);
+
+});
+
+
+// ✅ BUILD DROPDOWNS
+employeeData.forEach(function(emp){
+
+    var isSelected =
+        (String(emp.id) === selectedEmpId)
+        ? 'selected'
+        : '';
+
+    empOptions +=
+        '<option value="'+emp.id+'" '+isSelected+'>' +
+        emp.name +
+        '</option>';
+
+    
+
+    empRoleMap[emp.id] = {
+        roleId: emp.roleId,
+        roleName: emp.roleName
+    };
+
+});
+
+employeeData.forEach(function(emp){
+
+    
+
+    emp1Options +=
+        '<option value="'+emp.id+'">' +
+        emp.name +
+        '</option>';
+
+    
+
+    
+
 });
 log.debug("emp id is ",selectedEmpId)
 var projectOptions = '<option value="">Select</option>';
@@ -336,19 +464,13 @@ var projectSearch = search.create({
     filters: [['isinactive','is','F']],
     columns: ['internalid','name']
 });
-var empRoleMap = {};
+
 projectSearch.run().each(function(result){
     var id = result.getValue('internalid');
     var name = result.getValue('name');
 
     projectOptions += '<option value="'+id+'">'+name+'</option>';
-var empSearch = search.create({
-    type: 'employee',
-    filters: [
-        ['isinactive','is','F']
-    ],
-    columns: ['internalid','firstname','lastname','role']
-});
+
   var homeUrl = url.resolveScript({
                     scriptId:'customscript2874',
                     deploymentId:'customdeploy3',
@@ -358,26 +480,7 @@ var empSearch = search.create({
         email: email
     }
                 });
-empSearch.run().each(function(result){
 
-    var id = result.getValue('internalid');
-    var firstname = result.getValue('firstname');
-    var lastname = result.getValue('lastname');
-
-    var roleId = result.getValue('role');
-    var roleName = result.getText('role');
-
-    empRoleMap[id] = {
-        roleId: roleId,
-        roleName: roleName
-    };
-
-    emp1Options += '<option value="'+id+'">'+
-        firstname + ' ' + lastname +
-        '</option>';
-
-    return true;
-});
     return true;
 });
 
@@ -446,7 +549,7 @@ label.required::after {
 
 /* Section */
 .section {
-    background:#6f3ba2;
+    background:#8f50df;
     // background:#5d8db8;
     color:white;
     padding:8px;
@@ -533,7 +636,7 @@ height:30px;
 button {
    margin-top:20px;
 padding:10px 20px;
-background:#6f3ba2;
+background:#8f50df;
 color:white;
 border:none;
 cursor:pointer;
@@ -553,8 +656,15 @@ cursor:pointer;
 <div class="row">
 
 <div style="flex:1;">
+<div class="form-row">
+        <label>Ticket No</label>
+        
+        <span id="ticketNoText" style="padding:8px;font-size:14px;font-style:italic;">To be Generated automatically</span>
+
+<input type="hidden" id="ticketNoField" name="ticketNo">
+    </div>
     <div class="form-row">
-        <label class="required">Assignee</label>
+        <label class="required">Requester</label>
         <input type="hidden" name="empid" value="${selectedEmpId}">
         <select name="name" required>
         ${empOptions}
@@ -566,13 +676,7 @@ cursor:pointer;
     <input type="date" id="dateField" name="date" readonly>
     </div>
 
-    <div class="form-row">
-        <label>Ticket No</label>
-        
-        <span id="ticketNoText" style="padding:8px;font-size:14px;font-style:italic;">To be Generated automatically</span>
-
-<input type="hidden" id="ticketNoField" name="ticketNo">
-    </div>
+    
 </div>
 
 <div style="flex:1;">
@@ -634,6 +738,14 @@ cursor:pointer;
             <option value="2">Sandbox</option>
             
         </select>
+       
+    </div>
+     <div class="form-row">
+        <label class="required">Project Manager</label>
+        <select class="" name="coworker" required>
+          ${emp1Options}
+            
+        </select>
     </div>
 </div>
 
@@ -670,12 +782,7 @@ cursor:pointer;
     <div class="form-row">
         <label class="required">Status</label>
         <select name="status" required>
-<option value="">Select</option>
-<option value="1">To Do</option>
-<option value="2">In Progress</option>
-<option value="3">UAT</option>
-<option value="4">Code Review</option>
-<option value="5">Done</option>
+${statOptions}
 </select>
     </div>
 </div>
@@ -683,22 +790,35 @@ cursor:pointer;
 <div style="flex:1;">
     <div class="form-row">
         <label class="required">Issue Occurred on</label>
-        <input type="date" name="issueOccurredOn" required>
+        <input
+    type="date"
+    id="issueOccurredOn"
+    name="issueOccurredOn"
+    required>
     </div>
 
     <div class="form-row">
         <label class="required">Assigned To</label>
         
         <select class="" name="assignedTo" required>
-            ${emp1Options}
+            ${empOptions}
         </select>
     </div>
 
     <div class="form-row">
         <label class="required">Deadline</label>
-        <input type="date" name="deadline" required>
+        <input
+    type="date"
+    id="deadline"
+    name="deadline"
+    required>
     </div>
-    
+    <div class="form-row">
+        <label class="required">Reviewer</label>
+         <select class="" name="reviewer" required>
+            ${emp1Options}
+        </select>
+    </div>
 </div>
 
 </div>
@@ -735,6 +855,52 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 300);
 
 });
+
+const issueDateField =
+    document.getElementById(
+        'issueOccurredOn'
+    );
+
+const deadlineField =
+    document.getElementById(
+        'deadline'
+    );
+
+function validateDates(){
+
+    var issueDate =
+        issueDateField.value;
+
+    var deadline =
+        deadlineField.value;
+
+    if(issueDate && deadline){
+
+        if(
+            new Date(issueDate) >
+            new Date(deadline)
+        ){
+
+            alert(
+                'Issue Occurred Date should be less than or equal to Deadline'
+            );
+
+            deadlineField.value = '';
+        }
+    }
+}
+
+issueDateField.addEventListener(
+    'change',
+    validateDates
+);
+
+deadlineField.addEventListener(
+    'change',
+    validateDates
+);
+
+
 document.addEventListener("DOMContentLoaded", function () {
 
     const empDropdown =
@@ -928,6 +1094,7 @@ function convertToNetSuiteDate(dateStr) {
         var requestType = req.parameters.requestType;
         var assignedTo = req.parameters.assignedTo;
         var projectName = req.parameters.projectName;
+        var reviewer = req.parameters.reviewer;
         var suiteApp = req.parameters.suiteApp;
         var environment = req.parameters.environment;
         var priority = req.parameters.priority;
@@ -936,12 +1103,42 @@ function convertToNetSuiteDate(dateStr) {
         var issueOccurredOn = req.parameters.issueOccurredOn;
         var roleOfUser = req.parameters.roleOfUser;
         var deadline = req.parameters.deadline;
+        var coworker = req.parameters.coworker;
       var formattedDate = convertToNetSuiteDate(date);
 var formattedDeadline = convertToNetSuiteDate(deadline);
 var formattedIssueDate = convertToNetSuiteDate(issueOccurredOn);
 var overdueDays =req.parameters.overdueDays;
         var ticketNo =req.parameters.ticketNo;
+if(
+    formattedIssueDate &&
+    formattedDeadline
+){
 
+    var issueDateObj =
+        new Date(formattedIssueDate);
+
+    var deadlineObj =
+        new Date(formattedDeadline);
+
+    if(issueDateObj > deadlineObj){
+
+        context.response.write(`
+
+            <script>
+
+                alert(
+                    'Issue Occurred Date cannot be greater than Deadline'
+                );
+
+                history.back();
+
+            </script>
+
+        `);
+
+        return;
+    }
+}
         var rec = record.create({
             type: 'customrecord_rw_ticket',
             isDynamic: true
@@ -971,6 +1168,14 @@ var overdueDays =req.parameters.overdueDays;
             fieldId: 'custrecord_rw_ticket_issuedetails',
              value: issueDetails 
             });
+            rec.setValue({
+                fieldId:'custrecord_rw_ticket_review',
+                value: reviewer
+            })
+            rec.setValue({
+                fieldId:'custrecord_rw_ticket_coworker',
+                value:coworker
+            })
         rec.setValue({ 
             fieldId: 'custrecord_rw_ticket_requesttype', 
             value: requestType
@@ -1156,7 +1361,7 @@ body {
 .success-circle {
     width: 70px;
     height: 70px;
-    background: #6f3ba2;
+    background: #8f50df;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1187,7 +1392,7 @@ body {
 
 /* BUTTON */
 .dialog-btn {
-    background: linear-gradient(135deg, #6f3ba2, #8a4dd1);
+    background:#8f50df;
     border: none;
     color: white;
     padding: 10px 30px;
