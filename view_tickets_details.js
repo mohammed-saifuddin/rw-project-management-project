@@ -24,6 +24,74 @@ var updateStatus =
 
 if(updateStatus){
 
+    var oldTicketRec = record.load({
+    type:'customrecord_rw_ticket',
+    id: ticketId,
+    isDynamic:false
+});
+
+var oldStatus =
+    oldTicketRec.getText(
+        'custrecord_rw_ticket_ticketstatus'
+    ) || '';
+
+record.submitFields({
+
+    type:'customrecord_rw_ticket',
+
+    id: ticketId,
+
+    values:{
+        custrecord_rw_ticket_ticketstatus:
+            updateStatus
+    }
+});
+
+var newTicketRec = record.load({
+    type:'customrecord_rw_ticket',
+    id: ticketId,
+    isDynamic:false
+});
+
+var newStatus =
+    newTicketRec.getText(
+        'custrecord_rw_ticket_ticketstatus'
+    ) || '';
+
+var histRec = record.create({
+    type:'customrecord_rw_ticket_history',
+    isDynamic:true
+});
+
+histRec.setValue({
+    fieldId:'custrecord_rw_ticket_hist_ticket',
+    value:ticketId
+});
+
+histRec.setValue({
+    fieldId:'custrecord_rw_ticket_hist_oldstatus',
+    value:oldStatus
+});
+
+histRec.setValue({
+    fieldId:'custrecord_rw_ticket_hist_newstatus',
+    value:newStatus
+});
+
+histRec.setValue({
+    fieldId:'custrecordcustrecord_rw_ticket_hist_chan',
+    value:empId
+});
+
+histRec.setValue({
+    fieldId:'custrecord_rw_ticket_hist_changedon',
+    value:new Date()
+});
+
+histRec.save({
+    enableSourcing:true,
+    ignoreMandatoryFields:true
+});
     record.submitFields({
 
         type:'customrecord_rw_ticket',
@@ -954,6 +1022,110 @@ empSearch.run().each(function(result){
 var employeeJson =
     JSON.stringify(employeeList)
         .replace(/'/g, "\\'");
+
+        var historyHtml = `
+<div style="
+    margin-top:25px;
+    background:#fff;
+    border-radius:14px;
+    padding:20px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.08);
+">
+<h3 style="
+    margin-top:0;
+    margin-bottom:20px;
+    color:#172b4d;
+">
+    System Notes
+</h3>
+`;
+var histSearch = search.create({
+    type:'customrecord_rw_ticket_history',
+
+    filters:[
+        [
+            'custrecord_rw_ticket_hist_ticket',
+            'anyof',
+            ticketId
+        ]
+    ],
+
+    columns:[
+        search.createColumn({
+            name:'created',
+            sort:search.Sort.DESC
+        }),
+        'custrecord_rw_ticket_hist_oldstatus',
+        'custrecord_rw_ticket_hist_newstatus',
+        'custrecordcustrecord_rw_ticket_hist_chan',
+        'custrecord_rw_ticket_hist_changedon'
+    ]
+});
+histSearch.run().each(function(h){
+
+    historyHtml += `
+
+<div style="
+    border-left:5px solid #8f50df;
+    background:#f8f9fc;
+    padding:14px;
+    border-radius:10px;
+    margin-bottom:14px;
+">
+
+<div style="
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+">
+
+<div style="
+    font-weight:600;
+">
+    ${h.getValue(
+        'custrecord_rw_ticket_hist_oldstatus'
+    ) || '-'}
+    
+    →
+    
+    ${h.getValue(
+        'custrecord_rw_ticket_hist_newstatus'
+    ) || '-'}
+</div>
+
+<div style="
+    font-size:12px;
+    color:#6b778c;
+">
+🕒 ${
+format.format({
+    value:h.getValue('created'),
+    type:format.Type.DATETIMETZ
+})
+}
+</div>
+
+</div>
+
+<div style="
+    margin-top:8px;
+    font-size:13px;
+    color:#555;
+">
+👤 ${
+h.getText(
+    'custrecordcustrecord_rw_ticket_hist_chan'
+) || ''
+}
+</div>
+
+</div>
+`;
+
+    return true;
+});
+
+historyHtml += `</div>`;
 var commentsHtml = `
 <div class="comment-section">
 <input type="hidden" id="editingCommentId" value="">
@@ -1576,7 +1748,7 @@ margin-bottom:15px;
         <div class="value">${status}</div>
 
     </div>
-
+${historyHtml}
 ${commentsHtml}
 
     <button class="backBtn" type="button" onclick="goBack()">⬅ Back</button>
@@ -2192,6 +2364,10 @@ location.reload();
         location.reload();
     });
 }
+    sessionStorage.setItem(
+    'refreshDashboard',
+    'true'
+);
     </script>
     `;
 

@@ -11,6 +11,8 @@ var form = serverWidget.createForm({ title:' ' });
 
 var request = context.request;
 var from = request.parameters.from || '';
+var fromDashboard =
+    context.request.parameters.fromdashboard || '';
 var isFromHome = (from === 'home');
   var email = context.request.parameters.email || '';
     var empId = context.request.parameters.empid 
@@ -175,6 +177,10 @@ search.createColumn({
     join: 'custrecord1513'
 }),
 search.createColumn({
+    name: 'custrecord_rw_portal_scheduledgolivedate',
+    join: 'custrecord1513'
+}),
+search.createColumn({
     name: 'custrecord_rw_portal_duration',
     join: 'custrecord1513'
 }),
@@ -254,7 +260,7 @@ log.debug(additionalComments)
         customer: result.getText({ name: 'custrecord_rw_portal_customername', join: 'custrecord1513' }) || '',
         status: result.getText({ name: 'custrecord_rw_portal_status', join: 'custrecord1513' }) || '',
         customerId: result.getValue({ name: 'custrecord_rw_portal_customername', join: 'custrecord1513' }),
-
+         golive:result.getValue({name:'custrecord_rw_portal_scheduledgolivedate',join:'custrecord1513'}),
         startDate: result.getValue({ name: 'custrecord_rw_portal_start_date', join: 'custrecord1513' }) || '',
         endDate: result.getValue({ name: 'custrecord_rw_portal_end_date', join: 'custrecord1513' }) || '',
         updatedEndDate: result.getValue({ name: 'custrecord_rw_portal_updatedenddate', join: 'custrecord1513' }) || '',
@@ -521,6 +527,73 @@ var dmsRole = getEmployeeDMSRole(empInternalId);
 var roleType = getRoleTypeFromDMS(dmsRole);
 
 log.debug("FINAL ROLE TYPE (GLOBAL)", roleType);
+function getStatusClass(status){
+
+    status = (status || '')
+        .toLowerCase()
+        .replace(/\s/g,'');
+
+    // TO DO
+    if(status.includes('todo')){
+        return 'todo';
+    }
+
+    // IN PROGRESS
+    if(status.includes('inprogress')){
+        return 'inprogress';
+    }
+
+    // UAT
+    if(status.includes('uat')){
+        return 'uat';
+    }
+
+    // KICK OFF
+    if(status.includes('kickoff')){
+        return 'kickoff';
+    }
+
+    // BUSINESS REQUIREMENT
+    if(status.includes('businessrequirement')){
+        return 'business';
+    }
+
+    // TRAINING
+    if(status.includes('training')){
+        return 'training';
+    }
+
+    // GO LIVE
+    if(status.includes('golive')){
+        return 'golive';
+    }
+
+    // COC
+    if(status.includes('coc')){
+        return 'coc';
+    }
+
+    // SUPPORT
+    if(status.includes('support')){
+        return 'support';
+    }
+
+    // CODE REVIEW
+    if(status.includes('review')){
+        return 'codereview';
+    }
+
+    // DONE / CLOSED
+    if(
+        status.includes('done') ||
+        status.includes('closed') ||
+        status.includes('completed')
+    ){
+        return 'done';
+    }
+
+    return 'todo';
+}
 paginatedProjectIds.forEach(function(projectId){
 
     var data = projectMap[projectId];
@@ -633,9 +706,21 @@ ${roleType === 'PM' ? `
   var ticketDetails = getProductTicketDetails(data.customerId, obj.productId)
         return `
         <tr>
-            <td style="border:1px solid black;">${data.status || ''}</td>
+            <td style="border:1px solid black;">
+
+<span class="status ${getStatusClass(data.status)}">
+    ${data.status}
+</span>
+
+</td>
             <td style="border:1px solid black;">${name}</td>
-            <td style="border:1px solid black;">${obj.status || ''}</td>
+            <td style="border:1px solid black;">
+
+<span class="status ${getStatusClass(obj.status)}">
+    ${obj.status || ''}
+</span>
+
+</td>
             <td style="border:1px solid black;">${obj.comments || ''}</td>
             <td style="border:1px solid black;">${obj.startDate || ''}</td>
             <td style="border:1px solid black;">${obj.endDate || ''}</td>
@@ -689,11 +774,15 @@ ${ticketDetails.closed}
     </td>
 
     <td style="border:1px solid black;" onclick="openProject('${projectId}')"><u>${data.customer}</u></td>
-    ${!isFromHome ? `<td style="border:1px solid black;">${data.status}</td>` : ``}
+    ${!isFromHome ? `<td style="border:1px solid black;">
+        <span class="status ${getStatusClass(data.status)}">
+    ${data.status}
+</span>
+</td>` : ``}
    
    <td style="border:1px solid black;">${data.startDate}</td>
 <td style="border:1px solid black;">${data.endDate}</td>
-<td style="border:1px solid black;">${data.updatedEndDate}</td>
+<td style="border:1px solid black;">${data.golive}</td>
 
 <td style="border:1px solid black;">${data.pm}</td>
 <td style="border:1px solid black;">${data.pmocomments}</td>
@@ -1069,7 +1158,49 @@ text-decoration: none;
     cursor: pointer;
 }
 
+.status.todo{
+    background:#7f8c8d;
+}
 
+.status.inprogress{
+    background:#f39c12;
+}
+
+.status.uat{
+    background:#3498db;
+}
+
+.status.codereview{
+    background:#8e44ad;
+}
+
+.status.done{
+    background:#27ae60;
+}
+
+.status.kickoff{
+    background:#e67e22;
+}
+
+.status.business{
+    background:#16a085;
+}
+
+.status.training{
+    background:#d35400;
+}
+
+.status.golive{
+    background:#2ecc71;
+}
+
+.status.coc{
+    background:#c0392b;
+}
+
+.status.support{
+    background:#34495e;
+}
 </style>
 <form method="GET">
 <input type="hidden" id="pageInput" name="page" value="${page}">
@@ -1122,7 +1253,7 @@ text-decoration: none;
 ${!isFromHome ? `<th style="border:1px solid black;">Status</th>` : ``}
 <th style="border:1px solid black;">Start Date</th>
 <th style="border:1px solid black;">End Date</th>
-<th style="border:1px solid black;">Updated End Date</th>
+<th style="border:1px solid black;">Golive Date</th>
 
 <th style="border:1px solid black;">PM</th>
 <th style="border:1px solid black;">PMO Comments</th>
@@ -1208,7 +1339,7 @@ function hideLoader(){
 
     loader.style.display = "block";
 
-    // 🔥 hide table content
+    //  hide table content
     document.getElementById("homeContent").style.display = "none";
 
     // show iframe
@@ -1237,11 +1368,17 @@ function goToPage(page){
     }
 
 });
-window.history.pushState(null, null, window.location.href);
+history.pushState(null, null, location.href);
 
-window.onpopstate = function () {
-    window.location.href = "${homeUrl}";
-};
+window.addEventListener('popstate', function () {
+
+    // prevent browser back
+    history.pushState(null, null, location.href);
+
+    // redirect FULL WINDOW not iframe
+    window.top.location.replace('${homeUrl}');
+
+});
 var homeUrl = '${homeUrl}';
      function goBack(){
 

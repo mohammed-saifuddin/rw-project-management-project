@@ -146,16 +146,20 @@ statSearch1.run().each(function(result){
     var id = result.getValue('internalid');
     var name = result.getValue('name');
 
-     var isSelected = (name === 'To Do') ? 'selected' : '';
+    var isSelected = (name === 'To Do') ? 'selected' : '';
 
 
-statOptions += '<option value="'+id+'" '+isSelected+'>'+name+'</option>';
+var isDisabled = (name !== 'To Do') ? 'disabled' : '';
+
+statOptions += '<option value="'+id+'" '+isSelected+' '+isDisabled+'>'+name+'</option>';
+
+    
 
     return true;
 });
 var loggedRoleName = getEmployeeRole(empInternalId);
 
-log.debug("Logged Role Name", loggedRoleName); // ✅ USE NAME
+log.debug("Logged Role Name", loggedRoleName); //  USE NAME
 
 log.debug("Logged Role Name", loggedRoleName);
          var rwOptions ='<option value="">--Select--</option>';
@@ -222,7 +226,7 @@ function getEmployeeRole(empInternalId){
 
     if(empSearch.role && empSearch.role.length > 0){
 
-        return empSearch.role[0].value; // ✅ role internal id
+        return empSearch.role[0].value; //  role internal id
     }
 
     return '';
@@ -234,7 +238,7 @@ function getEmployeeDMSRole(empId){
     var emp = search.lookupFields({
         type: search.Type.EMPLOYEE,
         id: empId,
-        columns: ['custentityrw_dms_role']   // ✅ correct field
+        columns: ['custentityrw_dms_role']   //  correct field
     });
 
     log.debug("DMS ROLE RAW", emp);
@@ -332,7 +336,7 @@ roleSearch.run().each(function(result){
 
     var selected = '';
 
-    // ✅ match using role text
+    //  match using role text
    var roleName = name.toLowerCase().trim();
 log.debug("ROLE DROPDOWN NAME", roleName);
 if(
@@ -393,7 +397,7 @@ var fullName =
     .replace(/\s+/g,' ')
     .trim();
 
-// ✅ avoid duplicate NAMES
+//  avoid duplicate NAMES
 var uniqueKey = fullName.toLowerCase();
 
 if(uniqueEmployees[uniqueKey]){
@@ -412,7 +416,7 @@ uniqueEmployees[uniqueKey] = true;
 });
 
 
-// ✅ SORT ALPHABETICALLY
+//  SORT ALPHABETICALLY
 employeeData.sort(function(a,b){
 
     return a.name.localeCompare(b.name);
@@ -420,7 +424,7 @@ employeeData.sort(function(a,b){
 });
 
 
-// ✅ BUILD DROPDOWNS
+//  BUILD DROPDOWNS
 employeeData.forEach(function(emp){
 
     var isSelected =
@@ -621,7 +625,7 @@ height:30px;
 }
 .container {
     width: 100%; 
-    height:650px;         /* ✅ fixed width */
+    height:650px;         /*  fixed width */
     max-width: 95%;
     max-height:99%;
     position:absolute;
@@ -687,8 +691,8 @@ cursor:pointer;
     </div>
 
     <div class="form-row">
-        <label class="required">Request Type</label>
-        <select class="" name="requestType" required>
+        <label>Request Type</label>
+        <select class="" name="requestType" >
         <option value="">Select</option>
         <option value="1">New Request</option>
             <option value="2">Issue/bug</option>
@@ -697,8 +701,8 @@ cursor:pointer;
         </select>
     </div>
   <div class="form-row">
-        <label class="required">Role Of User</label>
-        <select name="roleOfUser" required>
+        <label>Role Of User</label>
+        <select name="roleOfUser" >
     ${roleOptions}
 </select>
     </div>
@@ -714,16 +718,16 @@ cursor:pointer;
 
 <div style="flex:1;">
     <div class="form-row">
-        <label class="required">Client Name</label>
-       <select name="projectName" id="projectName" required>
+        <label>Client Name</label>
+       <select name="projectName" id="projectName">
     ${customerOptions}
 </select>
     </div>
 
     <div class="form-row">
-        <label class="required">Reachware Product</label>
+        <label >Reachware Product</label>
         
-       <select class="" name="suiteApp" id="suiteApp" required>
+       <select class="" name="suiteApp" id="suiteApp" >
   ${productOptions}
 </select>
     </div>
@@ -731,8 +735,8 @@ cursor:pointer;
 
 <div style="flex:1;">
     <div class="form-row">
-        <label class="required">Environment</label>
-        <select class="" name="environment" required>
+        <label>Environment</label>
+        <select class="" name="environment" >
             <option value="">Select</option>
             <option  value="1">Production</option>
             <option value="2">Sandbox</option>
@@ -741,8 +745,8 @@ cursor:pointer;
        
     </div>
      <div class="form-row">
-        <label class="required">Project Manager</label>
-        <select class="" name="coworker" required>
+        <label>Project Manager</label>
+        <select class="" name="coworker" >
           ${emp1Options}
             
         </select>
@@ -909,12 +913,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const roleDropdown =
         document.querySelector("select[name='roleOfUser']");
 
-    // ✅ keep backend auto-selected role initially
+    //  keep backend auto-selected role initially
     var initialLoad = true;
 
     function setRole() {
 
-        // 🔥 skip first automatic override
+        //  skip first automatic override
         if(initialLoad){
             initialLoad = false;
             return;
@@ -1029,11 +1033,60 @@ function generateTicketNumber() {
 
     if (!projectId || !requestType) return;
 
-    var prefix = projectText.replace(/\s/g, '').substring(0, 3).toUpperCase();
+   var originalText =
+    projectText.trim().toUpperCase();
+
+// remove spaces & hyphens
+var cleanText =
+    originalText.replace(/[\s-]/g,'');
+
+// default prefix
+var prefix =
+    cleanText.substring(0,3);
+
+// check existing duplicate prefixes
+var existingPrefixes = [];
+
+var projectDropdown =
+    document.getElementById('projectName');
+
+for(var i = 0; i < projectDropdown.options.length; i++){
+
+    var txt =
+        (projectDropdown.options[i].text || '')
+        .trim()
+        .toUpperCase()
+        .replace(/[\s-]/g,'');
+
+    if(txt.length >= 3){
+
+        existingPrefixes.push(
+            txt.substring(0,3)
+        );
+    }
+}
+
+// duplicate count
+var sameCount =
+    existingPrefixes.filter(function(p){
+
+        return p === prefix;
+
+    }).length;
+
+// if duplicate prefix exists
+// use 4th character instead of 3rd
+if(sameCount > 1 && cleanText.length >= 4){
+
+    prefix =
+        cleanText[0] +
+        cleanText[1] +
+        cleanText[3];
+}
 
     var year = new Date().getFullYear();
 
-    // 🔥 type mapping
+    //  type mapping
     var typeCode = "";
     switch(requestType){
         case "1": typeCode = "NRQ"; break;
@@ -1057,7 +1110,10 @@ function generateTicketNumber() {
 projectDropdown.addEventListener('change', generateTicketNumber);
 requestTypeDropdown.addEventListener('change', generateTicketNumber);
 //console.log(file);
-
+sessionStorage.setItem(
+    'refreshDashboard',
+    'true'
+);
 
 </script>
 `;

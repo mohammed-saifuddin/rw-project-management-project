@@ -1057,8 +1057,8 @@ function getOverdueTickets(empId){
 var overdueTicketsOfLoggedInUser = getOverdueTickets(empId);
 function buildCard(title, currentList, upcomingList){
 
-    currentList = currentList || [];   // ✅ FIX
-    upcomingList = upcomingList || []; // ✅ FIX
+    currentList = currentList || [];   
+    upcomingList = upcomingList || []; 
 
     var currentHtml = currentList.length 
         ? currentList.map(c => `<li>${c}</li>`).join('')
@@ -2174,6 +2174,7 @@ transition:all 0.3s ease;
     text-align:center;
     font-size:18px;
     font-weight:bold;
+    font-family: Calibri;
     
 }
 
@@ -2363,7 +2364,7 @@ font-size:20px;
     gap:10px;
 }
 .role-text{
-    font-size:12px;
+    font-size:10px;
     font-weight:bold;
     background:white;
     border-radius:20px;
@@ -2504,7 +2505,7 @@ font-weight:bold;
 
 .full-name{
     
-    font-size:12px;
+    font-size:10px;
     font-weight:bold;
     color:#8f50df;
 }
@@ -2736,6 +2737,8 @@ ${ticketMenu}
 
 <div id="homeContent" style="margin-top:40px;">
 
+${roleType === 'PM' ? `
+
 <div class="stats-main-wrapper">
 
     <!-- PROJECT SECTION -->
@@ -2743,7 +2746,7 @@ ${ticketMenu}
 
         <div class="main-heading-row">
             <div class="main-heading">
-                Projects 
+                Projects
             </div>
         </div>
 
@@ -2766,7 +2769,7 @@ ${ticketMenu}
 
         <div class="main-heading-row">
             <div class="main-heading">
-                Tickets 
+                Tickets
             </div>
         </div>
 
@@ -2786,6 +2789,18 @@ ${ticketMenu}
 
 </div>
 
+` : ''}
+<div class="stats-container">
+
+            <div class="stats-header">
+                ${statsHeader}
+            </div>
+
+            <div class="stats-values">
+                ${statsValues}
+            </div>
+
+        </div>
 ${roleType === 'PMO' ? `
     ${specialCards}
 
@@ -2846,21 +2861,40 @@ ${roleType === 'OTHER' ? `
     <p>Opening...</p>
 </div>
 <script>
-
+var currentType = '';
 if (localStorage.getItem("isLoggedIn") !== "true") {
     window.location.replace('${loginUrl}');
 }
+
+// Disable browser back
+history.pushState(null, null, location.href);
+
+window.addEventListener('popstate', function () {
+
+    // stay on same page
+    history.pushState(null, null, location.href);
+
+});
 if (!localStorage.getItem("isLoggedIn")) {
    
 window.location.replace('${loginUrl}');
    }
     // Prevent back button completely
-window.history.pushState(null, null, window.location.href);
+// window.history.pushState(null, null, window.location.href);
+// window.addEventListener('pageshow', function(event) {
 
-window.onpopstate = function () {
+//     // browser back cache fix
+//     if (event.persisted) {
+
+//         window.location.reload();
+
+//     }
+
+// });
+// window.onpopstate = function () {
   
-window.location.replace('${loginUrl}');
-   };
+// window.location.replace('${loginUrl}');
+//    };
 function storeSession(email, empId, password) {
     localStorage.setItem("email", email);
     localStorage.setItem("empId", empId); 
@@ -2877,7 +2911,54 @@ console.log("Stored EmpId:", localStorage.getItem("empId"));
 var viewProjectUrl = '${viewProjectUrl}';
 var ticketUrl = '${ticketUrl}';
 
+// DISABLE BACK AFTER LOGIN
+ 
+function disableBackButton(){
 
+    // remove previous login page
+    history.replaceState(
+        null,
+        '',
+        location.href
+    );
+
+    // push current dashboard state
+    history.pushState(
+        null,
+        '',
+        location.href
+    );
+
+}
+
+// initial
+disableBackButton();
+
+// browser back
+window.addEventListener('popstate', function () {
+
+    // stay on dashboard
+    history.pushState(
+        null,
+        '',
+        location.href
+    );
+
+});
+
+// mobile swipe back
+window.addEventListener('pageshow', function (event) {
+
+    if(event.persisted){
+
+        disableBackButton();
+
+    }
+
+});
+
+//enable only on home page
+disableBackButton();
 
 
 function renderMyTicketDonut(){
@@ -2931,16 +3012,17 @@ function renderMyTicketDonut(){
 
 function openProjectView(projectId){
 
-    setPageTitle("Project Details");
-    document.getElementById("headerTitle").innerText = "Project Details";
+    //setPageTitle("Project Details");
+   // document.getElementById("headerTitle").innerText = "Project Details";
 
     document.getElementById("homeContent").style.display = "none";
     document.getElementById("loader").style.display = "block";
-
+currentType = type || '';
     let url = viewProjectUrl;
 
-    // 👇 pass projectId + mode=view
+    //  pass projectId + mode=view
     url += "&projectId=" + projectId;
+url += "&statusFilter=" + encodeURIComponent(currentType);
     url += "&mode=view";
 
     document.getElementById("mainFrame").src = url;
@@ -2970,7 +3052,7 @@ document.getElementById("loader").style.display = "block";
 document.getElementById("mainFrame").src = projectUrl  ;
 document.getElementById("projectContent").style.display = "block";
 toggleChartVisibility();
-
+//disableBackButton();
 
 }
 function toggleChartVisibility(){
@@ -3040,7 +3122,9 @@ document.getElementById("headerTitle").innerText = "Reachware Project Management
     document.getElementById("loader").style.display = "block";
 
      let title = "Projects";
-
+if(type){
+    currentType = type;
+}
     if(type === "total") title = "Total Projects";
     else if(type === "open") title = "Open Projects";
     else if(type === "close") title = "Closed Projects";
@@ -3065,7 +3149,8 @@ frame.src = url;
     if(type){
         
         url += "&filter=" + type;
-url += "&from=home";   // ✅ ADD THIS
+url += "&from=home";   //  ADD THIS
+
         url += "&title=" + encodeURIComponent(title);  
     }
 
@@ -3077,7 +3162,8 @@ url += "&from=home";   // ✅ ADD THIS
 }
     document.addEventListener("DOMContentLoaded", function(){
     toggleChartVisibility();
-    togglePieVisibility();   // ✅ ADD THIS
+    togglePieVisibility(); 
+    disableBackButton();  //  ADD THIS
 });
 function openTasks(){
 alert("task are opening");
@@ -3111,7 +3197,7 @@ document.getElementById("projectContent").style.display = "block";
 //         return;
 //     }
 
-//     // 🔥 ALWAYS start fresh
+//     //  ALWAYS start fresh
 //     var url = ticketUrl;
 
    
@@ -3333,6 +3419,7 @@ var frame = document.getElementById("mainFrame");
     frame.style.display = "none";
     toggleChartVisibility();
     togglePieVisibility();
+    disableBackButton();
 }
     
 var loggedRoleName = "${loggedRoleName}";
@@ -3488,6 +3575,55 @@ var statusChart = new Chart(ctx, {
         }
     }
 });
+function refreshDashboardCounts(){
+
+    fetch('/app/site/hosting/scriptlet.nl?script=HOME_SCRIPT&deploy=1')
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        document.getElementById('openCount').innerText =
+            data.open;
+
+        document.getElementById('closedCount').innerText =
+            data.closed;
+
+        document.getElementById('projectCount').innerText =
+            data.projects;
+
+        document.getElementById('overdueCount').innerText =
+            data.overdue;
+    });
+
+}
+window.addEventListener('storage', function(event){
+
+    if(event.key === 'dashboard-refresh'){
+
+        refreshDashboardCounts();
+
+    }
+
+});
+
+window.addEventListener('focus', function(){
+
+    var shouldRefresh =
+        sessionStorage.getItem('refreshDashboard');
+
+    if(shouldRefresh === 'true'){
+
+        sessionStorage.removeItem(
+            'refreshDashboard'
+        );
+
+        window.location.reload();
+
+    }
+
+});
+
 </script>
 
 `;

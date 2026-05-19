@@ -10,8 +10,13 @@ const onRequest = (context) => {
 if (context.request.method === 'POST') {
 var projectStatus = context.request.parameters.projectStatus;
 var projectId = context.request.parameters.projectId;
+var updatedEndDate =
+    context.request.parameters.updatedEndDate;
+var pmoComments =
+    context.request.parameters.pmoComments || '';
     var body;
-
+var empId =
+    context.request.parameters.empid || '';
     try {
         body = JSON.parse(context.request.body);
     } catch (e) {
@@ -25,7 +30,53 @@ var projectId = context.request.parameters.projectId;
         context.response.write("No data received");
         return;
     }
+var oldProjectRec = record.load({
+    type: 'customrecord_rw_portal_access',
+    id: projectId,
+    isDynamic: false
+});
 
+var oldProjectStatus =
+    oldProjectRec.getText(
+        'custrecord_rw_portal_status'
+    ) || '';
+
+var newProjectStatusText = '';
+function parseInputDate(dateStr){
+
+    if(!dateStr) return null;
+
+    var parts = dateStr.split('-');
+
+    return new Date(
+        parts[0],        // year
+        parts[1] - 1,    // month
+        parts[2]         // day
+    );
+}
+if(projectStatus){
+
+    var projStatusSearch = search.create({
+        type: 'customlist_rw_portal_statuslist',
+        filters: [
+            ['internalid','anyof', projectStatus],
+            
+        ],
+        columns: ['name']
+    });
+
+    var projRes =
+        projStatusSearch.run().getRange({
+            start: 0,
+            end: 1
+        });
+
+    if(projRes.length > 0){
+
+        newProjectStatusText =
+            projRes[0].getValue('name') || '';
+    }
+}
     body.forEach(function(line){
 
         if(!line.id) return; // safety
@@ -39,62 +90,270 @@ if(line.functional){
 if(line.technical){
     values['custrecord_rw_portal_techconsultant'] = line.technical;
 }
-
+if(line.rwpm){
+    values['custrecord_rw_rwprojectmanager'] =
+        line.rwpm;
+}
 values['custrecord_rw_portal_lineexpecteduatdate'] =
-    line.uat ? new Date(line.uat + "T00:00:00") : null;
+    parseInputDate(line.uat);
 
 values['custrecord_rw_portal_lineexptgolivedate'] =
-    line.golive ? new Date(line.golive + "T00:00:00") : null;
+    parseInputDate(line.golive);
+
 values['custrecord_rw_portal_startdateline'] =
-    line.startdate ? new Date(line.startdate + "T00:00:00") : null;
+    parseInputDate(line.startdate);
 
 values['custrecord_rw_portal_enddateline'] =
-    line.enddate ? new Date(line.enddate + "T00:00:00") : null;
+    parseInputDate(line.enddate);
 
 values['custrecord_rw_portal_updateddeadline'] =
-    line.updateddeadline ? new Date(line.updateddeadline + "T00:00:00") : null;
+    parseInputDate(line.updateddeadline);
+
+values['custrecord_rw_portal_lineexpecteduatdate'] =
+    parseInputDate(line.uat);
+
+values['custrecord_rw_portal_lineexptgolivedate'] =
+    parseInputDate(line.golive);
 if(line.status){
     values['custrecord_rw_portal_projstat'] = line.status;
 }
-if(projectStatus && projectId){
-    record.submitFields({
-        type: 'customrecord_rw_portal_access',
-        id: projectId,
-        values: {
-            custrecord_rw_portal_status: projectStatus
-        }
+values['custrecord_rw_portal_durationline'] =
+    line.duration || '';
+
+
+var oldLine = record.load({
+    type: 'customrecord_rw_portal_access2',
+    id: line.id,
+    isDynamic: false
+});
+
+var oldStatusText =
+    oldLine.getText('custrecord_rw_portal_projstat') || '';
+
+var oldStatusId =
+    oldLine.getValue('custrecord_rw_portal_projstat') || '';
+
+var newStatusId = line.status || '';
+
+
+
+
+var newStatusText =
+    line.statusText || '';
+if(newStatusId){
+
+    var statusSearch = search.create({
+        type: 'customlist_rw_portal_access_pjstlist',
+        filters: [
+            ['internalid','anyof', newStatusId]
+        ],
+        columns: ['name']
     });
+
+    var res = statusSearch.run().getRange({
+        start: 0,
+        end: 1
+    });
+
+    if(res.length > 0){
+
+        newStatusText =
+            res[0].getValue('name') || '';
+    }
 }
+
+var projectStatusChanged =
+    String(oldProjectStatus) !=
+    String(newProjectStatusText);
+
+var productStatusChanged =
+    newStatusId &&
+    String(oldStatusId) !=
+    String(newStatusId);
+
+if(
+    projectStatusChanged ||
+    productStatusChanged
+){
+
+    var productText =
+        oldLine.getText('custrecord_rw_portal_rwproduct') || '';
+
+    var histRec = record.create({
+        type: 'customrecord_rw_project_status_history',
+        isDynamic: true
+    });
+
+    histRec.setValue({
+        fieldId: 'custrecord_rw_hist_project',
+        value: Number(projectId)
+    });
+
+    histRec.setValue({
+        fieldId: 'custrecord_rw_hist_line',
+        value: line.id
+    });
+
+    histRec.setValue({
+        fieldId: 'custrecord_rw_hist_product',
+        value: productText
+    });
+
+    histRec.setValue({
+        fieldId: 'custrecord_rw_hist_oldstatus',
+        value: oldStatusText || '-'
+    });
+histRec.setValue({
+    fieldId: 'custrecord_rw_hist_oldprojstatus',
+    value: oldProjectStatus || ''
+});
+
+histRec.setValue({
+    fieldId: 'custrecord_rw_hist_projectstatus',
+    value: newProjectStatusText || ''
+});
+   histRec.setValue({
+    fieldId: 'custrecord_rw_hist_newstatus',
+    value:
+        productStatusChanged
+        ? newStatusText
+        : oldStatusText
+});
+    histRec.setValue({
+        fieldId: 'custrecord_rw_hist_changedby',
+        value: Number(empId)
+    });
+
+    histRec.setValue({
+        fieldId: 'custrecord_rw_hist_changedon',
+        value: new Date()
+    });
+
+    histRec.setValue({
+        fieldId: 'custrecord_rw_hist_startdate',
+        value: line.startdate
+            ? new Date(line.startdate)
+            : null
+    });
+
+    histRec.setValue({
+        fieldId: 'custrecord_rw_hist_enddate',
+        value: line.enddate
+            ? new Date(line.enddate)
+            : null
+    });
+
+    histRec.setValue({
+        fieldId: 'custrecord_rw_hist_updateddeadline',
+        value: line.updateddeadline
+            ? new Date(line.updateddeadline)
+            : null
+    });
+
+    histRec.setValue({
+        fieldId: 'custrecord_rw_hist_duration',
+        value: line.duration || ''
+    });
+
+    var histId = histRec.save({
+    enableSourcing: true,
+    ignoreMandatoryFields: true
+});
+
+log.debug(
+    'HISTORY SAVED',
+    histId
+);
+}
+
+
+
 record.submitFields({
     type: 'customrecord_rw_portal_access2',
     id: line.id,
     values: values
 });
     });
+var oldProjectRec = record.load({
+    type: 'customrecord_rw_portal_access',
+    id: projectId,
+    isDynamic: false
+});
 
+var oldProjectStatus =
+    oldProjectRec.getText(
+        'custrecord_rw_portal_status'
+    ) || '';
+
+var newProjectStatusText = '';
+
+if(projectStatus){
+
+    var projStatusSearch = search.create({
+        type: 'customlist_rw_portal_statuslist',
+        filters: [
+            ['internalid','anyof', projectStatus]
+        ],
+        columns: ['name']
+    });
+
+    var projRes =
+        projStatusSearch.run().getRange({
+            start: 0,
+            end: 1
+        });
+
+    if(projRes.length > 0){
+
+        newProjectStatusText =
+            projRes[0].getValue('name') || '';
+    }
+}
+
+
+if(projectId){
+
+    var updateValues = {};
+
+    if(projectStatus){
+        updateValues.custrecord_rw_portal_status =
+            projectStatus;
+    }
+
+    if(updatedEndDate){
+        updateValues.custrecord_rw_portal_updatedenddate =
+            new Date(updatedEndDate);
+    }
+    if(pmoComments){
+updateValues.custrecord_rw_portal_pmocommnts =
+    pmoComments;
+    }
+    record.submitFields({
+        type: 'customrecord_rw_portal_access',
+        id: projectId,
+        values: updateValues
+    });
+}
     context.response.write('success');
     return;
 }
     var form = serverWidget.createForm({ title: ' ' });
 var statOptions ='<option value="">--Select--</option>';
-var statOptions1 ='<option value="">--Select--</option>';
-var statSearch1 = search.create({
-    type: 'customlist_rw_portal_statuslist',
-    columns: ['internalid','name']
-});
-
-statSearch1.run().each(function(result){
-
-    var id = result.getValue('internalid');
-    var name = result.getValue('name');
-
-     var isSelected = (name === 'To Do') ? 'selected' : '';
 
 
-statOptions += '<option value="'+id+'" '+isSelected+'>'+name+'</option>';
 
-    return true;
-});
+// statSearch1.run().each(function(result){
+
+//     var id = result.getValue('internalid');
+//     var name = result.getValue('name');
+
+//      var isSelected = (name === 'To-Do') ? 'selected' : '';
+
+
+// statOptions += '<option value="'+id+'" '+isSelected+'>'+name+'</option>';
+
+//     return true;
+// });
 var statSearch = search.create({
     type: 'customlist_rw_portal_access_pjstlist',
     columns: ['internalid','name']
@@ -221,6 +480,7 @@ if(roleType === 'PMO'){
             <th style="border:1px solid #ccc;padding:8px;">Start Date</th>
             <th style="border:1px solid #ccc;padding:8px;">End Date</th>
             <th style="border:1px solid #ccc;padding:8px;">Updated Deadline</th>
+           <th style="border:1px solid #ccc;padding:8px;">Duration</th>
         </tr>
     `;
 }  else if (roleType === 'PM') {
@@ -261,8 +521,12 @@ if(roleType === 'PMO'){
     var projectManager ='';
     var accountManager ='';
     var erp ='';
+    var performaDate='';
+    var functional1='';
+    var technical ='';
     var scheduledUatDate= '';
     var goliveDate ='';
+    var duration='';
     var performa='';
       var fileUrl = '';
       var projectManagerId='';
@@ -278,7 +542,7 @@ var empSearch = search.create({
 
 var funcDropdown = '<option value="">--Select--</option>';
 var techDropdown = '<option value="">--Select--</option>';
-
+var pmDropdown = '<option value="">--Select--</option>';
 
 
 const projectUrl = url.resolveScript({
@@ -313,8 +577,12 @@ var userId = currentUser.id;
   projectManagerId = projectRec.getValue('custrecord_rw_portal_projectmanager');
 stdate=projectRec.getValue('custrecord_rw_portal_start_date');
 eddate=projectRec.getValue('custrecord_rw_portal_end_date');
-updatedenddate=projectRec.getValue('custrecord_rw_portal_updatedenddate');
-pmoComments=projectRec.getValue('custrecord_rw_portal_pmocommnts')
+updatedenddate=projectRec.getValue('custrecord_rw_portal_updatedenddate') || 'NIL'
+pmoComments=projectRec.getValue('custrecord_rw_portal_pmocommnts');
+duration=projectRec.getValue('custrecord_rw_portal_duration')
+functional1 =projectRec.getText('custrecord_rw_portal_functional_consulta');
+technical1 =projectRec.getText('custrecord_rw_portal_technical');
+performaDate=projectRec.getValue('custrecord_rw_portal_invoice_date') || 'NIL'
   
         // var isProjectManager = (empId === projectManagerId);
         var canEdit = (roleType === 'PM' || roleType === 'PMO');
@@ -358,6 +626,9 @@ var projectStatusOptions = '<option value="">--Select--</option>';
 
 var projectStatusSearch = search.create({
     type: 'customlist_rw_portal_statuslist',
+    filters:[[
+        'isinactive','is','F'
+    ]],
     columns: ['internalid','name']
 });
 
@@ -376,12 +647,19 @@ projectStatusSearch.run().each(function(res){
 });
          var scheduled='';
          var golive='';
+         var invoice='';
          var st = '';
 var ed = '';
 var upd = '';
         if(scheduledUatDate){
     scheduled = format.format({
         value: scheduledUatDate,
+        type: format.Type.DATE
+    });
+}
+   if(performaDate){
+    invoice = format.format({
+        value: performaDate,
         type: format.Type.DATE
     });
 }
@@ -424,8 +702,49 @@ function toInputDate(date){
         return '';
     }
 }
-   
-var empRoleMap = {};
+ function getDateValues(date){
+
+    var obj = {
+        display: '',
+        input: ''
+    };
+
+    if(!date){
+        return obj;
+    }
+
+    try{
+
+        // already display format
+        obj.display = date;
+
+        // HANDLE DD/MM/YYYY
+        var parts = date.split('/');
+
+        if(parts.length !== 3){
+            return obj;
+        }
+
+        var day = parts[0];
+        var month = parts[1];
+        var year = parts[2];
+
+        // FOR INPUT TYPE="DATE"
+        obj.input =
+            year + '-' + month + '-' + day;
+
+    }catch(e){
+
+        log.debug(
+            'DATE FORMAT ERROR',
+            e
+        );
+    }
+
+    return obj;
+}
+
+
 
 var lineItemsHtml = '';
 
@@ -446,7 +765,9 @@ var lineSearch = search.create({
         'custrecord_rw_portal_projstat',
         'custrecord_rw_portal_updateddeadline',
         'custrecord_rw_portal_enddateline',
-        'custrecord_rw_portal_startdateline'
+        'custrecord_rw_portal_startdateline',
+        'custrecord_rw_portal_durationline'
+
 
 
     ]
@@ -465,6 +786,7 @@ lineSearch.run().each(function(result){
     var technical = result.getText('custrecord_rw_portal_techconsultant') || '';
     var functionalId = result.getValue('custrecord_rw_portal_funcconsultant');
 var technicalId  = result.getValue('custrecord_rw_portal_techconsultant');
+var duration =result.getValue('custrecord_rw_portal_durationline')
 
 var functional   = result.getText('custrecord_rw_portal_funcconsultant');
 var technical    = result.getText('custrecord_rw_portal_techconsultant');
@@ -475,20 +797,9 @@ var linestatusId = result.getValue('custrecord_rw_portal_projstat'); // for drop
 var startdate=result.getValue('custrecord_rw_portal_startdateline');
 var enddate=result.getValue('custrecord_rw_portal_enddateline');
 var updateddeadline=result.getValue('custrecord_rw_portal_updateddeadline');
-var statOptions1 = '<option value="">--Select--</option>';
 
-statSearch.run().each(function(res){
 
-    var id = res.getValue('internalid');
-    var name = res.getValue('name');
 
-    var selected = (id == linestatusId) ? 'selected' : '';
-
-    statOptions1 += '<option value="'+id+'" '+selected+'>'+name+'</option>';
-
-    return true;
-});
-var statOptions = '<option value="">--Select--</option>';
 
 statSearch.run().each(function(res){
 
@@ -501,15 +812,72 @@ statSearch.run().each(function(res){
 
     return true;
 });
+var employeeList = [];
+var uniqueEmployees = {};
+
 empSearch.run().each(function(emp){
 
     var id = emp.getValue('internalid');
-    var name = emp.getValue('firstname') + ' ' + emp.getValue('lastname');
 
-    funcDropdown += '<option value="'+id+'" '+(id == functionalId ? 'selected' : '')+'>'+name+'</option>';
-    techDropdown += '<option value="'+id+'" '+(id == technicalId ? 'selected' : '')+'>'+name+'</option>';
+    var first =
+        emp.getValue('firstname') || '';
+
+    var last =
+        emp.getValue('lastname') || '';
+
+    var name =
+        (first + ' ' + last).trim();
+
+    // skip empty names
+    if(!name){
+        return true;
+    }
+
+    // unique by lowercase name
+    var key = name.toLowerCase();
+
+    if(!uniqueEmployees[key]){
+
+        uniqueEmployees[key] = true;
+
+        employeeList.push({
+            id: id,
+            name: name
+        });
+    }
 
     return true;
+});
+
+// SORT ALPHABETICALLY
+employeeList.sort(function(a,b){
+
+    return a.name.localeCompare(b.name);
+});
+
+// BUILD DROPDOWNS
+employeeList.forEach(function(emp){
+
+    funcDropdown +=
+        '<option value="' + emp.id + '" ' +
+        (emp.id == functionalId ? 'selected' : '') +
+        '>' +
+        emp.name +
+        '</option>';
+pmDropdown +=
+    '<option value="' + emp.id + '" ' +
+    (emp.id == result.getValue('custrecord_rw_rwprojectmanager')
+        ? 'selected'
+        : '') +
+    '>' +
+    emp.name +
+    '</option>';
+    techDropdown +=
+        '<option value="' + emp.id + '" ' +
+        (emp.id == technicalId ? 'selected' : '') +
+        '>' +
+        emp.name +
+        '</option>';
 });
 var uat = '';
 var golive = '';
@@ -550,41 +918,656 @@ if(goliveRaw){
 
 var lineId = result.id;   // 🔥 BEST WAY
  
+var goliveLineObj =
+    getDateValues(goliveRaw);
 
+var startLineObj =
+    getDateValues(startdate);
+
+var endLineObj =
+    getDateValues(enddate);
+
+var updatedLineObj =
+    getDateValues(updateddeadline); 
+var empRoleMap = {};
 
  if(roleType === 'PMO'){
+   var historyHtml = `
+<div style="
+    padding:18px;
+    background:#f8f9fc;
+    border-radius:14px;
+    border:1px solid #e3e8f0;
+    box-shadow:0 4px 12px rgba(0,0,0,0.06);
+    margin-top:10px;
+">
+`;
+
+var histSearch = search.create({
+    type: 'customrecord_rw_project_status_history',
+
+    filters: [
+        [
+            ['custrecord_rw_hist_line','anyof', lineId],
+            // 'OR',
+            // [
+            //     'custrecord_rw_hist_project',
+            //     'anyof',
+            //     projectId
+            // ]
+        ]
+    ],
+
+    columns: [
+    search.createColumn({
+    name:'created',
+    sort: search.Sort.DESC
+}),
+        'custrecord_rw_hist_oldprojstatus',
+        'custrecord_rw_hist_projectstatus',
+        'custrecord_rw_hist_oldstatus',
+        'custrecord_rw_hist_newstatus',
+        'custrecord_rw_hist_changedby',
+        'custrecord_rw_hist_duration'
+    ]
+});
+
+histSearch.run().each(function(h){
+
+    historyHtml += `
+
+<div style="
+    background:white;
+    border-left:5px solid #8f50df;
+    border-radius:12px;
+    padding:10px 14px;
+    margin-bottom:13px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.05);
+">
+
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:12px;
+    ">
+
+        <div style="
+            font-size:15px;
+            font-weight:700;
+            color:#2d3436;
+        ">
+            ${product}
+        </div>
+
+        <div style="
+            background:#f3ecff;
+            color:#8f50df;
+            padding:5px 12px;
+            border-radius:20px;
+            font-size:12px;
+            font-weight:600;
+        ">
+            ${h.getValue(
+                'custrecord_rw_hist_duration'
+            ) || '-'}
+        </div>
+
+    </div>
+
+    <div style="
+        display:flex;
+        gap:20px;
+        flex-wrap:wrap;
+        margin-bottom:10px;
+    ">
+
+        <div style="
+            flex:1;
+            min-width:240px;
+            background:#f8f9ff;
+            padding:12px;
+            border-radius:10px;
+        ">
+
+            <div style="
+                font-size:12px;
+                color:#7f8c8d;
+                margin-bottom:6px;
+                font-weight:600;
+                text-transform:uppercase;
+            ">
+                Project Status
+            </div>
+
+            <div style="
+                display:flex;
+                align-items:center;
+                gap:10px;
+                font-size:14px;
+                font-weight:600;
+            ">
+
+                <span style="
+                    color:#e67e22;
+                    background:#fff4e8;
+                    padding:5px 10px;
+                    border-radius:8px;
+                ">
+                    ${h.getValue(
+                        'custrecord_rw_hist_oldprojstatus'
+                    ) || '-'}
+
+                </span>
+
+                <span style="
+                    color:#8f50df;
+                    font-size:18px;
+                ">
+                    →
+                </span>
+
+                <span style="
+                    color:#27ae60;
+                    background:#eafaf1;
+                    padding:5px 10px;
+                    border-radius:8px;
+                ">
+                    ${h.getValue(
+                        'custrecord_rw_hist_projectstatus'
+                    ) || '-'}
+
+                </span>
+
+            </div>
+
+        </div>
+
+        <div style="
+            flex:1;
+            min-width:240px;
+            background:#f8f9ff;
+            padding:12px;
+            border-radius:10px;
+        ">
+
+            <div style="
+                font-size:12px;
+                color:#7f8c8d;
+                margin-bottom:6px;
+                font-weight:600;
+                text-transform:uppercase;
+            ">
+                Product Status
+            </div>
+
+            <div style="
+                display:flex;
+                align-items:center;
+                gap:10px;
+                font-size:14px;
+                font-weight:600;
+            ">
+
+                <span style="
+                    color:#e67e22;
+                    background:#fff4e8;
+                    padding:5px 10px;
+                    border-radius:8px;
+                ">
+                    ${h.getValue(
+                        'custrecord_rw_hist_oldstatus'
+                    ) || '-'}
+
+                </span>
+
+                <span style="
+                    color:#8f50df;
+                    font-size:18px;
+                ">
+                    →
+                </span>
+
+                <span style="
+                    color:#27ae60;
+                    background:#eafaf1;
+                    padding:5px 10px;
+                    border-radius:8px;
+                ">
+                    ${h.getValue(
+                        'custrecord_rw_hist_newstatus'
+                    ) || '-'}
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        font-size:12px;
+        color:#7f8c8d;
+        margin-top:10px;
+        border-top:1px solid #f1f2f6;
+        padding-top:10px;
+    ">
+
+        <div>
+            👤 ${h.getText(
+                'custrecord_rw_hist_changedby'
+            ) || ''}
+        </div>
+
+        <div>
+          🕒 ${
+    format.format({
+        value: h.getValue('created'),
+        type: format.Type.DATETIMETZ
+    }) || ''
+}
+        </div>
+
+    </div>
+
+</div>
+`;
+
+    return true;
+});
+
+historyHtml += `</div>`;
     lineItemsHtml += `
 <tr data-id="${lineId}">
-    <td style="border:1px solid #ccc;padding:8px;">${product}</td>
+    <td style="border:1px solid #ccc;padding:8px;">
+    <span class="toggleHistory"
+          onclick="toggleHistory('${lineId}')"
+          style="
+            cursor:pointer;
+            color:#8f50df;
+            font-weight:bold;
+            margin-right:8px;
+          ">
+        ▶
+    </span>
+
+    ${product}
+</td>
     <td style="border:1px solid #ccc;padding:8px;">${comments}</td>
     <td style="border:1px solid #ccc;padding:8px;">
         <span class="view-mode">${linestatus}</span>
-        <select class="edit-mode status" style="display:none;">
-            ${statOptions1}
+        <select class="edit-mode status" style="display:none;" data-currenttext="${linestatus}">
+            ${statOptions}
         </select>
     </td>
     <td style="border:1px solid #ccc;padding:8px;">
     <span class="view-mode">${start}</span>
-    <input class="edit-mode startdate" type="date" value="${toInputDate(startdate)}" style="display:none;" />
+   
+
+<input
+    class="edit-mode startdate"
+    type="date"
+    value="${startLineObj.input}"
+    style="display:none;"
+/>
 </td>
    <td style="border:1px solid #ccc;padding:8px;">
-    <span class="view-mode">${end}</span>
-    <input class="edit-mode enddate" type="date" value="${toInputDate(enddate)}" style="display:none;" />
+    <span class="view-mode">
+    ${endLineObj.display}
+</span>
+
+<input
+    class="edit-mode enddate"
+    type="date"
+    value="${endLineObj.input}"
+    style="display:none;"
+/>
 </td>
    <td style="border:1px solid #ccc;padding:8px;">
-    <span class="view-mode">${updated}</span>
-    <input class="edit-mode updateddeadline" type="date" value="${toInputDate(updateddeadline)}" style="display:none;" />
+    <span class="view-mode">
+    ${updatedLineObj.display}
+</span>
+
+<input
+    class="edit-mode updateddeadline"
+    type="date"
+    value="${updatedLineObj.input}"
+    style="display:none;"
+/>
 </td>
     
+<td style="border:1px solid #ccc;padding:8px;">
 
-</tr>`;
+    <span class="view-mode duration-text">
+        ${duration || ''}
+    </span>
+
+    <input
+        type="text"
+        class="edit-mode duration"
+        value="${duration || ''}"
+        readonly
+        style="
+            display:none;
+            width:80px;
+            background:#f5f5f5;
+            border:1px solid #ccc;
+        "
+    />
+
+</td>
+</tr>
+
+<tr id="history_${lineId}"
+    style="display:none;background:#fafafa;">
+
+<td colspan="12"
+    style="padding:15px;">
+
+    ${historyHtml}
+
+</td>
+</tr>`
+
+;
+log.debug(
+    'START RAW',
+    startdate
+);
+
+log.debug(
+    'START INPUT',
+    startLineObj.input
+);
+
+log.debug(
+    'END INPUT',
+    endLineObj.input
+);
+
+log.debug(
+    'UPDATED INPUT',
+    updatedLineObj.input
+);
 }
 else if (roleType === 'PM') {
+    var historyHtml = `
+<div style="
+    padding:18px;
+    background:#f8f9fc;
+    border-radius:14px;
+    border:1px solid #e3e8f0;
+    box-shadow:0 4px 12px rgba(0,0,0,0.06);
+    margin-top:10px;
+">
+`;
+
+var histSearch = search.create({
+    type: 'customrecord_rw_project_status_history',
+
+    filters: [
+        [
+            ['custrecord_rw_hist_line','anyof', lineId],
+            // 'OR',
+            // [
+            //     'custrecord_rw_hist_project',
+            //     'anyof',
+            //     projectId
+            // ]
+        ]
+    ],
+
+    columns: [
+    search.createColumn({
+    name:'created',
+    sort: search.Sort.DESC
+}),
+        'custrecord_rw_hist_oldprojstatus',
+        'custrecord_rw_hist_projectstatus',
+        'custrecord_rw_hist_oldstatus',
+        'custrecord_rw_hist_newstatus',
+        'custrecord_rw_hist_changedby',
+        'custrecord_rw_hist_duration'
+    ]
+});
+
+histSearch.run().each(function(h){
+
+    historyHtml += `
+
+<div style="
+    background:white;
+    border-left:5px solid #8f50df;
+    border-radius:12px;
+    padding:10px 14px;
+    margin-bottom:13px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.05);
+">
+
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:12px;
+    ">
+
+        <div style="
+            font-size:15px;
+            font-weight:700;
+            color:#2d3436;
+        ">
+            ${product}
+        </div>
+
+        <div style="
+            background:#f3ecff;
+            color:#8f50df;
+            padding:5px 12px;
+            border-radius:20px;
+            font-size:12px;
+            font-weight:600;
+        ">
+            ${h.getValue(
+                'custrecord_rw_hist_duration'
+            ) || '-'}
+        </div>
+
+    </div>
+
+    <div style="
+        display:flex;
+        gap:20px;
+        flex-wrap:wrap;
+        margin-bottom:10px;
+    ">
+
+        <div style="
+            flex:1;
+            min-width:240px;
+            background:#f8f9ff;
+            padding:12px;
+            border-radius:10px;
+        ">
+
+            <div style="
+                font-size:12px;
+                color:#7f8c8d;
+                margin-bottom:6px;
+                font-weight:600;
+                text-transform:uppercase;
+            ">
+                Project Status
+            </div>
+
+            <div style="
+                display:flex;
+                align-items:center;
+                gap:10px;
+                font-size:14px;
+                font-weight:600;
+            ">
+
+                <span style="
+                    color:#e67e22;
+                    background:#fff4e8;
+                    padding:5px 10px;
+                    border-radius:8px;
+                ">
+                    ${h.getValue(
+                        'custrecord_rw_hist_oldprojstatus'
+                    ) || '-'}
+
+                </span>
+
+                <span style="
+                    color:#8f50df;
+                    font-size:18px;
+                ">
+                    →
+                </span>
+
+                <span style="
+                    color:#27ae60;
+                    background:#eafaf1;
+                    padding:5px 10px;
+                    border-radius:8px;
+                ">
+                    ${h.getValue(
+                        'custrecord_rw_hist_projectstatus'
+                    ) || '-'}
+
+                </span>
+
+            </div>
+
+        </div>
+
+        <div style="
+            flex:1;
+            min-width:240px;
+            background:#f8f9ff;
+            padding:12px;
+            border-radius:10px;
+        ">
+
+            <div style="
+                font-size:12px;
+                color:#7f8c8d;
+                margin-bottom:6px;
+                font-weight:600;
+                text-transform:uppercase;
+            ">
+                Product Status
+            </div>
+
+            <div style="
+                display:flex;
+                align-items:center;
+                gap:10px;
+                font-size:14px;
+                font-weight:600;
+            ">
+
+                <span style="
+                    color:#e67e22;
+                    background:#fff4e8;
+                    padding:5px 10px;
+                    border-radius:8px;
+                ">
+                    ${h.getValue(
+                        'custrecord_rw_hist_oldstatus'
+                    ) || '-'}
+
+                </span>
+
+                <span style="
+                    color:#8f50df;
+                    font-size:18px;
+                ">
+                    →
+                </span>
+
+                <span style="
+                    color:#27ae60;
+                    background:#eafaf1;
+                    padding:5px 10px;
+                    border-radius:8px;
+                ">
+                    ${h.getValue(
+                        'custrecord_rw_hist_newstatus'
+                    ) || '-'}
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        font-size:12px;
+        color:#7f8c8d;
+        margin-top:10px;
+        border-top:1px solid #f1f2f6;
+        padding-top:10px;
+    ">
+
+        <div>
+            👤 ${h.getText(
+                'custrecord_rw_hist_changedby'
+            ) || ''}
+        </div>
+
+        <div>
+          🕒 ${
+    format.format({
+        value: h.getValue('created'),
+        type: format.Type.DATETIMETZ
+    }) || ''
+}
+        </div>
+
+    </div>
+
+</div>
+`;
+
+    return true;
+});
+
+historyHtml += `</div>`;
     lineItemsHtml += `
 <tr data-id="${lineId}">
-<td style="border:1px solid #ccc;padding:8px;">${product}</td>
+<td style="border:1px solid #ccc;padding:8px;">
+    <span class="toggleHistory"
+          onclick="toggleHistory('${lineId}')"
+          style="
+            cursor:pointer;
+            color:#8f50df;
+            font-weight:bold;
+            margin-right:8px;
+          ">
+        ▶
+    </span>
+
+    ${product}
+</td>
 <td style="border:1px solid #ccc;padding:8px;">${comments}</td>
-<td style="border:1px solid #ccc;padding:8px;">${pm}</td>
+<td style="border:1px solid #ccc;padding:8px;">
+    <span class="view-mode">${pm}</span>
+
+    <select class="edit-mode rwpm" style="display:none;">
+    ${pmDropdown}
+</select>
+</td>
 
 <td style="border:1px solid #ccc;padding:8px;">
     <span class="view-mode">${functional}</span>
@@ -612,23 +1595,60 @@ else if (roleType === 'PM') {
 
 <td style="border:1px solid #ccc;padding:8px;">
     <span class="view-mode">${linestatus}</span>
-    <select class="edit-mode status" style="display:none;">
+    <select class="edit-mode status" style="display:none;" data-currenttext="${linestatus}">
        ${statOptions}
     </select>
 </td>
- <td style="border:1px solid #ccc;padding:8px;">
-    <span class="view-mode">${start}</span>
-    <input class="edit-mode startdate" type="date" value="${toInputDate(startdate)}" style="display:none;" />
+<td style="border:1px solid #ccc;padding:8px;">
+    <span class="view-mode">${startLineObj.display}</span>
+   
+
+<input
+    class="edit-mode startdate"
+    type="date"
+    value="${startLineObj.input}"
+    style="display:none;"
+/>
 </td>
    <td style="border:1px solid #ccc;padding:8px;">
-    <span class="view-mode">${end}</span>
-    <input class="edit-mode enddate" type="date" value="${toInputDate(enddate)}" style="display:none;" />
+    <span class="view-mode">
+    ${endLineObj.display}
+</span>
+
+<input
+    class="edit-mode enddate"
+    type="date"
+    value="${endLineObj.input}"
+    style="display:none;"
+/>
 </td>
    <td style="border:1px solid #ccc;padding:8px;">
-    <span class="view-mode">${updated}</span>
-    <input class="edit-mode updateddeadline" type="date" value="${toInputDate(updateddeadline)}" style="display:none;" />
+    <span class="view-mode">
+    ${updatedLineObj.display}
+</span>
+
+<input
+    class="edit-mode updateddeadline"
+    type="date"
+    value="${updatedLineObj.input}"
+    style="display:none;"
+/>
 </td>
-</tr>`;
+   
+</tr>
+
+<tr id="history_${lineId}"
+    style="display:none;background:#fafafa;">
+
+<td colspan="12"
+    style="padding:15px;">
+
+    ${historyHtml}
+
+</td>
+</tr>`
+
+;
 }
 else {
     lineItemsHtml += `
@@ -663,7 +1683,7 @@ else {
 
 <td style="border:1px solid #ccc;padding:8px;">
     <span class="view-mode">${linestatus}</span>
-    <select class="edit-mode status" style="display:none;">
+    <select class="edit-mode status" style="display:none;" data-currenttext="${linestatus}">
        ${statOptions}
     </select>
 </td>
@@ -842,6 +1862,7 @@ else {
         <div class="label">Customer</div>
         <div class="value">${customer}</div>
         <div class="label">Performa Invoice</div>
+        
         <div class="value">
     ${fileUrl ? `<a href="javascript:void(0)"
    onclick="window.open('${fileUrl}','_blank','noopener=yes,noreferrer=yes')">
@@ -849,37 +1870,74 @@ else {
 </a>` : 'No Attachment'}
     
 </div>
+<div class="label">Peforma Invoice Date</div>
+        <div class="value">${invoice}</div>
         <div class="label">Status</div>
 <div class="value">
 
     <span class="view-mode">${status}</span>
 
-    <select id="projectStatus" class="edit-mode" style="display:none;">
+    <select id="projectStatus" class="edit-mode" style="display:none;" data-currenttext="${status}">
         ${projectStatusOptions}
     </select>
 
 </div>
 
-        <div class="label">Direct Project</div>
+        <div class="label">Revenue Stream</div>
         <div class="value">${directProject}</div>
         <div class="label">Project Manager</div>
         <div class="value">${projectManager}</div>
         <div class="label">Account Manager</div>
         <div class="value">${accountManager}</div>
-        <div class="label">ERP</div>
+        <div class="label">Product/Services</div>
         <div class="value">${erp}</div>
-        <div class="label">Scheduled UAT Date</div>
-        <div class="value">${scheduled}</div>
+       
         <div class="label">Go-Live Date</div>
         <div class="value">${golive}</div>
  <div class="label">Start Date</div>
         <div class="value">${st}</div>
          <div class="label">Updated End Date</div>
-        <div class="value">${upd}</div>
+<div class="value">
+
+    <span class="view-mode">${upd}</span>
+
+    <input
+        type="date"
+        id="updatedEndDate"
+        class="edit-mode"
+        value="${toInputDate(updatedenddate)}"
+        style="display:none;"
+    >
+
+</div>
  <div class="label">End Date</div>
         <div class="value">${ed}</div>
          <div class="label">PMO comments</div>
-        <div class="value">${pmoComments}</div>
+
+<div class="value">
+
+    <span class="view-mode">
+        ${pmoComments || ''}
+    </span>
+
+    <textarea
+        id="pmoComments"
+        class="edit-mode"
+        style="
+            display:none;
+            width:100%;
+            min-height:70px;
+        "
+    >${pmoComments || 'NO comments'}</textarea>
+
+</div>
+
+         <div class="label">Functional consulatant</div>
+        <div class="value">${functional1}</div>
+   <div class="label">Technical consulatant</div>
+        <div class="value">${technical1}</div>
+        <div class="label">Duration</div>
+        <div class="value">${duration} days</div>
     </div>
 
 <table style="width:100%; border-collapse:collapse; margin-top:14px;">
@@ -973,12 +2031,95 @@ ${canEdit ? `
         el.innerText = value;
     }
 }
+
+var statusFlow = [
+    'Kick Off',
+'Business requirement',
+'System configuration',
+'In Progress',
+'UAT',
+'Training',
+'Data Migration',
+'Date cleansing',
+'Go-live',
+'COC',
+'Post Go-live',
+'Support',
+    
+   
+    'Testing',
+    'Done',
+     
+    'COC',
+
+];
+function disablePreviousStatuses(selectEl){
+
+    if(!selectEl) return;
+
+    var currentText =
+        (
+            selectEl.getAttribute(
+                'data-currenttext'
+            ) || ''
+        ).trim().toLowerCase();
+
+    Array.from(selectEl.options)
+    .forEach(function(opt){
+
+        opt.disabled = false;
+        opt.style.color = '';
+    });
+
+    var currentIndex = statusFlow
+    .map(function(s){
+        return s.toLowerCase();
+    })
+    .indexOf(currentText);
+
+    if(currentIndex < 0){
+        return;
+    }
+
+    Array.from(selectEl.options)
+    .forEach(function(opt){
+
+        var optionText =
+            (opt.text || '')
+            .trim()
+            .toLowerCase();
+
+        var optIndex = statusFlow
+        .map(function(s){
+            return s.toLowerCase();
+        })
+        .indexOf(optionText);
+
+        if(optIndex < currentIndex){
+
+            opt.disabled = true;
+
+            opt.style.background =
+                '#f1f1f1';
+
+            opt.style.color =
+                '#999';
+        }
+    });
+}
   function saveData(){
 
-    var rows = document.querySelectorAll("tbody tr");
+    var rows =
+    document.querySelectorAll(
+        "tbody tr[data-id]"
+    );
     var projectStatus = document.getElementById("projectStatus")?.value || '';
+    var updatedEndDate =
+    document.getElementById("updatedEndDate")?.value || '';
+var pmoComments =
+    document.getElementById("pmoComments")?.value || '';
     var data = [];
-
+var hasError = false;
     rows.forEach(function(row){
 
         var id = row.getAttribute("data-id");
@@ -988,28 +2129,143 @@ ${canEdit ? `
             console.log("Skipping row without ID");
             return;
         }
-
+if(hasError){
+    return;
+}
      
 var functional = row.querySelector("select.edit-mode.functional")?.value;
 var technical  = row.querySelector("select.edit-mode.technical")?.value;
 var uat        = row.querySelector("input.edit-mode.uat")?.value;
+var rwpm =
+    row.querySelector(
+        "select.edit-mode.rwpm"
+    )?.value || '';
 var golive     = row.querySelector("input.edit-mode.golive")?.value;
 var status     = row.querySelector("select.edit-mode.status")?.value;
+var statusText =
+    row.querySelector(
+        "select.edit-mode.status"
+    )?.selectedOptions[0]?.text || '';
 var startdate = row.querySelector("input.edit-mode.startdate")?.value;
 var enddate = row.querySelector("input.edit-mode.enddate")?.value;
 var updateddeadline = row.querySelector("input.edit-mode.updateddeadline")?.value;
-       
+       // DATE VALIDATIONS
+var duration = '';
 
+if(startdate && enddate){
+
+    var s = new Date(startdate);
+    var e = new Date(enddate);
+
+    var diff =
+        e.getTime() - s.getTime();
+
+    if(diff >= 0){
+
+        var days = Math.ceil(
+            diff / (1000 * 60 * 60 * 24)
+        );
+
+        duration = days + ' days';
+    }
+}
+if(startdate && enddate){
+
+    var startObj = new Date(startdate);
+    var endObj = new Date(enddate);
+
+    if(startObj > endObj){
+
+        showToast(
+            "Start Date should be less than End Date",
+            "#e74c3c"
+        );
+
+      hasError = true;
+return;
+    }
+}
+
+if(updateddeadline && enddate){
+
+    var updatedObj = new Date(updateddeadline);
+    var endObj2 = new Date(enddate);
+
+    if(updatedObj < endObj2){
+
+        showToast(
+            "Updated Deadline should be greater than End Date",
+            "#e74c3c"
+        );
+
+        hasError = true;
+return;
+    }
+}
+var projectStartDate = '${toInputDate(stdate)}';
+var projectEndDate = '${toInputDate(eddate)}';
+var projectUpdatedEndDate = '${toInputDate(updatedenddate)}';
+
+// PRODUCT START DATE VALIDATION
+if(startdate && projectStartDate){
+
+    if(new Date(startdate) < new Date(projectStartDate)){
+
+        showToast(
+            "Product Start Date cannot be less than Project Start Date",
+            "#e74c3c"
+        );
+
+        hasError = true;
+        return;
+    }
+}
+
+// PRODUCT END DATE VALIDATION
+if(enddate && projectEndDate){
+
+    if(new Date(enddate) > new Date(projectEndDate)){
+
+        showToast(
+            "Product End Date cannot exceed Project End Date",
+            "#e74c3c"
+        );
+
+        hasError = true;
+        return;
+    }
+}
+
+// PRODUCT UPDATED DEADLINE VALIDATION
+if(updateddeadline && projectUpdatedEndDate){
+
+    if(
+        new Date(updateddeadline) >
+        new Date(projectUpdatedEndDate)
+    ){
+
+        showToast(
+            "Product Updated Deadline cannot exceed Project Updated End Date",
+            "#e74c3c"
+        );
+
+        hasError = true;
+        return;
+    }
+}
        data.push({
     id: id,
     functional: functional || '',
     technical: technical || '',
+    rwpm: rwpm,
     uat: uat || '',
     golive: golive || '',
     status: status || '',
     startdate:startdate || '',
     enddate:enddate || '',
     updateddeadline:updateddeadline || '',
+    duration: duration,
+    statusText: statusText,
 });
     });
 
@@ -1025,8 +2281,15 @@ var updateddeadline = row.querySelector("input.edit-mode.updateddeadline")?.valu
     headers: {
         "Content-Type": "application/x-www-form-urlencoded"
     },
-    body: "data=" + encodeURIComponent(JSON.stringify(data)) + 
-          "&projectStatus=" + projectStatus
+    body:
+
+"data=" + encodeURIComponent(JSON.stringify(data)) +
+"&projectStatus=" + projectStatus +
+
+"&updatedEndDate=" + updatedEndDate +
+"&pmoComments=" + encodeURIComponent(pmoComments) +
+"&projectId=${projectId}" +
+"&empid=${empId}"
 })
 .then(res => res.text())
 .then(res => {
@@ -1046,19 +2309,60 @@ showToast("Project Saved Successfully ");
             var startInp = row.querySelector("input.edit-mode.startdate");
             var endInp = row.querySelector("input.edit-mode.enddate");
             var updInp = row.querySelector("input.edit-mode.updateddeadline");
-            
+            var statusText =
+    row.querySelector(
+        "select.edit-mode.status"
+    )?.selectedOptions[0]?.text || '';
+
+
+            var durationInp =
+    row.querySelector(
+        "input.edit-mode.duration"
+    );
+
+if(durationInp){
+
+    updateCell(
+        row,
+        ".duration-text",
+        durationInp.value
+    );
+}
             if(funcSel){
     var txt = funcSel.options[funcSel.selectedIndex]?.text || '';
     updateCell(row, "td:nth-child(4) .view-mode", txt);
 }
 if(startInp){
-    updateCell(row, "td:nth-child(4) .view-mode", formatDate(startInp.value));
+
+    // ONLY PMO
+    if(row.querySelector("td:nth-child(4) .startdate")){
+        updateCell(row, "td:nth-child(4) .view-mode", formatDate(startInp.value));
+    }
+
+    // PM
+    updateCell(row, "td:nth-child(9) .view-mode", formatDate(startInp.value));
 }
+
 if(endInp){
-    updateCell(row, "td:nth-child(5) .view-mode", formatDate(endInp.value));
+
+    // ONLY PMO
+    if(row.querySelector("td:nth-child(5) .enddate")){
+        updateCell(row, "td:nth-child(5) .view-mode", formatDate(endInp.value));
+    }
+
+    // PM
+    updateCell(row, "td:nth-child(10) .view-mode", formatDate(endInp.value));
 }
+
 if(updInp){
-    updateCell(row, "td:nth-child(6) .view-mode", formatDate(updInp.value));
+
+    // ONLY PMO
+    if(row.querySelector("td:nth-child(6) .updateddeadline")){
+        updateCell(row, "td:nth-child(6) .view-mode", formatDate(updInp.value));
+    }
+
+    // PM
+    updateCell(row, "td:nth-child(11) .view-mode", formatDate(updInp.value));
 }
 if(techSel){
     var txt = techSel.options[techSel.selectedIndex]?.text || '';
@@ -1097,7 +2401,19 @@ if(statusSelect){
         document.querySelectorAll(".view-mode").forEach(el => el.style.display = "inline");
 
         document.getElementById("saveBtn").style.display = "none";
-        document.getElementById("editBtn").style.display = "inline";
+document.getElementById("editBtn").style.display = "inline";
+
+showToast(
+    "Project Saved Successfully",
+    "#28a745"
+);
+
+setTimeout(function(){
+
+    window.location.href =
+        window.location.href;
+
+}, 1200);
 
     } else {
         alert("Error: " + res);
@@ -1105,6 +2421,85 @@ if(statusSelect){
 
 });
 }
+window.toggleHistory = function(lineId){
+
+    var row = document.getElementById(
+        'history_' + lineId
+    );
+
+    if(!row) return;
+
+    var icon = document.querySelector(
+        '[onclick="toggleHistory(\\'' + lineId + '\\')"]'
+    );
+
+    if(row.style.display === 'none'){
+
+        row.style.display = 'table-row';
+
+        if(icon){
+            icon.innerHTML = '▼';
+        }
+
+    } else {
+
+        row.style.display = 'none';
+
+        if(icon){
+            icon.innerHTML = '▶';
+        }
+    }
+};
+document.addEventListener('change', function(e){
+
+    var row = e.target.closest('tr');
+
+    if(!row) return;
+
+    var startInput =
+        row.querySelector('.edit-mode.startdate');
+
+    var endInput =
+        row.querySelector('.edit-mode.enddate');
+
+    var durationInput =
+        row.querySelector('.edit-mode.duration');
+
+    if(
+        !startInput ||
+        !endInput ||
+        !durationInput
+    ){
+        return;
+    }
+
+    var start = startInput.value;
+    var end = endInput.value;
+
+    if(start && end){
+
+        var s = new Date(start);
+        var ed = new Date(end);
+
+        var diff = ed - s;
+
+        if(diff >= 0){
+
+            var days = Math.ceil(
+                diff /
+                (1000 * 60 * 60 * 24)
+            );
+
+            durationInput.value =
+                days + ' days';
+
+        } else {
+
+            durationInput.value = '';
+        }
+    }
+
+});
 document.getElementById("saveBadge").style.display = "inline";
 
 setTimeout(()=>{
@@ -1112,16 +2507,44 @@ setTimeout(()=>{
 }, 2000);
 function enableEdit(){
 
-    document.querySelectorAll(".view-mode").forEach(function(el){
+    document.querySelectorAll(".view-mode")
+    .forEach(function(el){
+
         el.style.display = "none";
     });
 
-    document.querySelectorAll(".edit-mode").forEach(function(el){
+    document.querySelectorAll(".edit-mode")
+    .forEach(function(el){
+
         el.style.display = "inline-block";
     });
 
-    document.getElementById("editBtn").style.display = "none";
-    document.getElementById("saveBtn").style.display = "inline-block";
+    // DISABLE PASSED STATUS FOR LINE ITEMS
+    document
+    .querySelectorAll('select.edit-mode.status')
+    .forEach(function(sel){
+
+        disablePreviousStatuses(sel);
+    });
+
+    // DISABLE PASSED STATUS FOR PROJECT STATUS
+    var projectStatus =
+        document.getElementById(
+            'projectStatus'
+        );
+
+    if(projectStatus){
+
+        disablePreviousStatuses(
+            projectStatus
+        );
+    }
+
+    document.getElementById("editBtn")
+    .style.display = "none";
+
+    document.getElementById("saveBtn")
+    .style.display = "inline-block";
 }
   document.addEventListener("DOMContentLoaded", function () {
 
@@ -1132,12 +2555,22 @@ function enableEdit(){
         editBtn.addEventListener("click", enableEdit);
     }
 
-    if(saveBtn){
-        saveBtn.addEventListener("click", saveData);
-    }
+    // if(saveBtn){
+    //     saveBtn.addEventListener("click", saveData);
+    // }
 
 });
+document
+.querySelectorAll('select.edit-mode.status')
+.forEach(function(sel){
 
+    disablePreviousStatuses(sel);
+
+});
+ sessionStorage.setItem(
+    'refreshDashboard',
+    'true'
+);
     </script>
     `;
 

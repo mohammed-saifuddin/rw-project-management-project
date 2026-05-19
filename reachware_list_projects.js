@@ -37,6 +37,20 @@ erpSearch.run().each(function(res){
 
     return true;
 });
+var projectOptions = '<option value="">--Select--</option>';
+var project =search.create({
+    type:'customlistrw_portal_project_type_list',
+    columns:['internalid','name']
+})
+project.run().each(function(res){
+
+projectOptions +=
+        '<option value="' + res.getValue('internalid') + '">' +
+        res.getValue('name') +
+        '</option>';
+
+    return true;
+});
 var empId = context.request.parameters.empid;
 var email = context.request.parameters.email;
 var from = context.request.parameters.from || '';
@@ -46,10 +60,10 @@ statSearch.run().each(function(result){
     var id = result.getValue('internalid');
     var name = result.getValue('name');
 
-    var isSelected = (name === 'To-Do') ? 'selected' : '';
+    var isSelected = (name === 'To-do') ? 'selected' : '';
 
 
-var isDisabled = (name !== 'To-Do') ? 'disabled' : '';
+var isDisabled = (name !== 'To-do') ? 'disabled' : '';
 
 statOptions += '<option value="'+id+'" '+isSelected+' '+isDisabled+'>'+name+'</option>';
 
@@ -60,6 +74,9 @@ statOptions += '<option value="'+id+'" '+isSelected+' '+isDisabled+'>'+name+'</o
 var statOptions1 ='<option value="">--Select--</option>';
 var statSearch1 = search.create({
     type: 'customlist_rw_portal_statuslist',
+    filters:[
+        ['isinactive','is','F']
+    ],
     columns: ['internalid','name']
 });
 
@@ -68,8 +85,8 @@ statSearch1.run().each(function(result){
     var id = result.getValue('internalid');
     var name = result.getValue('name');
 
-     var isSelected = (name === 'To Do') ? 'selected' : '';
-var isDisabled = (name !== 'To Do') ? 'disabled' : '';
+     var isSelected = (name === 'Kick Off') ? 'selected' : '';
+var isDisabled = (name !== 'Kick Off') ? 'disabled' : '';
 
 statOptions1 += '<option value="'+id+'" '+isSelected+' '+isDisabled+'>'+name+'</option>';
 
@@ -85,18 +102,62 @@ rwSearch.run().each(function(result){
 })
 var customerOptions = '<option value="">--Select--</option>';
 
+var customerData = [];
+
 var customerSearch = search.create({
-    type: 'customer',
+
+    type: search.Type.CUSTOMER,
+
     filters: [
-    ['isinactive','is','F'],
-    'AND',
-    ['custentity_is_rw_customer','is','T']
-],
-    columns: ['internalid','altname']
+        ['isinactive','is','F'],
+        'AND',
+        ['custentity_is_rw_customer','is','T']
+    ],
+
+    columns: [
+        'internalid',
+        'altname'
+    ]
 });
+
 customerSearch.run().each(function(result){
-    customerOptions += '<option value="' + result.getValue('internalid') + '">' + result.getValue('altname') + '</option>';
-     return true;
+
+    customerData.push({
+
+        id:
+            result.getValue('internalid'),
+
+        name:
+            result.getValue('altname') || ''
+    });
+
+    return true;
+});
+
+// SORT ALPHABETICALLY
+customerData.sort(function(a,b){
+
+    return a.name.localeCompare(b.name);
+});
+
+// BUILD DROPDOWN
+customerData.forEach(function(customer){
+
+    customerOptions += `
+
+        <option value="${customer.id}"
+
+            ${
+                
+                customer.id
+
+                
+            }>
+
+            ${customer.name}
+
+        </option>
+    `;
 });
 var dpSearch = search.create({
     type: 'customlist_rw_portal_directprojectlist',
@@ -312,14 +373,16 @@ log.debug("ROLE TYPE", roleType);
 if(roleType === 'PMO'){
     tableHeader = `
         <tr>
-            <th>RW Product</th>
+            <th>Services/Products</th>
             <th>PMO Comments</th>
             <th>Status</th>
+            
 
             ${isEdit ? `
                 <th>Start Date</th>
                 <th>End Date</th>
                 <th>Updated Deadline</th>
+                <th>Duration</th>
             ` : ``}
 
             <th></th>
@@ -329,7 +392,7 @@ if(roleType === 'PMO'){
 else if(roleType === 'PM'){
     tableHeader = `
         <tr>
-            <th>RW Product</th>
+            <th>Services/Products</th>
             <th>PMO Comments</th>
             <th>Project Manager</th>
             <th>Functional Consultant</th>
@@ -340,6 +403,7 @@ else if(roleType === 'PM'){
             <th>Start Date</th>
                 <th>End Date</th>
                 <th>Updated Deadline</th>
+                
             <th></th>
         </tr>
     `;
@@ -347,7 +411,7 @@ else if(roleType === 'PM'){
 else {
     tableHeader = `
         <tr>
-            <th>RW Product</th>
+            <th>Services/Products</th>
             <th>PMO Comments</th>
             <th>Project Manager</th>
             <th>Functional Consultant</th>
@@ -355,13 +419,14 @@ else {
             <th>Expected UAT Date</th>
             <th>Expected Go Live Date</th>
             <th>Status</th>
+            
             <th></th>
         </tr>
     `;
 }
 
 var rowHtml = '';
-
+log.debug(isEdit)
 
     if(roleType === 'PMO'){
     rowHtml = `
@@ -373,9 +438,21 @@ var rowHtml = '';
         </td>
 
         ${isEdit ? `
+            
         <td> <input type="date" id="stdate" name="stdate[]"></td>
 <td><input type="date" id="eddate" name="eddate[]"></td>
 <td><input type="date" id="updateddeadline" name="updateddeadline[]"></td>
+<td>
+    <input type="text"
+           name="durationline[]"
+           class="durationline"
+           readonly
+           style="
+                background:#f5f5f5;
+                cursor:not-allowed;
+           ">
+</td>
+
         ` : ``}
 
         <td><button type="button" onclick="removeRow(this)">❌</button></td>
@@ -891,6 +968,9 @@ text-decoration: none;
     padding:0;     /* remove gaps */
     margin:0;
 }
+    input[type="date"]{
+    font-family:Arial;
+}
 </style>
 
 <form method="POST">
@@ -899,6 +979,11 @@ text-decoration: none;
 <div class="main-container">
 <div id="toast" class="toast"></div>
 <div class="form-grid">
+<label class="required">Project Type</label>
+<select name="projecttype">
+${projectOptions}
+
+</select>
 
 <label class="required">Customer Name</label>
 
@@ -912,58 +997,76 @@ text-decoration: none;
 
 </div>
 
+<label class="required">Revenue Stream</label>
+<select name="directproject" id="directproject" required>
+${dpOptions}
+</select>
 <label class="required">Proforma Invoice</label>
 
         <input type="file" id="attachment" name="invoice" >
 <input type="hidden" name="fileId" id="fileId">
-<label class="required">Account Manager</label>
-<select name="accountmanager" required>
-${empOptions}
-</select>
-
-<label class="required">Kick of Date</label>
-<input type="date" name="uatdate" id="uatdate" required>
 
 <label class="required">Project Manager</label>
 <select name="projectmanager" id="headerPM">
 ${empOptions}
 </select>
 
-<label class="required">Scheduled Go Live Date</label>
-<input type="date" name="golivedate" id="golivedate" required>
+<label>Performa Invoice Date</label>
+<input type="date" name="invoicedate" id="invoicedate" required>
 
-<label class="required">ERP</label>
+
+<label class="required">Account Manager</label>
+<select name="accountmanager" id="accountmanager" required>
+${empOptions}
+</select>
+
+<label>Start Date</label>
+<input type="date" name="startdate" id="startdate" required>
+
+
+<label class="required">Product/Services</label>
 <select name="erp" required>
 ${erpOptions}
 </select>
-
-<label class="required">Direct Project</label>
-<select name="directproject" id="directproject" required>
-${dpOptions}
-</select>
-
-<label class="required">Project Type</label>
-<select name="projecttype">
-<option value="">--Select--</option>
-<option value="1">Implementation</option>
-<option value="2">Support</option>
-
-</select>
-
-<label class="required">Status</label>
+<label >End Date</label>
+<input type="date" name="enddate" id="enddate" required>
+<label>Status</label>
 <select name="status" required>
 ${statOptions1}
 </select>
-<label class="required">Start Date</label>
-<input type="date" name="startdate" id="startdate" required>
-<label class="required">End Date</label>
-<input type="date" name="enddate" id="enddate" required>
-<label class="required">Updated end date</label>
-<input type="date" name="updatedenddate" id="updatedenddate" required>
-<label class="required">Duration</label>
-<input type="type" name="duration" id="duration" required>
-<label class="required">PMO Comments</label>
-<input type="type" name="pmocomments" id="pmocomments" required>
+${isEdit ? `
+<label>Updated End Date</label>
+<input type="date"
+       name="updatedenddate"
+       id="updatedenddate">
+` : ``}
+
+
+<label class="required">Tentative Go Live Date</label>
+<input type="date" name="golivedate" id="golivedate" required>
+
+
+
+
+
+
+
+
+
+<label>Project Duration</label>
+<input type="type" name="duration" id="duration">
+
+<label class="required">Functional Consultant</label>
+<select name="functional1" id="functional1" required>
+${empOptions}
+</select>
+<label>PMO Comments</label>
+<input type="type" name="pmocomments" id="pmocomments">
+<label class="required">Technical Consultant</label>
+<select name="technical1" id="technical1" required>
+${empOptions}
+</select>
+
 </div>
 <button type="button" onclick="addRow()" class="addBtn" style="margin-top:10px;">
 ➕ 
@@ -1034,10 +1137,12 @@ ${rowHtml}
             style="width:100%; padding:8px; margin-bottom:15px; border:1px solid #ccc; border-radius:5px;" />
 
         <div style="display:flex; gap:10px; justify-content:center;">
-            <button type="button" onclick="saveCustomer()" 
-                style="padding:8px 15px; background:#8f50df; color:white; border:none; border-radius:5px;">
-                Save
-            </button>
+            <button type="button"
+        id="saveCustomerBtn"
+        onclick="saveCustomer()" 
+        style="padding:8px 15px; background:#8f50df; color:white; border:none; border-radius:5px;">
+    Save
+</button>
 
             <button onclick="closeCustomerModal()" 
                 style="padding:8px 15px; background:#ccc; border:none; border-radius:5px;">
@@ -1096,60 +1201,161 @@ function showToast(message){
     endInput.addEventListener("change", calculateDuration);
 
 });
+
+// document.addEventListener("DOMContentLoaded", function(){
+
+//     var projectManager =
+//         document.getElementById("headerPM");
+
+//     var accountManager =
+//         document.getElementById("accountmanager");
+
+//     projectManager.addEventListener("change", function(){
+
+//         accountManager.value =
+//             projectManager.value;
+
+//     });
+
+// });
+function formatDateForInput(dateObj){
+
+    let day = String(dateObj.getDate()).padStart(2,'0');
+    let month = String(dateObj.getMonth()+1).padStart(2,'0');
+    let year = dateObj.getFullYear();
+
+    return year + '-' + month + '-' + day;
+}
+    document.getElementById("startdate").value =
+    formatDateForInput(new Date());
+
+    var goliveField =
+    document.getElementById("golivedate");
+
+var endDateField =
+    document.getElementById("enddate");
+
+endDateField.addEventListener(
+    "change",
+    function(){
+
+        goliveField.value=endDateField.value;
+    }
+);
 function saveCustomer(){
 
-    var name = document.getElementById("newCustomerName").value;
+    var btn =
+        document.getElementById(
+            "saveCustomerBtn"
+        );
 
-    if(!name){
-        alert("Please enter customer name");
+    // prevent multiple clicks
+    if(btn.disabled){
         return;
     }
 
-    // ✅ CLOSE MODAL
-    document.getElementById("customerModal").style.display = "none";
+    var name =
+        document.getElementById(
+            "newCustomerName"
+        ).value.trim();
 
-    // ✅ SHOW LOADER
-    document.getElementById("loader").style.display = "flex";
+    if(!name){
+
+        showToast(
+            "Please enter customer name"
+        );
+
+        return;
+    }
+
+    // disable button
+    btn.disabled = true;
+    btn.innerText = "Creating...";
+
+    // show loader
+    document.getElementById(
+        "loader"
+    ).style.display = "flex";
 
     fetch(window.location.href, {
+
         method: "POST",
+
         headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
+            "Content-Type":
+                "application/x-www-form-urlencoded"
         },
-        body: "action=createCustomer&customername=" + encodeURIComponent(name)
+
+        body:
+            "action=createCustomer&customername="
+            + encodeURIComponent(name)
+
     })
+
     .then(res => res.json())
+
     .then(data => {
+
+        // hide loader
+        document.getElementById(
+            "loader"
+        ).style.display = "none";
+
+        // enable again
+        btn.disabled = false;
+        btn.innerText = "Save";
 
         if(data.success){
 
-            // OPTIONAL: small delay for smooth UX
-            document.getElementById("dialog").style.display = "flex";
-document.querySelector(".dialog-title").innerText = "Customer Created!";
-document.querySelector(".dialog-text").innerText = data.name + " added successfully.";
-            setTimeout(function(){
+            var dropdown =
+                document.getElementById(
+                    "customerDropdown"
+                );
 
-                // ✅ REDIRECT TO SAME SUITELET (refresh page)
-                window.location.href = window.location.href;
+            var option =
+                document.createElement("option");
 
-            }, 400);
+            option.value = data.id;
+            option.text = data.name;
+
+            dropdown.appendChild(option);
+
+            dropdown.value = data.id;
+
+            closeCustomerModal();
+
+            document.getElementById(
+                "newCustomerName"
+            ).value = '';
+
+            showToast(
+                "Customer created successfully"
+            );
 
         } else {
 
-            // ❌ ERROR → hide loader + reopen modal
-            document.getElementById("loader").style.display = "none";
-            document.getElementById("customerModal").style.display = "flex";
-
-            alert("Error creating customer");
+            showToast(
+                data.message ||
+                "Customer already exists"
+            );
         }
+
     })
+
     .catch(err => {
 
-        document.getElementById("loader").style.display = "none";
-        document.getElementById("customerModal").style.display = "flex";
-
         console.error(err);
-        alert("Error creating customer");
+
+        document.getElementById(
+            "loader"
+        ).style.display = "none";
+
+        btn.disabled = false;
+        btn.innerText = "Save";
+
+        showToast(
+            "Error creating customer"
+        );
     });
 }
 
@@ -1537,10 +1743,40 @@ if (req.parameters.action === "createCustomer") {
 
     var name = req.parameters.customername;
 
-    var customerRec = record.create({
-        type: record.Type.CUSTOMER,
-        isDynamic: true
+    var existingCustomer = search.create({
+
+    type: search.Type.CUSTOMER,
+
+    filters: [
+        ['altname','is',name]
+    ],
+
+    columns: ['internalid']
+
+}).run().getRange({
+    start:0,
+    end:1
+});
+
+if(existingCustomer.length > 0){
+
+    context.response.setHeader({
+        name:'Content-Type',
+        value:'application/json'
     });
+
+    context.response.write(JSON.stringify({
+        success:false,
+        message:'Customer already exists'
+    }));
+
+    return;
+}
+
+var customerRec = record.create({
+    type: record.Type.CUSTOMER,
+    isDynamic: true
+});
 
     // customerRec.setValue({ fieldId: 'entityid', value: name });
    customerRec.setValue({ fieldId: 'companyname', value: name });
@@ -1587,6 +1823,9 @@ var enddate=req.parameters.enddate;
 var updatedenddate=req.parameters.updatedenddate;
 var pmocomments=req.parameters.pmocomments;
 var duration = '';
+var functional1 =req.parameters.functional1;
+var technical1=req.parameters.technical1;
+var invoicedate =req.parameters.invoicedate;
 
 if(startdate && enddate){
 
@@ -1665,6 +1904,28 @@ value:accountmanager
 rec.setValue({
 fieldId:'custrecord_rw_portal_projectmanager',
 value:projectmanager
+});
+
+if(functional1){
+
+    rec.setValue({
+        fieldId:'custrecord_rw_portal_functional_consulta',
+        value: parseInt(functional1)
+    });
+
+}
+
+if(technical1){
+
+    rec.setValue({
+        fieldId:'custrecord_rw_portal_technical',
+        value: parseInt(technical1)
+    });
+
+}
+rec.setValue({
+fieldId:'custrecord_rw_portal_invoice_date',
+value:new Date(invoicedate)
 });
 
 rec.setValue({
@@ -2171,6 +2432,10 @@ function showDialog(){
     document.getElementById("loader").style.display = "none";
     document.getElementById("dialog").style.display = "flex";
 }
+    sessionStorage.setItem(
+    'refreshDashboard',
+    'true'
+);
 function redirectPage(){
     window.location.href = window.redirectUrl;
 }

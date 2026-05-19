@@ -121,7 +121,35 @@ if (isNaN(pageIndex) || pageIndex < 0) {
     pageIndex = 0;
 }
 
+function getStatusClass(status){
 
+    status = (status || '')
+        .toLowerCase()
+        .replace(/\s/g,'');
+
+    if(status.includes('todo')){
+        return 'todo';
+    }
+
+    if(status.includes('progress')){
+        return 'inprogress';
+    }
+
+    if(status.includes('review')){
+        return 'codereview';
+    }
+
+    if(status.includes('uat')){
+        return 'uat';
+    }
+
+    if(status.includes('done') ||
+       status.includes('closed')){
+        return 'done';
+    }
+
+    return 'todo';
+}
 var filterType = context.request.parameters.filter;
 var mode = request.parameters.mode;
 
@@ -604,7 +632,17 @@ if (!data || data.length === 0) {
                 
                 
                 <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_deadline') || ''}</td>
-                <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_ticketstatus') || ''}</td>
+                <td style="border:1px solid black;">
+
+<span class="status ${getStatusClass(
+    result.getText('custrecord_rw_ticket_ticketstatus')
+)}">
+
+${result.getText('custrecord_rw_ticket_ticketstatus') || ''}
+
+</span>
+
+</td>
             </tr>
         `;
     }
