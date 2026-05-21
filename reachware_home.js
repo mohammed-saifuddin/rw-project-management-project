@@ -460,7 +460,7 @@ if (empId) {
     }
 }
 if (!empRole || empRole.trim() === '') {
-    empRole =  'Administrator';
+    empRole =  'Others';
 }
 function getCurrentGoLiveProducts(){
 
@@ -518,10 +518,10 @@ if(roleType === 'PMO'){
     statsHeader = `
         <div>Total Projects</div>
         <div>Open Projects</div>
-        <div>In Progress</div>
+        
         
         <div>Kickoff</div>
-        <div>Business requirement</div>
+        
         <div>Training</div>
         <div>UAT</div>
         <div>Go live</div>
@@ -533,10 +533,10 @@ if(roleType === 'PMO'){
    statsValues = `
     <div class="data-val" id="tit" onclick="openProjects('total')">${projectCount}</div>
     <div class="data-val" id="tit" onclick="openProjects('open')">${openProjects}</div>
-    <div class="data-val" id="tit" onclick="openProjects('inprogress')">${inProgressCount}</div>
+    
    
     <div class="data-val" id="tit" onclick="openProjects('kickof')">${kickOffCount}</div>
-    <div class="data-val" id="tit" onclick="openProjects('bussinessrequirement')">${bussinesCount}</div>
+    
     <div class="data-val" id="tit" onclick="openProjects('training')">${training}</div>
     <div class="data-val" id="tit" onclick="openProjects('uat')">${uatCount}</div>
     <div class="data-val" id="tit" onclick="openProjects('golive')">${golive}</div>
@@ -3478,7 +3478,7 @@ var chartData = {
     labels: [
     "Total Projects",
     "Open Projects",
-        "In Progress",
+        
         "Kickoff",
         "Business",
         "Training",
@@ -3491,7 +3491,7 @@ var chartData = {
     values: [
         ${projectCount},
         ${openProjects},
-        ${inProgressCount},
+        
         ${kickOffCount},
         ${bussinesCount},
         ${training},

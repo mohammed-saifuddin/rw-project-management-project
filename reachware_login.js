@@ -123,6 +123,7 @@ div.uir-page-wrapper {
             color:white;
              font-weight:bold;
             margin-left:10px;
+            font-family:calibri;
             padding:16px;
             height:70px;
             font-size:16px;

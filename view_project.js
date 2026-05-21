@@ -8,20 +8,106 @@ define(['N/ui/serverWidget','N/record','N/url','N/search','N/format','N/file','N
 const onRequest = (context) => {
    
 if (context.request.method === 'POST') {
-var projectStatus = context.request.parameters.projectStatus;
-var projectId = context.request.parameters.projectId;
+var reqBody = JSON.parse(
+    context.request.body || '{}'
+);
+
+var body =
+    reqBody.data || [];
+
+var milestoneData =
+    reqBody.milestoneData || [];
+
+var projectStatus =
+    reqBody.projectStatus || '';
+
 var updatedEndDate =
-    context.request.parameters.updatedEndDate;
+    reqBody.updatedEndDate || '';
+
 var pmoComments =
-    context.request.parameters.pmoComments || '';
-    var body;
+    reqBody.pmoComments || '';
+
+var projectId =
+    reqBody.projectId || '';
+
 var empId =
-    context.request.parameters.empid || '';
-    try {
-        body = JSON.parse(context.request.body);
-    } catch (e) {
-        body = JSON.parse(context.request.parameters.data || "[]");
+    reqBody.empid || '';
+function getEmployeeDMSRole(empId){
+
+    if(!empId) return '';
+
+    var emp = search.lookupFields({
+        type: search.Type.EMPLOYEE,
+        id: empId,
+        columns: ['custentityrw_dms_role']   // ✅ correct field
+    });
+
+    log.debug("DMS ROLE RAW", emp);
+
+    if(emp.custentityrw_dms_role && emp.custentityrw_dms_role.length > 0){
+        return emp.custentityrw_dms_role[0].text;   // "RW PMO"
     }
+
+    return '';
+}
+function getRoleTypeFromDMS(roleName){
+
+    if(!roleName) return 'OTHER';
+
+    roleName = roleName.toLowerCase();
+
+    if(roleName.includes('pmo')) return 'PMO';
+    if(roleName.includes('developer')) return 'DEV';
+    if(roleName.includes('pm')) return 'PM';
+
+    return 'OTHER';
+}
+function safeDate(dateStr){
+
+    if(!dateStr){
+        return null;
+    }
+
+    try{
+
+        var d = new Date(dateStr);
+
+        if(isNaN(d.getTime())){
+            return null;
+        }
+
+        return d;
+
+    }catch(e){
+
+        return null;
+    }
+}
+log.debug(
+    'FINAL MILESTONE DATA',
+    JSON.stringify(milestoneData)
+);
+
+var dmsRole =
+    getEmployeeDMSRole(empId);
+
+log.debug(
+    'POST DMS ROLE',
+    dmsRole
+);
+
+var roleType =
+    getRoleTypeFromDMS(dmsRole);
+
+log.debug(
+    'POST ROLE TYPE',
+    roleType
+);
+    // try {
+    //     body = JSON.parse(context.request.body);
+    // } catch (e) {
+    //     body = JSON.parse(context.request.parameters.data || "[]");
+    // }
 
     log.debug("FINAL BODY", body);
 
@@ -30,6 +116,19 @@ var empId =
         context.response.write("No data received");
         return;
     }
+    // var milestoneData =
+    // context.request.parameters
+    // .milestoneData || [];
+
+// try{
+
+//     milestoneData =
+//         JSON.parse(milestoneData);
+
+// }catch(e){
+
+//     milestoneData = [];
+// }
 var oldProjectRec = record.load({
     type: 'customrecord_rw_portal_access',
     id: projectId,
@@ -41,6 +140,8 @@ var oldProjectStatus =
         'custrecord_rw_portal_status'
     ) || '';
 
+
+   
 var newProjectStatusText = '';
 function parseInputDate(dateStr){
 
@@ -315,19 +416,180 @@ if(projectId){
 
     var updateValues = {};
 
+if(roleType === 'PMO'){
+
     if(projectStatus){
+
         updateValues.custrecord_rw_portal_status =
             projectStatus;
     }
 
     if(updatedEndDate){
+
         updateValues.custrecord_rw_portal_updatedenddate =
-            new Date(updatedEndDate);
+            safeDate(updatedEndDate);
     }
-    if(pmoComments){
-updateValues.custrecord_rw_portal_pmocommnts =
-    pmoComments;
+
+    updateValues.custrecord_rw_portal_pmocommnts =
+        pmoComments || '';
+}
+var customerId =
+    oldProjectRec.getValue(
+        'custrecord_rw_portal_customername'
+    ) || '';
+
+log.debug(
+    'CUSTOMER link',
+    customerId
+);
+
+if(roleType === 'PM'){
+
+     milestoneData.forEach(function(ms){
+
+    var planId = ms.id || '';
+
+    // CREATE NEW RECORD
+    if(!planId){
+
+        var newRec = record.create({
+            type: 'customrecord_rw_customer_project_plan',
+            isDynamic: true
+        });
+
+    if(customerId){
+
+    newRec.setValue({
+
+        fieldId:
+        'custrecord_rw_cust_proj_plan_link',
+
+        value:
+        customerId
+    });
+}
+
+        if(ms.milestoneid){
+            newRec.setValue({
+                fieldId: 'custrecord_rw_cust_proj_mile_stone',
+                value: ms.milestoneid
+            });
+        }
+        
+        if(ms.productid){
+            newRec.setValue({
+                fieldId: 'custrecord_rw_cust_proj_plan_prod_serv',
+                value: ms.productid
+            });
+        }
+      if(directProject){
+
+    newRec.setValue({
+        fieldId:
+        'custrecord_rw_cust_proj_rev_stream',
+        value: directProject
+    });
+}
+      
+      
+        if(ms.startdate){
+            newRec.setValue({
+                fieldId:
+                'custrecord_rw_cust_proj_mile_start_date',
+                value:safeDate(ms.startdate)
+            });
+        }
+         if(ms.sno){
+newRec.setValue({
+                fieldId:
+                'custrecord_rw_cust_proj_plan_sno',
+                value:ms.sno
+            });
+         }
+
+
+
+        if(ms.enddate){
+            newRec.setValue({
+                fieldId:
+                'custrecord_rw_cust_proj_plan_end_date',
+                value:safeDate(ms.enddate)
+            });
+        }
+
+        newRec.setValue({
+            fieldId:
+            'custrecord_rw_cust_proj_planest_duration',
+            value: ms.duration || ''
+        });
+
+        if(ms.actual){
+            newRec.setValue({
+                fieldId:
+                'custrecord_rw_cust_proj_plan_act_compl',
+                value:safeDate(ms.actual)
+            });
+        }
+
+        newRec.setValue({
+            fieldId:
+            'custrecord_rw_cust_proj_plan_aging',
+            value: ms.aging || ''
+        });
+
+        newRec.setValue({
+            fieldId:
+            'custrecord_rw_cust_proj_plan_time_spent',
+            value: ms.timespent || ''
+        });
+
+        var newId = newRec.save({
+            enableSourcing:true,
+            ignoreMandatoryFields:true
+        });
+
+        log.debug('NEW MILESTONE CREATED', newId);
+
     }
+
+    // UPDATE EXISTING
+    else{
+
+        record.submitFields({
+
+            type:
+            'customrecord_rw_customer_project_plan',
+
+            id: planId,
+
+            values: {
+
+                custrecord_rw_cust_proj_mile_start_date:
+                    safeDate(ms.startdate),
+
+                custrecord_rw_cust_proj_plan_end_date:
+                    safeDate(ms.enddate),
+
+                custrecord_rw_cust_proj_planest_duration:
+                    ms.duration || '',
+
+                custrecord_rw_cust_proj_plan_act_compl:
+                    safeDate(ms.actual),
+
+                custrecord_rw_cust_proj_plan_aging:
+                    ms.aging || '',
+custrecord_rw_cust_proj_plan_sno:
+    ms.sno || '',
+
+
+                custrecord_rw_cust_proj_plan_time_spent:
+                    ms.timespent || ''
+            }
+        });
+    }
+});
+}
+  
     record.submitFields({
         type: 'customrecord_rw_portal_access',
         id: projectId,
@@ -565,6 +827,10 @@ var userId = currentUser.id;
         });
 
         customer = projectRec.getText('custrecord_rw_portal_customername') || '';
+        var customerId =
+    projectRec.getValue(
+        'custrecord_rw_portal_customername'
+    ) || '';
         status = projectRec.getText('custrecord_rw_portal_status') || '';
         projectType = projectRec.getText('custrecord_rw_portal_projecttype') || '';
         directProject = projectRec.getText('custrecord_rw_portal_directproject') || '';
@@ -585,7 +851,10 @@ technical1 =projectRec.getText('custrecord_rw_portal_technical');
 performaDate=projectRec.getValue('custrecord_rw_portal_invoice_date') || 'NIL'
   
         // var isProjectManager = (empId === projectManagerId);
-        var canEdit = (roleType === 'PM' || roleType === 'PMO');
+        var canEdit = (
+    roleType === 'PM' ||
+    roleType === 'PMO'
+);
         log.debug("user id is",userId);
         log.debug("emp id is ",empId)
         //log.debug("project manger id is",projectManagerId)
@@ -777,9 +1046,371 @@ function formatDate(date){
     var d = new Date(date);
     return d.toLocaleDateString('en-GB'); // dd/mm/yyyy
 }
+
+
 lineSearch.run().each(function(result){
 
     var product = result.getText('custrecord_rw_portal_rwproduct') || '';
+    var productId =
+    result.getValue(
+        'custrecord_rw_portal_rwproduct'
+    ) || '';
+
+var templateId = '';
+
+if(productId){
+
+    var productLookup =
+        search.lookupFields({
+
+            type:
+            'customrecord_rw_extend_products',
+
+            id:
+            productId,
+
+            columns: [
+                'custrecord_rw_ext_proj_plan_template'
+            ]
+        });
+
+    if(
+        productLookup
+        .custrecord_rw_ext_proj_plan_template &&
+
+        productLookup
+        .custrecord_rw_ext_proj_plan_template
+        .length
+    ){
+
+        templateId =
+            productLookup
+            .custrecord_rw_ext_proj_plan_template[0]
+            .value;
+    }
+}
+var startDate = '';
+var milestoneenddate = '';
+var estDuration = '';
+var actualCompleted = '';
+var aging = '';
+var timeSpent = '';
+var canEditMilestone =
+    (roleType === 'PM');
+var milestoneRows = '';
+
+if(templateId){
+
+    var milestoneSearch =
+        search.create({
+
+            type:
+            'customrecord_rw_project_plan_temp_child',
+
+            filters: [
+                [
+                    'custrecord_rw_proj_plan_temp_child_link',
+                    'anyof',
+                    templateId
+                ]
+            ],
+
+            columns: [
+
+                search.createColumn({
+    name:
+    'formulanumeric',
+    formula:
+    '{custrecord_rw_proj_plan_temp_child_sno}',
+    sort:
+    search.Sort.ASC
+}),
+'custrecord_rw_proj_plan_temp_child_sno',
+
+                'custrecord_rw_project_temp_child_miles'
+            ]
+        });
+
+
+       
+   milestoneSearch.run().each(function(ms){
+
+    var sno =
+        ms.getValue(
+            'custrecord_rw_proj_plan_temp_child_sno'
+        ) || '';
+
+    var milestoneId =
+        ms.getValue(
+            'custrecord_rw_project_temp_child_miles'
+        ) || '';
+
+    var milestoneName =
+        ms.getText(
+            'custrecord_rw_project_temp_child_miles'
+        ) || '';
+
+    var startDate = '';
+    var milestoneenddate = '';
+    var estDuration = '';
+    var actualCompleted = '';
+    var aging = '';
+    var timeSpent = '';
+var customerPlanId = '';
+    var customerPlanSearch = search.create({
+
+        type: 'customrecord_rw_customer_project_plan',
+
+       filters: [
+
+    [
+        'custrecord_rw_cust_proj_plan_link',
+        'anyof',
+        customerId
+    ],
+
+    'AND',
+
+    [
+        'formulatext: {custrecord_rw_cust_proj_mile_stone}',
+        'is',
+        milestoneName
+    ],
+
+    'AND',
+
+    [
+        'formulatext: {custrecord_rw_cust_proj_plan_prod_serv}',
+        'is',
+        product
+    ]
+],
+
+        columns: [
+               search.createColumn({
+    name:
+    'custrecord_rw_cust_proj_plan_sno',
+    sort:
+    search.Sort.ASC
+}),
+            'internalid',
+         
+            'custrecord_rw_cust_proj_mile_start_date',
+            'custrecord_rw_cust_proj_plan_sno',
+
+            'custrecord_rw_cust_proj_plan_end_date',
+
+            'custrecord_rw_cust_proj_planest_duration',
+
+            'custrecord_rw_cust_proj_plan_act_compl',
+
+            'custrecord_rw_cust_proj_plan_aging',
+
+            'custrecord_rw_cust_proj_plan_time_spent'
+        ]
+    });
+
+    customerPlanSearch.run().each(function(cp){
+      
+         customerPlanId =
+    cp.getValue('internalid') || '';
+        startDate =
+            cp.getValue(
+                'custrecord_rw_cust_proj_mile_start_date'
+            ) || '';
+
+        milestoneenddate =
+            cp.getValue(
+                'custrecord_rw_cust_proj_plan_end_date'
+            ) || '';
+
+        estDuration =
+            cp.getValue(
+                'custrecord_rw_cust_proj_planest_duration'
+            ) || '';
+
+        actualCompleted =
+            cp.getValue(
+                'custrecord_rw_cust_proj_plan_act_compl'
+            ) || '';
+
+        aging =
+            cp.getValue(
+                'custrecord_rw_cust_proj_plan_aging'
+            ) || '';
+
+        timeSpent =
+            cp.getValue(
+                'custrecord_rw_cust_proj_plan_time_spent'
+            ) || '';
+
+        return false;
+    });
+
+var isPM =
+    (roleType === 'PM');
+    
+   if(isPM){
+
+milestoneRows += `
+
+<tr
+    class="milestoneRow"
+    data-planid="${customerPlanId}"
+    data-milestoneid="${milestoneId}"
+    data-productid="${productId}"
+    data-sno="${sno}"
+>
+
+<td style="border:1px solid #ddd;padding:8px;">
+    ${sno}
+</td>
+
+<td style="border:1px solid #ddd;padding:8px;">
+    ${milestoneName}
+</td>
+
+<td style="border:1px solid #ddd;padding:8px;">
+
+    <span class="view-mode">
+        ${startDate || ''}
+    </span>
+
+    <input
+        type="date"
+        class="edit-mode ms-startdate"
+        value="${getDateValues(startDate).input}"
+        style="display:none;width:100%;"
+    />
+
+</td>
+
+<td style="border:1px solid #ddd;padding:8px;">
+
+    <span class="view-mode">
+        ${milestoneenddate || ''}
+    </span>
+
+    <input
+        type="date"
+        class="edit-mode ms-enddate"
+        value="${getDateValues(milestoneenddate).input}"
+        style="display:none;width:100%;"
+    />
+
+</td>
+
+<td style="border:1px solid #ddd;padding:8px;">
+
+    <span class="view-mode">
+        ${estDuration || ''}
+    </span>
+
+    <input
+        type="text"
+        class="edit-mode ms-duration"
+        readonly
+        value="${estDuration || ''}"
+        style="display:none;width:80px;"
+    />
+
+</td>
+
+<td style="border:1px solid #ddd;padding:8px;">
+
+    <span class="view-mode">
+        ${actualCompleted || ''}
+    </span>
+
+    <input
+        type="date"
+        class="edit-mode ms-actual"
+        value="${getDateValues(actualCompleted).input}"
+        style="display:none;width:100%;"
+    />
+
+</td>
+
+<td style="border:1px solid #ddd;padding:8px;">
+
+    <span class="view-mode">
+        ${aging || ''}
+    </span>
+
+    <input
+        type="text"
+        class="edit-mode ms-aging"
+        readonly
+        value="${aging || ''}"
+        style="display:none;width:80px;"
+    />
+
+</td>
+
+<td style="border:1px solid #ddd;padding:8px;">
+
+    <span class="view-mode">
+        ${timeSpent || ''}
+    </span>
+
+    <input
+        type="text"
+        class="edit-mode ms-timespent"
+        value="${timeSpent || ''}"
+        style="display:none;width:80px;"
+    />
+
+</td>
+
+</tr>
+`;
+
+}else{
+
+milestoneRows += `
+
+<tr>
+
+<td style="border:1px solid #ddd;padding:8px;">
+    ${sno}
+</td>
+
+<td style="border:1px solid #ddd;padding:8px;">
+    ${milestoneName}
+</td>
+
+<td style="border:1px solid #ddd;padding:8px;">
+    ${getDateValues(startDate).display || ''}
+</td>
+
+<td style="border:1px solid #ddd;padding:8px;">
+   ${getDateValues(milestoneenddate).display || ''}
+</td>
+
+<td style="border:1px solid #ddd;padding:8px;">
+    ${estDuration || ''}
+</td>
+
+<td style="border:1px solid #ddd;padding:8px;">
+    ${getDateValues(actualCompleted).display || ''}
+</td>
+
+<td style="border:1px solid #ddd;padding:8px;">
+    ${aging || ''}
+</td>
+
+<td style="border:1px solid #ddd;padding:8px;">
+    ${timeSpent || ''}
+</td>
+
+</tr>
+`;
+
+}
+
+    return true;
+});
+}
     var comments = result.getValue('custrecord_rw_portal_additionalcomments') || '';
     var pm = result.getText('custrecord_rw_rwprojectmanager') || '';
     var functional = result.getText('custrecord_rw_portal_funcconsultant') || '';
@@ -794,9 +1425,9 @@ var technical    = result.getText('custrecord_rw_portal_techconsultant');
 var goliveRaw = result.getValue('custrecord_rw_portal_lineexptgolivedate');
 var linestatus = result.getText('custrecord_rw_portal_projstat'); // for display
 var linestatusId = result.getValue('custrecord_rw_portal_projstat'); // for dropdown
-var startdate=result.getValue('custrecord_rw_portal_startdateline');
-var enddate=result.getValue('custrecord_rw_portal_enddateline');
-var updateddeadline=result.getValue('custrecord_rw_portal_updateddeadline');
+var startdate=result.getValue('custrecord_rw_portal_startdateline') || '';
+var enddate=result.getValue('custrecord_rw_portal_enddateline') || '';
+var updateddeadline=result.getValue('custrecord_rw_portal_updateddeadline') || '';
 
 
 
@@ -1184,6 +1815,17 @@ historyHtml += `</div>`;
     lineItemsHtml += `
 <tr data-id="${lineId}">
     <td style="border:1px solid #ccc;padding:8px;">
+    <span
+    onclick="togglePlan('${lineId}')"
+    style="
+        cursor:pointer;
+        color:#27ae60;
+        font-weight:bold;
+        margin-right:8px;
+    "
+>
+    📋
+</span>
     <span class="toggleHistory"
           onclick="toggleHistory('${lineId}')"
           style="
@@ -1271,6 +1913,102 @@ historyHtml += `</div>`;
     ${historyHtml}
 
 </td>
+</tr>
+<tr id="plan_${lineId}"
+    style="
+        display:none;
+        background:#f8f9fc;
+    ">
+
+<td colspan="12"
+    style="padding:15px;">
+
+    <div style="
+        background:white;
+        border-radius:12px;
+        padding:15px;
+        border:1px solid #ddd;
+    ">
+
+        <div style="
+            font-size:16px;
+            font-weight:bold;
+            color:#8f50df;
+            margin-bottom:12px;
+        ">
+            ${product}
+        </div>
+
+        <table style="
+            width:100%;
+            border-collapse:collapse;
+        ">
+
+            <thead>
+
+                <tr style="
+                    background:#8f50df;
+                    color:white;
+                ">
+
+                    <th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">
+                        S.NO
+                    </th>
+
+                    <th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">
+                        Milestone
+                    </th>
+
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Start Date</th>
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">End Date</th>
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Estimated Duration</th>
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Actual Completed</th>
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Aging</th>
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Time Spent</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                ${
+                    milestoneRows ||
+
+                    '<tr><td colspan="2">No Milestones Found</td></tr>'
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</td>
+
 </tr>`
 
 ;
@@ -1547,6 +2285,17 @@ historyHtml += `</div>`;
     lineItemsHtml += `
 <tr data-id="${lineId}">
 <td style="border:1px solid #ccc;padding:8px;">
+<span
+    onclick="togglePlan('${lineId}')"
+    style="
+        cursor:pointer;
+        color:#27ae60;
+        font-weight:bold;
+        margin-right:8px;
+    "
+>
+    📋
+</span>
     <span class="toggleHistory"
           onclick="toggleHistory('${lineId}')"
           style="
@@ -1646,6 +2395,102 @@ historyHtml += `</div>`;
     ${historyHtml}
 
 </td>
+</tr>
+<tr id="plan_${lineId}"
+    style="
+        display:none;
+        background:#f8f9fc;
+    ">
+
+<td colspan="12"
+    style="padding:15px;">
+
+    <div style="
+        background:white;
+        border-radius:12px;
+        padding:15px;
+        border:1px solid #ddd;
+    ">
+
+        <div style="
+            font-size:16px;
+            font-weight:bold;
+            color:#8f50df;
+            margin-bottom:12px;
+        ">
+            ${product}
+        </div>
+
+        <table style="
+            width:100%;
+            border-collapse:collapse;
+        ">
+
+            <thead>
+
+                <tr style="
+                    background:#8f50df;
+                    color:white;
+                ">
+
+                    <th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">
+                        S.NO
+                    </th>
+
+                    <th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">
+                        Milestone
+                    </th>
+
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Start Date</th>
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">End Date</th>
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Estimated Duration</th>
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Actual Completed</th>
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Aging</th>
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Time Spent</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                ${
+                    milestoneRows ||
+
+                    '<tr><td colspan="2">No Milestones Found</td></tr>'
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</td>
+
 </tr>`
 
 ;
@@ -1693,6 +2538,213 @@ else {
 });
     }
 
+//     var subscriptionHtml = '';
+
+// var addedProducts = {};
+
+// var productSearch = search.create({
+
+//     type: 'customrecord_rw_portal_access2',
+
+//     filters: [
+//         ['custrecord1513','anyof', projectId]
+//     ],
+
+//     columns: [
+//         'custrecord_rw_portal_rwproduct'
+//     ]
+// });
+
+// productSearch.run().each(function(res){
+
+//     var productId =
+//         res.getValue(
+//             'custrecord_rw_portal_rwproduct'
+//         );
+
+//     if(!productId){
+//         return true;
+//     }
+
+//     // avoid duplicate product
+//     if(addedProducts[productId]){
+//         return true;
+//     }
+
+//     addedProducts[productId] = true;
+
+//     // =====================================
+//     // PRODUCT RECORD
+//     // =====================================
+
+//     var productData =
+//         search.lookupFields({
+
+//             type:
+//             'customrecord_rw_extend_products',
+
+//             id:
+//             productId,
+
+//             columns: [
+//                 'name',
+//                 'custrecord_rw_ext_proj_plan_template'
+//             ]
+//         });
+
+//     var productName =
+//         productData.name || '';
+
+//     var subscriptionId = '';
+
+//     var product = '';
+
+//     if(
+//         productData
+//         .custrecord_ns_subscription_plan &&
+//         productData
+//         .custrecord_ns_subscription_plan
+//         .length
+//     ){
+
+//         subscriptionId =
+//             productData
+//             .custrecord_ns_subscription_plan[0]
+//             .value;
+
+//         product =
+//             productData
+//             .custrecord_ns_subscription_plan[0]
+//             .text;
+//     }
+
+//     // =====================================
+//     // FETCH CUSTOM SUBTAB RECORDS
+//     // =====================================
+
+//     var milestoneRows = '';
+
+// var milestoneSearch = search.create({
+
+//     type: 'customrecord_rw_project_plan_temp_child',
+
+//     filters: [
+//         [
+//             'custrecord_rw_proj_plan_temp_child_link',
+//             'anyof',
+//             productData.custrecord_rw_ext_proj_plan_template[0].value
+//         ]
+//     ],
+
+//     columns: [
+
+//         search.createColumn({
+//             name:
+//             'custrecord_rw_proj_plan_temp_child_sno',
+
+//             sort:
+//             search.Sort.ASC
+//         }),
+
+//         'custrecord_rw_project_temp_child_miles'
+//     ]
+// });
+
+// log.debug(
+//     'MILESTONE COUNT',
+//     milestoneSearch.runPaged().count
+// );
+
+// milestoneSearch.run().each(function(ms){
+
+//     milestoneRows += `
+
+//         <tr>
+
+//             <td>
+//                 ${
+//                     ms.getText(
+//                         'custrecord_rw_proj_plan_temp_child_sno'
+//                     ) ||
+
+//                     ms.getValue(
+//                         'custrecord_rw_proj_plan_temp_child_sno'
+//                     ) || ''
+//                 }
+//             </td>
+
+//             <td>
+//                 ${
+//                     ms.getText(
+//                         'custrecord_rw_project_temp_child_miles'
+//                     ) ||
+
+//                     ms.getValue(
+//                         'custrecord_rw_project_temp_child_miles'
+//                     ) || ''
+//                 }
+//             </td>
+
+//         </tr>
+
+//     `;
+
+//     return true;
+// });
+    
+
+//     // =====================================
+//     // FINAL HTML
+//     // =====================================
+
+//     subscriptionHtml += `
+
+//         <div class="subscriptionCard">
+
+//             <div class="subscriptionTitle">
+
+//                 ${productName}
+
+//             </div>
+
+//             <div class="subscriptionSubTitle">
+
+//                 ${product}
+
+//             </div>
+
+//             <table class="milestoneTable">
+
+//                 <thead>
+
+//                     <tr>
+
+//                         <th>S.NO</th>
+
+//                         <th>Project Milestones</th>
+
+//                     </tr>
+
+//                 </thead>
+
+//                 <tbody>
+
+//                     ${
+//                         milestoneRows ||
+
+//                         '<tr><td colspan="2">No Milestones Found</td></tr>'
+//                     }
+
+//                 </tbody>
+
+//             </table>
+
+//         </div>
+
+//     `;
+
+//     return true;
+// });
     var htmlField = form.addField({
         id: 'custpage_html',
         type: serverWidget.FieldType.INLINEHTML,
@@ -1714,7 +2766,60 @@ else {
     gap: 12px 20px;
     align-items: center;
 }
+.subscriptionWrapper{
 
+    margin-top:30px;
+}
+
+.subscriptionCard{
+
+    margin-bottom:25px;
+    border:1px solid #ddd;
+    border-radius:12px;
+    padding:20px;
+    background:white;
+
+    box-shadow:
+    0 2px 8px rgba(0,0,0,0.05);
+}
+
+.subscriptionTitle{
+
+    font-size:18px;
+    font-weight:bold;
+    color:#8f50df;
+
+    margin-bottom:8px;
+}
+
+.subscriptionSubTitle{
+
+    font-size:14px;
+    color:#666;
+
+    margin-bottom:20px;
+}
+
+.milestoneTable{
+
+    width:100%;
+    border-collapse:collapse;
+}
+
+.milestoneTable th{
+
+    background:#8f50df;
+    color:white;
+    padding:10px;
+
+    border:1px solid #ccc;
+}
+
+.milestoneTable td{
+
+    padding:10px;
+    border:1px solid #ccc;
+}
 .label {
     font-weight: bold;
 }
@@ -1816,7 +2921,59 @@ else {
     0%{transform:translate(-50%,-50%) rotate(0deg);}
     100%{transform:translate(-50%,-50%) rotate(360deg);}
 }
+.planWrapper{
+    margin-top:30px;
+}
 
+.planTabs{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+}
+
+.planTabBtn{
+
+    background:#f3f3f3;
+    border:none;
+    padding:10px 18px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+}
+
+.planTabBtn.active{
+
+    background:#8f50df;
+    color:white;
+}
+
+.planTabContent{
+
+    display:none;
+}
+
+.planCard{
+
+    background:white;
+    border-radius:12px;
+    padding:20px;
+    border:1px solid #ddd;
+    box-shadow:0 2px 10px rgba(0,0,0,0.05);
+}
+
+.planTitle{
+
+    font-size:18px;
+    font-weight:bold;
+    color:#8f50df;
+    margin-bottom:15px;
+}
+
+.planBody{
+
+    line-height:1.8;
+}
 #loader p{
     position:absolute;
     top:60%;
@@ -1872,16 +3029,7 @@ else {
 </div>
 <div class="label">Peforma Invoice Date</div>
         <div class="value">${invoice}</div>
-        <div class="label">Status</div>
-<div class="value">
-
-    <span class="view-mode">${status}</span>
-
-    <select id="projectStatus" class="edit-mode" style="display:none;" data-currenttext="${status}">
-        ${projectStatusOptions}
-    </select>
-
-</div>
+  
 
         <div class="label">Revenue Stream</div>
         <div class="value">${directProject}</div>
@@ -1906,7 +3054,7 @@ else {
         id="updatedEndDate"
         class="edit-mode"
         value="${toInputDate(updatedenddate)}"
-        style="display:none;"
+        style="display:none;width:100%;"
     >
 
 </div>
@@ -1938,7 +3086,23 @@ else {
         <div class="value">${technical1}</div>
         <div class="label">Duration</div>
         <div class="value">${duration} days</div>
+
+              <div class="label">Status</div>
+<div class="value">
+
+    <span class="view-mode">${status}</span>
+
+    <select id="projectStatus" class="edit-mode" style="display:none;width:100%;" data-currenttext="${status}">
+        ${projectStatusOptions}
+    </select>
+
+</div>
     </div>
+    
+<!-- ====================================== -->
+<!-- PRODUCT PLAN TABS -->
+<!-- ====================================== -->
+
 
 <table style="width:100%; border-collapse:collapse; margin-top:14px;">
   <thead>
@@ -1967,7 +3131,114 @@ ${canEdit ? `
     ✔ Saved
 </span>
     <script>
-    
+    function calculateDays(start, end){
+
+    if(!start || !end){
+        return '';
+    }
+
+    var s = new Date(start);
+    var e = new Date(end);
+
+    var diff =
+        Math.floor(
+            (e - s) / (1000 * 60 * 60 * 24)
+        );
+
+    return diff >= 0 ? diff : '';
+}
+
+function autoPopulateMilestone(row){
+
+    var startDate =
+        row.querySelector('.ms-startdate')?.value || '';
+
+    var milestoneenddate =
+        row.querySelector('.ms-enddate')?.value || '';
+
+    var actualDate =
+        row.querySelector('.ms-actual')?.value || '';
+
+    var durationInput =
+        row.querySelector('.ms-duration');
+
+    var agingInput =
+        row.querySelector('.ms-aging');
+
+    // Estimated Duration
+    if(durationInput){
+
+        durationInput.value =
+            calculateDays(
+                startDate,
+                milestoneenddate
+            );
+    }
+
+    // Aging
+    if(agingInput){
+
+        agingInput.value =
+            calculateDays(
+                startDate,
+                actualDate
+            );
+    }
+}
+
+function bindMilestoneAutoCalc(){
+
+    document
+    .querySelectorAll('.milestoneRow')
+    .forEach(function(row){
+
+        var start =
+            row.querySelector('.ms-startdate');
+
+        var end =
+            row.querySelector('.ms-enddate');
+
+        var actual =
+            row.querySelector('.ms-actual');
+
+        if(start){
+
+            start.addEventListener(
+                'change',
+                function(){
+
+                    autoPopulateMilestone(row);
+                }
+            );
+        }
+
+        if(end){
+
+            end.addEventListener(
+                'change',
+                function(){
+
+                    autoPopulateMilestone(row);
+                }
+            );
+        }
+
+        if(actual){
+
+            actual.addEventListener(
+                'change',
+                function(){
+
+                    autoPopulateMilestone(row);
+                }
+            );
+        }
+
+        // Initial load
+        autoPopulateMilestone(row);
+
+    });
+}
    document.title="project details";
     var projectUrl = '${projectUrl}';
 //      function goBack(){
@@ -2032,16 +3303,97 @@ ${canEdit ? `
     }
 }
 
+window.togglePlan = function(lineId){
+
+    var row =
+        document.getElementById(
+            'plan_' + lineId
+        );
+
+    if(!row) return;
+
+    if(row.style.display === 'none'){
+
+        row.style.display = 'table-row';
+
+    } else {
+
+        row.style.display = 'none';
+    }
+};
+document.addEventListener(
+    'DOMContentLoaded',
+    function(){
+
+        bindMilestoneAutoCalc();
+
+        var firstBtn =
+            document.querySelector(
+                '.planTabBtn'
+            );
+
+        if(firstBtn){
+
+            firstBtn.click();
+        }
+    }
+);
+function openPlanTab(productId){
+
+    // hide all
+    document
+    .querySelectorAll('.planTabContent')
+    .forEach(function(tab){
+
+        tab.style.display = 'none';
+    });
+
+    // remove active
+    document
+    .querySelectorAll('.planTabBtn')
+    .forEach(function(btn){
+
+        btn.classList.remove('active');
+    });
+
+    // show current
+    document.getElementById(
+        'tab_' + productId
+    ).style.display = 'block';
+
+    // active button
+    document.getElementById(
+        'tabbtn_' + productId
+    ).classList.add('active');
+}
+
+// AUTO OPEN FIRST TAB
+document.addEventListener(
+    'DOMContentLoaded',
+    function(){
+
+        var firstBtn =
+            document.querySelector(
+                '.planTabBtn'
+            );
+
+        if(firstBtn){
+
+            firstBtn.click();
+        }
+    }
+);
 var statusFlow = [
     'Kick Off',
+    'To-Do',
 'Business requirement',
 'System configuration',
 'In Progress',
 'UAT',
 'Training',
 'Data Migration',
-'Date cleansing',
-'Go-live',
+'Data cleansing',
+'Go live',
 'COC',
 'Post Go-live',
 'Support',
@@ -2119,6 +3471,50 @@ function disablePreviousStatuses(selectEl){
 var pmoComments =
     document.getElementById("pmoComments")?.value || '';
     var data = [];
+
+    var milestoneData = [];
+
+document.querySelectorAll('.milestoneRow')
+.forEach(function(row){
+
+    milestoneData.push({
+
+        id:
+            row.dataset.planid || '',
+
+        milestoneid:
+            row.dataset.milestoneid || '',
+
+        productid:
+            row.dataset.productid || '',
+
+        sno:
+            row.dataset.sno || '',
+
+        startdate:
+            row.querySelector('.ms-startdate')?.value || '',
+
+        enddate:
+            row.querySelector('.ms-enddate')?.value || '',
+
+        duration:
+            row.querySelector('.ms-duration')?.value || '',
+
+        actual:
+            row.querySelector('.ms-actual')?.value || '',
+
+        aging:
+            row.querySelector('.ms-aging')?.value || '',
+
+        timespent:
+            row.querySelector('.ms-timespent')?.value || ''
+    });
+});
+
+console.log(
+    'MILESTONE DATA',
+    milestoneData
+);
 var hasError = false;
     rows.forEach(function(row){
 
@@ -2169,6 +3565,8 @@ if(startdate && enddate){
         duration = days + ' days';
     }
 }
+
+
 if(startdate && enddate){
 
     var startObj = new Date(startdate);
@@ -2266,6 +3664,7 @@ if(updateddeadline && projectUpdatedEndDate){
     updateddeadline:updateddeadline || '',
     duration: duration,
     statusText: statusText,
+    milestoneData: milestoneData
 });
     });
 
@@ -2276,20 +3675,30 @@ if(updateddeadline && projectUpdatedEndDate){
         return;
     }
 
-  fetch(window.location.href, {
-    method: "POST",
+ fetch(window.location.href, {
+
+    method: 'POST',
+
     headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
+        'Content-Type': 'application/json'
     },
-    body:
 
-"data=" + encodeURIComponent(JSON.stringify(data)) +
-"&projectStatus=" + projectStatus +
+    body: JSON.stringify({
 
-"&updatedEndDate=" + updatedEndDate +
-"&pmoComments=" + encodeURIComponent(pmoComments) +
-"&projectId=${projectId}" +
-"&empid=${empId}"
+        data: data,
+
+        milestoneData: milestoneData,
+
+        projectStatus: projectStatus,
+
+        updatedEndDate: updatedEndDate,
+
+        pmoComments: pmoComments,
+
+        projectId: "${projectId}",
+
+empid: "${empId}"
+    })
 })
 .then(res => res.text())
 .then(res => {

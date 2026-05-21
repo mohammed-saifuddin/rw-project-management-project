@@ -39,7 +39,7 @@ erpSearch.run().each(function(res){
 });
 var projectOptions = '<option value="">--Select--</option>';
 var project =search.create({
-    type:'customlistrw_portal_project_type_list',
+    type:'customrecordrw_portal_project_type_list',
     columns:['internalid','name']
 })
 project.run().each(function(res){
@@ -160,7 +160,7 @@ customerData.forEach(function(customer){
     `;
 });
 var dpSearch = search.create({
-    type: 'customlist_rw_portal_directprojectlist',
+    type: 'customrecord_rw_proj_rev_stream',
     columns: ['internalid','name']
 });
 
@@ -1030,16 +1030,19 @@ ${erpOptions}
 </select>
 <label >End Date</label>
 <input type="date" name="enddate" id="enddate" required>
-<label>Status</label>
-<select name="status" required>
-${statOptions1}
-</select>
+
+
 ${isEdit ? `
 <label>Updated End Date</label>
 <input type="date"
        name="updatedenddate"
        id="updatedenddate">
 ` : ``}
+
+<label>PMO Comments</label>
+<input type="type" name="pmocomments" id="pmocomments">
+
+
 
 
 <label class="required">Tentative Go Live Date</label>
@@ -1048,10 +1051,10 @@ ${isEdit ? `
 
 
 
-
-
-
-
+<label class="required">Technical Consultant</label>
+<select name="technical1" id="technical1" required>
+${empOptions}
+</select>
 
 <label>Project Duration</label>
 <input type="type" name="duration" id="duration">
@@ -1060,12 +1063,13 @@ ${isEdit ? `
 <select name="functional1" id="functional1" required>
 ${empOptions}
 </select>
-<label>PMO Comments</label>
-<input type="type" name="pmocomments" id="pmocomments">
-<label class="required">Technical Consultant</label>
-<select name="technical1" id="technical1" required>
-${empOptions}
+
+
+<label>Status</label>
+<select name="status" required>
+${statOptions1}
 </select>
+
 
 </div>
 <button type="button" onclick="addRow()" class="addBtn" style="margin-top:10px;">
@@ -1735,7 +1739,8 @@ else{
 
 var req = context.request;
 var fileId = req.parameters.fileId;
-        
+   var empId = req.parameters.empid || '';
+var email = req.parameters.email || '';     
 
 log.debug("Received File ID", fileId);
 // 🔥 HANDLE CUSTOMER CREATION

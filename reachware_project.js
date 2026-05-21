@@ -244,9 +244,9 @@ results.forEach(function(result){
     var product = result.getText('custrecord_rw_portal_rwproduct');
     var productId = result.getValue('custrecord_rw_portal_rwproduct');
 var additionalComments=result.getValue('custrecord_rw_portal_additionalcomments') || '';
-var lineStartDate = result.getValue('custrecord_rw_portal_startdateline') || '';
-var lineEndDate = result.getValue('custrecord_rw_portal_enddateline') || '';
-var lineUpdatedDate = result.getValue('custrecord_rw_portal_updateddeadline') || '';
+var lineStartDate = result.getValue('custrecord_rw_portal_startdateline') || 'NIL';
+var lineEndDate = result.getValue('custrecord_rw_portal_enddateline') || 'NIL';
+var lineUpdatedDate = result.getValue('custrecord_rw_portal_updateddeadline') || 'NIL';
 var lineDuration =result.getValue('custrecord_rw_portal_durationline');
 var functionalConsultant = result.getText({ name: 'custrecord_rw_portal_funcconsultant' }) || '';
 var technicalConsultant = result.getText({ name: 'custrecord_rw_portal_techconsultant' }) || '';
@@ -782,11 +782,12 @@ ${ticketDetails.closed}
    
    <td style="border:1px solid black;">${data.startDate}</td>
 <td style="border:1px solid black;">${data.endDate}</td>
+<td style="border:1px solid black;">${data.duration + ' days'}</td>
 <td style="border:1px solid black;">${data.golive}</td>
 
 <td style="border:1px solid black;">${data.pm}</td>
 <td style="border:1px solid black;">${data.pmocomments}</td>
-<td style="border:1px solid black;">${data.duration + ' days'}</td>
+
 
 <td style="border:1px solid black;">${Object.keys(data.products).length}</td>
     ${ticketCols}
@@ -1253,12 +1254,13 @@ text-decoration: none;
 ${!isFromHome ? `<th style="border:1px solid black;">Status</th>` : ``}
 <th style="border:1px solid black;">Start Date</th>
 <th style="border:1px solid black;">End Date</th>
+<th style="border:1px solid black;">Duration</th>
 <th style="border:1px solid black;">Golive Date</th>
 
 <th style="border:1px solid black;">PM</th>
 <th style="border:1px solid black;">PMO Comments</th>
 
-<th style="border:1px solid black;">Duration</th>
+
 <th style="border:1px solid black;">Total Products</th>
 ${ticketHeaderCols}
 </tr>
