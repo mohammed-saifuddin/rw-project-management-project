@@ -17,12 +17,26 @@ define([
         var form = serverWidget.createForm({
             title: ' '
         });
+var empId = context.request.parameters.empid 
+         || context.request.parameters.empId 
+         || context.request.parameters.employeeId 
+         || '';
 
+var email = context.request.parameters.email;
     const detailUrl = url.resolveScript({
     scriptId: 'customscript3142',
     deploymentId: 'customdeploy1',
     returnExternalUrl: true
 });
+var homeUrl = url.resolveScript({
+                    scriptId:'customscript2874',
+                    deploymentId:'customdeploy3',
+                    returnExternalUrl:true,
+                    params:{
+        empid: empId,
+        email: email
+    }
+                });
         var htmlField = form.addField({
             id: 'custpage_html',
             type: serverWidget.FieldType.INLINEHTML,
@@ -306,6 +320,19 @@ data.push({
     cursor:pointer;
     font-size:20px;
 }
+    #main_form_div,
+#custpage_html_fs,
+#custpage_html_val{
+
+    overflow:visible !important;
+    height:auto !important;
+    max-height:none !important;
+}
+
+.card{
+
+    overflow:visible !important;
+}
         </style>
 
         <div class="container">
@@ -442,6 +469,7 @@ function closeModal(){
     document.getElementById('productModal')
         .style.display = 'none';
 }
+        
 function openProduct(data){
 
     document.getElementById('productModal')

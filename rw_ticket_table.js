@@ -882,7 +882,18 @@ font-weight:bold;
     border-radius:15px;
     font-size:11px;
     color:white;
+      white-space: nowrap;      /* Prevents text from wrapping */
+    overflow: hidden;         /* Hides overflow text */
+    text-overflow: ellipsis;
 }
+    th{
+   text-transform: uppercase;
+   
+   font-family:calibri;
+     white-space: nowrap;      /* Prevents text from wrapping */
+    overflow: hidden;         /* Hides overflow text */
+    text-overflow: ellipsis;
+   }
 .table-header{
     display:flex;
     align-items:center;
@@ -1493,7 +1504,17 @@ var frame = document.getElementById("mainFrame");
     toggleChartVisibility();
     togglePieVisibility();
 }
-    
+  history.pushState(null, null, location.href);
+
+window.addEventListener('popstate', function () {
+
+    // prevent browser back
+    history.pushState(null, null, location.href);
+
+    // redirect FULL WINDOW not iframe
+    window.top.location.replace('${homeUrl}');
+
+});  
 var homeUrl = '${homeUrl}';
      function goBack(){
 

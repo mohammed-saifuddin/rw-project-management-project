@@ -366,6 +366,11 @@ const projectPlanUrl = url.resolveScript({
         email: email
     }
 });
+ const newProjectPlanUrl = url.resolveScript({
+    scriptId: 'customscript3146',
+    deploymentId: 'customdeploy1',
+    returnExternalUrl: true
+});
 var viewProjectUrl = url.resolveScript({
 scriptId: 'customscript2892',
 deploymentId: 'customdeploy1',
@@ -704,6 +709,11 @@ if (roleType !== 'PMO') {
 var projectPlan ='';
 if(roleType === 'PM'){
     projectPlan = `<div class="menu" onclick="openProjectPlan(); closeMenu()">Project Plan</div>`;
+}
+
+var newProjectPlan ='';
+if(roleType === 'PM'){
+    newProjectPlan = `<div class="menu" onclick="openNewProjectPlan(); closeMenu()">New Milestone</div>`;
 }
 var projectMenu = '';
 if(roleType !== 'OTHER'){
@@ -2142,6 +2152,13 @@ html, body {
     width: 100%;
     transition:all 0.3s ease;
 
+   text-transform: uppercase;
+   
+   font-family:calibri;
+     white-space: nowrap;      /* Prevents text from wrapping */
+    overflow: hidden;         /* Hides overflow text */
+    text-overflow: ellipsis;
+   
 }
 
 .stats-header div,
@@ -2346,6 +2363,14 @@ border-right:1px solid white;
     justify-content: center;
     align-items: center;
 }
+    th{
+   text-transform: uppercase;
+   
+   font-family:calibri;
+     white-space: nowrap;      /* Prevents text from wrapping */
+    overflow: hidden;         /* Hides overflow text */
+    text-overflow: ellipsis;
+   }
 .spinner {
   position:absolute;
   top:50%;
@@ -2586,6 +2611,13 @@ font-weight:bold;
     font-size:16px;
     font-weight:bold;
 
+   text-transform: uppercase;
+   
+   font-family:calibri;
+     white-space: nowrap;      /* Prevents text from wrapping */
+    overflow: hidden;         /* Hides overflow text */
+    text-overflow: ellipsis;
+   
     border-radius:6px 6px 0 0;
     border-bottom:2px solid white;
 }
@@ -2724,6 +2756,7 @@ font-weight:bold;
 ${projectMenu}
 ${ticketMenu}
 ${projectPlan}
+${newProjectPlan}
 
 </div>
 
@@ -3142,6 +3175,22 @@ setPageTitle("Project Plan template");
     document.getElementById('loader').style.display = 'block';
 
     frame.src = '${projectPlanUrl}';
+
+    
+
+    closeMenu();
+}
+    function openNewProjectPlan(){
+setPageTitle("New Project Plan template");
+    document.getElementById('homeContent').style.display = 'none';
+    document.getElementById('projectContent').style.display = 'block';
+    var frame = document.getElementById('mainFrame');
+
+    frame.style.display = 'block';
+
+    document.getElementById('loader').style.display = 'block';
+
+    frame.src = '${newProjectPlanUrl}';
 
     
 

@@ -996,8 +996,18 @@ overflow-y:auto;
     border-radius:15px;
     font-size:11px;
     color:white;
+      white-space: nowrap;      /* Prevents text from wrapping */
+    overflow: hidden;         /* Hides overflow text */
+    text-overflow: ellipsis;
 }
-
+th{
+   text-transform: uppercase;
+   
+   font-family:calibri;
+     white-space: nowrap;      /* Prevents text from wrapping */
+    overflow: hidden;         /* Hides overflow text */
+    text-overflow: ellipsis;
+   }
 /* dynamic colors */
 .status.todo{ background:#999; }
 .status.inprogress{ background:#f39c12; }
