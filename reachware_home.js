@@ -356,6 +356,16 @@ params: {
         email: email
     }
 });
+
+const projectPlanUrl = url.resolveScript({
+    scriptId: 'customscript3140',
+    deploymentId: 'customdeploy1',
+    returnExternalUrl: true,
+    params: {
+        empid: empId,
+        email: email
+    }
+});
 var viewProjectUrl = url.resolveScript({
 scriptId: 'customscript2892',
 deploymentId: 'customdeploy1',
@@ -690,6 +700,10 @@ var ticketMenu = '';
 
 if (roleType !== 'PMO') {
     ticketMenu = `<div class="menu" onclick="openTickets(); closeMenu()">Tickets</div>`;
+}
+var projectPlan ='';
+if(roleType === 'PM'){
+    projectPlan = `<div class="menu" onclick="openProjectPlan(); closeMenu()">Project Plan</div>`;
 }
 var projectMenu = '';
 if(roleType !== 'OTHER'){
@@ -2250,8 +2264,8 @@ background:#0f4e80;
     flex: 1;
     padding: 0 20px;
 
-    height: auto;        /* 🔥 REMOVE FIXED HEIGHT */
-    overflow: visible;   /* 🔥 NO SCROLL, NO CUT */
+    height: auto;        /*  REMOVE FIXED HEIGHT */
+    overflow: visible;   /*  NO SCROLL, NO CUT */
 }
 .con{
 
@@ -2709,7 +2723,7 @@ font-weight:bold;
 
 ${projectMenu}
 ${ticketMenu}
-
+${projectPlan}
 
 </div>
 
@@ -3010,6 +3024,7 @@ function renderMyTicketDonut(){
 }
     
 
+
 function openProjectView(projectId){
 
     //setPageTitle("Project Details");
@@ -3113,6 +3128,24 @@ function toggleDashboardVisibility(){
     if(pie){
         pie.style.display = isHomeVisible ? "block" : "none";
     }
+}
+
+function openProjectPlan(){
+setPageTitle("Project Plan template");
+    document.getElementById('homeContent').style.display = 'none';
+    document.getElementById('projectContent').style.display = 'block';
+
+    var frame = document.getElementById('mainFrame');
+
+    frame.style.display = 'block';
+
+    document.getElementById('loader').style.display = 'block';
+
+    frame.src = '${projectPlanUrl}';
+
+    
+
+    closeMenu();
 }
 function openProjects(type){
 
@@ -3420,6 +3453,18 @@ var frame = document.getElementById("mainFrame");
     toggleChartVisibility();
     togglePieVisibility();
     disableBackButton();
+     // REFRESH PM DASHBOARD
+    var shouldRefresh =
+        sessionStorage.getItem('refreshDashboard');
+
+    if(shouldRefresh === 'true'){
+
+        sessionStorage.removeItem(
+            'refreshDashboard'
+        );
+
+        location.reload();
+    }
 }
     
 var loggedRoleName = "${loggedRoleName}";

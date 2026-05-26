@@ -778,6 +778,8 @@ if(roleType === 'PMO'){
     
     var customer = '';
     var status = '';
+    var subsidiary = '';
+var projectClass = '';
     var projectType = '';
     var directProject ='';
     var projectManager ='';
@@ -835,6 +837,16 @@ var userId = currentUser.id;
         projectType = projectRec.getText('custrecord_rw_portal_projecttype') || '';
         directProject = projectRec.getText('custrecord_rw_portal_directproject') || '';
         projectManager = projectRec.getText('custrecord_rw_portal_projectmanager') || '';
+
+        subsidiary =
+    projectRec.getText(
+        'custrecord_rw_portal_subsidiary'
+    ) || '';
+
+projectClass =
+    projectRec.getText(
+        'custrecord_rw_portal_class'
+    ) || '';
         accountManager = projectRec.getText('custrecord_rw_portal_accountmanager') || '';
         erp = projectRec.getText('custrecord_rw_portal_erp') || '';
         scheduledUatDate = projectRec.getValue('custrecord_rw_portal_scheduleduatdate') || '';
@@ -3018,6 +3030,13 @@ else {
 
         <div class="label">Customer</div>
         <div class="value">${customer}</div>
+
+       <div class="label">Subsidiary</div>
+<div class="value">${subsidiary}</div>
+
+<div class="label">Class</div>
+<div class="value">${projectClass}</div>
+
         <div class="label">Performa Invoice</div>
         
         <div class="value">

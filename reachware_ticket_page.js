@@ -904,7 +904,25 @@ deadlineField.addEventListener(
     validateDates
 );
 
+document.addEventListener("DOMContentLoaded", function(){
 
+    // TODAY DATE
+    var today = new Date();
+
+    var yyyy = today.getFullYear();
+    var mm = String(today.getMonth() + 1).padStart(2,'0');
+    var dd = String(today.getDate()).padStart(2,'0');
+
+    var minDate = yyyy + '-' + mm + '-' + dd;
+
+    // ALL DATE FIELDS
+    document.querySelectorAll('input[type="date"]').forEach(function(field){
+
+        field.setAttribute('min', minDate);
+
+    });
+
+});
 document.addEventListener("DOMContentLoaded", function () {
 
     const empDropdown =

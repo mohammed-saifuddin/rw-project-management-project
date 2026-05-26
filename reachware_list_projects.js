@@ -17,6 +17,53 @@ var empOptions = '<option value="">--Select--</option>';
 var dpOptions = '<option value="">--Select--</option>';
 var rwOptions ='<option value="">--Select--</option>';
 var statOptions ='<option value="">--Select--</option>';
+var subsidiaryOptions = '<option value="">--Select--</option>';
+
+var subsidiarySearch = search.create({
+    type: search.Type.SUBSIDIARY,
+    filters: [
+        ['isinactive','is','F']
+    ],
+    columns: [
+        'internalid',
+        'name'
+    ]
+});
+
+subsidiarySearch.run().each(function(result){
+
+    subsidiaryOptions +=
+        '<option value="' + result.getValue('internalid') + '">' +
+        result.getValue('name') +
+        '</option>';
+
+    return true;
+});
+
+var classOptions = '<option value="">--Select--</option>';
+
+var classSearch = search.create({
+    type: search.Type.CLASSIFICATION,
+    filters: [
+        ['isinactive','is','F']
+    ],
+    columns: [
+        'internalid',
+        'name'
+    ]
+});
+
+classSearch.run().each(function(result){
+
+    classOptions +=
+        '<option value="' + result.getValue('internalid') + '">' +
+        result.getValue('name') +
+        '</option>';
+
+    return true;
+});
+
+
 var statSearch = search.create({
     type: 'customlist_rw_portal_access_pjstlist',
     columns: ['internalid','name']
@@ -997,6 +1044,16 @@ ${projectOptions}
 
 </div>
 
+<label>Subsidiary</label>
+<select name="subsidiary" id="subsidiary" >
+${subsidiaryOptions}
+</select>
+
+<label>Class</label>
+<select name="class" id="class" required>
+${classOptions}
+</select>
+
 <label class="required">Revenue Stream</label>
 <select name="directproject" id="directproject" required>
 ${dpOptions}
@@ -1171,6 +1228,27 @@ function showToast(message){
         toast.classList.remove("show");
     }, 3000); // disappears after 3 sec
 }
+
+document.addEventListener("DOMContentLoaded", function(){
+
+    // TODAY DATE
+    var today = new Date();
+
+    var yyyy = today.getFullYear();
+    var mm = String(today.getMonth() + 1).padStart(2,'0');
+    var dd = String(today.getDate()).padStart(2,'0');
+
+    var minDate = yyyy + '-' + mm + '-' + dd;
+
+    // ALL DATE FIELDS
+    document.querySelectorAll('input[type="date"]').forEach(function(field){
+
+        field.setAttribute('min', minDate);
+
+    });
+
+});
+
     document.addEventListener("DOMContentLoaded", function(){
 
     var startInput = document.getElementById("startdate");
@@ -1831,7 +1909,8 @@ var duration = '';
 var functional1 =req.parameters.functional1;
 var technical1=req.parameters.technical1;
 var invoicedate =req.parameters.invoicedate;
-
+var subsidiary = req.parameters.subsidiary;
+var projectClass = req.parameters.class;
 if(startdate && enddate){
 
     var start = new Date(startdate);
@@ -1919,7 +1998,10 @@ if(functional1){
     });
 
 }
-
+rec.setValue({
+    fieldId:'custrecord_rw_portal_subsidiary',
+    value: subsidiary
+});
 if(technical1){
 
     rec.setValue({
@@ -1928,6 +2010,11 @@ if(technical1){
     });
 
 }
+
+rec.setValue({
+    fieldId:'custrecord_rw_portal_class',
+    value: projectClass
+});
 rec.setValue({
 fieldId:'custrecord_rw_portal_invoice_date',
 value:new Date(invoicedate)
