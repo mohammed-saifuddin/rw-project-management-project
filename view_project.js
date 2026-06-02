@@ -735,7 +735,12 @@ log.debug("DMS ROLE", dmsRole);
 log.debug("ROLE TYPE", roleType);
 if(roleType === 'PMO'){
     tableHeader = `
-        <tr style="background:#8f50df; color:white;">
+        <tr style="background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+); color:white;">
             <th style="border:1px solid #ccc;padding:8px;">RW Product</th>
             <th style="border:1px solid #ccc;padding:8px;">Comments</th>
             <th style="border:1px solid #ccc;padding:8px;">Status</th>
@@ -747,7 +752,12 @@ if(roleType === 'PMO'){
     `;
 }  else if (roleType === 'PM') {
     tableHeader = `
-        <tr style="background:#8f50df; color:white;">
+        <tr style="background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+); color:white;">
             <th style="border:1px solid #ccc;padding:8px;">RW Product</th>
             <th style="border:1px solid #ccc;padding:8px;">Comments</th>
             <th style="border:1px solid #ccc;padding:8px;">Project Manager</th>
@@ -763,7 +773,7 @@ if(roleType === 'PMO'){
     `;
 }else {
     tableHeader = `
-        <tr style="background:#8f50df; color:white;">
+        <tr style="background:linear-gradient(135deg, #8E2DE2, #C471ED); color:white;">
             <th style="border:1px solid #ccc;padding:8px;">RW Product</th>
             <th style="border:1px solid #ccc;padding:8px;">Comments</th>
             <th style="border:1px solid #ccc;padding:8px;">Project Manager</th>
@@ -2820,7 +2830,7 @@ else {
 
 .milestoneTable th{
 
-    background:#8f50df;
+    background:linear-gradient(135deg, #8E2DE2, #C471ED);
     color:white;
     padding:10px;
 
@@ -2901,7 +2911,12 @@ else {
         .backBtn{
             margin-top:20px;
             padding:10px 15px;
-            background:#8f50df;
+            background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
             color:white;
             border:none;
             border-radius:5px;
@@ -2997,7 +3012,12 @@ else {
     #editBtn{
     margin-top:20px;
             padding:10px 15px;
-            background:#8f50df;
+            background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
             color:white;
             border:none;
             border-radius:5px;
@@ -3009,7 +3029,12 @@ else {
             #saveBtn{
              margin-top:20px;
             padding:10px 15px;
-            background:#8f50df;
+            background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
             color:white;
             border:none;
             border-radius:5px;

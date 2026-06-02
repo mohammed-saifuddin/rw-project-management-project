@@ -1191,7 +1191,12 @@ margin-bottom:15px;
         onclick="saveComment()"
         style="
             margin-top:10px;
-            background:#8f50df;
+            background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
             color:white;
             border:none;
             padding:10px 15px;
@@ -1256,7 +1261,13 @@ margin-bottom:15px;
     width:42px;
     height:42px;
     border-radius:50%;
-    background:#8f50df;
+    background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
+
     color:white;
     display:flex;
     align-items:center;
@@ -1414,7 +1425,7 @@ margin-bottom:15px;
 
 .comment-btn{
     margin-top:12px;
-    background:#8f50df;
+    background:linear-gradient(135deg, #8E2DE2, #C471ED);
     color:white;
     border:none;
     padding:10px 18px;
@@ -1492,7 +1503,12 @@ margin-bottom:15px;
         .backBtn{
             margin-top:20px;
             padding:10px 15px;
-            background:#8f50df;
+            background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
             color:white;
             border:none;
             border-radius:5px;
@@ -1557,7 +1573,7 @@ margin-bottom:15px;
 /* SAVE */
 
 .reply-save-btn{
-    background:#8f50df;
+    background:linear-gradient(135deg, #8E2DE2, #C471ED);
     color:white;
     border:none;
     padding:8px 14px;
@@ -1586,7 +1602,7 @@ margin-bottom:15px;
     #editBtn{
     margin-top:20px;
             padding:10px 15px;
-            background:#8f50df;
+            background:linear-gradient(135deg, #8E2DE2, #C471ED);
             color:white;
             border:none;
             border-radius:5px;
@@ -1647,7 +1663,12 @@ margin-bottom:15px;
 }
 
 .statusBtn{
-    background:#8f50df;
+    background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
     color:white;
     border:none;
     padding:10px 16px;
@@ -1679,7 +1700,7 @@ margin-bottom:15px;
             #saveBtn{
              margin-top:20px;
             padding:10px 15px;
-            background:#8f50df;
+            background:linear-gradient(135deg, #8E2DE2, #C471ED);
             color:white;
             border:none;
             border-radius:5px;

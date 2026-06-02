@@ -553,7 +553,12 @@ label.required::after {
 
 /* Section */
 .section {
-    background:#8f50df;
+           background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
     // background:#5d8db8;
     color:white;
     padding:8px;
@@ -640,12 +645,22 @@ height:30px;
 button {
    margin-top:20px;
 padding:10px 20px;
-background:#8f50df;
+       background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
 color:white;
 border:none;
 cursor:pointer;
 }
+label{
+text-transform:uppercase;
+font-size:12px;
+font-family:Arial, sans-serif;
 
+}
 </style>
 
 <div class="container">

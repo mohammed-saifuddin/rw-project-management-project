@@ -704,20 +704,20 @@ var avatarLetter = (empRole && empRole.length > 0)
 var ticketMenu = '';
 
 if (roleType !== 'PMO') {
-    ticketMenu = `<div class="menu" onclick="openTickets(); closeMenu()">Tickets</div>`;
+    ticketMenu = `<div class="menu" onclick="openTickets(); closeMenu()"><i class="fa-solid fa-ticket"></i>  Tickets</div>`;
 }
 var projectPlan ='';
 if(roleType === 'PM'){
-    projectPlan = `<div class="menu" onclick="openProjectPlan(); closeMenu()">Project Plan</div>`;
+    projectPlan = `<div class="menu" onclick="openProjectPlan(); closeMenu()"><i class="fa-solid fa-chart-gantt"></i>   Project Plan</div>`;
 }
 
 var newProjectPlan ='';
 if(roleType === 'PM'){
-    newProjectPlan = `<div class="menu" onclick="openNewProjectPlan(); closeMenu()">New Milestone</div>`;
+    newProjectPlan = `<div class="menu" onclick="openNewProjectPlan(); closeMenu()"><i class="fa-solid fa-file-circle-plus"></i>  Milestone</div>`;
 }
 var projectMenu = '';
 if(roleType !== 'OTHER'){
-    projectMenu = '<div class="menu" onclick="openProjects(); closeMenu()">Projects</div>';
+    projectMenu = '<div class="menu" onclick="openProjects(); closeMenu()"> <i class="fa-solid fa-list"></i>  Projects</div>';
 }
 function getCurrentMonthDates(){
     var today = new Date();
@@ -1096,7 +1096,11 @@ function buildCard(title, currentList, upcomingList){
         <div class="card">
             <h3>${title}</h3>
 
-            <h4 style="color:#8f50df;">Current Month</h4>
+            <h4 style="color:linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;">Current Month</h4>
             <ul>${currentHtml}</ul>
 
             <h4 style="color:#999;">Upcoming</h4>
@@ -1115,7 +1119,7 @@ function buildSingleCard(title, list){
 
     return `
         <div class="card">
-            <h3>${title} (${count})</h3>
+            <h3 class="card-title">${title} (${count})</h3>
 
             <!-- ✅ COLUMN HEADER -->
             <div class="card-header-row">
@@ -1257,7 +1261,7 @@ var goLiveCardUser = `
 <div style="display:flex; gap:15px; margin:10px;">
 
     <div style="
-        width:340px;
+        width:360px;
         background:#fff;
         border-radius:10px;
         box-shadow:0 4px 10px rgba(0,0,0,0.1);
@@ -1266,11 +1270,16 @@ var goLiveCardUser = `
 
         <!-- HEADER -->
         <div style="
-            background:#8f50df;
+            background:linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;
             color:white;
             padding:10px;
             font-weight:bold;
             font-size:14px;
+            font-family:Arial, sans-serif;
         ">
              Current Go-Lives(${goLiveProductsForUser.length})
         </div>
@@ -1285,6 +1294,7 @@ var goLiveCardUser = `
                 border-bottom:2px solid #ddd;
                 padding-bottom:5px;
                 font-size:13px;
+                font-family:Arial, sans-serif;
             ">
                 <span>Project Name</span>
                 <span>Product Name</span>
@@ -1296,14 +1306,16 @@ var goLiveCardUser = `
                 ${goLiveProductsForUser.map(p => `
     <div style="
         display:flex;
-        justify-content:space-between;
+        justify-content:space-around;
         padding:6px 0;
         border-bottom:1px solid #eee;
         font-size:12px;
+        white-space:nowrap;
+        font-family:Arial, sans-serif;
         gap:12px;
     ">
-        <span>${p.project}</span>
-        <span>${p.product}</span>
+        <span style="font-family:Arial, sans-serif;float:left;">${p.project}</span>
+        <span style="font-family:Arial, sans-serif;float:right;">${p.product}</span>
     </div>
 `).join('')}
 
@@ -1333,6 +1345,7 @@ var overdueCardInner = `
         padding:10px;
         font-weight:bold;
         font-size:14px;
+        font-family:Arial, sans-serif;
     ">
          Overdue Tickets
     </div>
@@ -1346,6 +1359,7 @@ var overdueCardInner = `
             border-bottom:2px solid #ddd;
             padding-bottom:5px;
             font-size:13px;
+            font-family:Arial, sans-serif;
         ">
             <span>Ticket No</span>
             <span>Days</span>
@@ -1442,7 +1456,7 @@ var highPriorityCardOfLoggedInUser = `
 <div style="display:flex; gap:15px; margin:10px;">
 
     <div style="
-        width:320px;
+        width:300px;
         min-height:300px;
         background:#fff;
         border-radius:10px;
@@ -1452,11 +1466,16 @@ var highPriorityCardOfLoggedInUser = `
 
         <!-- HEADER (same as table header) -->
         <div style="
-            background:#8f50df;
+            background:linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;
             color:white;
             padding:10px;
             font-weight:bold;
             font-size:14px;
+            font-family:Arial, sans-serif;
         ">
              High Priority (${priorityTickets.length})
         </div>
@@ -1471,6 +1490,7 @@ var highPriorityCardOfLoggedInUser = `
                 border-bottom:2px solid #ddd;
                 padding-bottom:5px;
                 font-size:13px;
+                font-family:Arial, sans-serif;
             ">
                 <span>Ticket No</span>
                 <span>Deadline</span>
@@ -1486,6 +1506,7 @@ var highPriorityCardOfLoggedInUser = `
                         padding:6px 0;
                         border-bottom:1px solid #eee;
                         font-size:12px;
+                        font-family:Arial, sans-serif;
                     ">
                         <span>${t.number}</span>
                         <span>${t.deadline || '-'}</span>
@@ -1686,11 +1707,16 @@ var overdueProjectCardInner = `
 
     <!-- HEADER -->
     <div style="
-        background:#8f50df;
+        background:linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;
         color:white;
         padding:10px;
         font-weight:bold;
         font-size:14px;
+        font-family:Arial, sans-serif;
     ">
          Overdue Products
     </div>
@@ -1705,6 +1731,7 @@ var overdueProjectCardInner = `
             border-bottom:2px solid #ddd;
             padding-bottom:5px;
             font-size:12px;
+            font-family:Arial, sans-serif;
         ">
         <span>Project</span>
             <span>Product</span>
@@ -1721,6 +1748,7 @@ var overdueProjectCardInner = `
                     padding:6px 0;
                     border-bottom:1px solid #eee;
                     font-size:12px;
+                    font-family:Arial, sans-serif;
                 ">
                 <span>${p.project || '-'}</span>
                     <span>${p.product}</span>
@@ -1742,15 +1770,20 @@ var overdueProjectCardInneruser = `
 <div style="display:flex;gap:15px;margin:10px;">
 <div style="
     width:360px;
-    background:#fff;
-    border-radius:10px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.1);
-    overflow:hidden;
+        min-height:300px;
+        background:#fff;
+        border-radius:10px;
+        box-shadow:0 4px 10px rgba(0,0,0,0.1);
+        overflow:hidden;
 ">
 
     <!-- HEADER -->
     <div style="
-        background:#8f50df;
+        background:linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;
         color:white;
         padding:10px;
         font-weight:bold;
@@ -1776,7 +1809,7 @@ var overdueProjectCardInneruser = `
         </div>
 
         <!-- DATA -->
-        <div style="max-height:200px; overflow-y:auto;">
+        <div style="max-height:none; overflow:visible;">
 
             ${overdueProjectsUsers.map(p => `
                 <div style="
@@ -1786,6 +1819,7 @@ var overdueProjectCardInneruser = `
                     gap:12px;
                     border-bottom:1px solid #eee;
                     font-size:12px;
+                    font-family:Arial, sans-serif;
                 ">
                 <span>${p.project || '-'}</span>
                     <span>${p.product}</span>
@@ -1810,7 +1844,7 @@ var donutCard = `
     background:#fff;
     border-radius:12px;
     box-shadow:0 4px 10px rgba(0,0,0,0.1);
-    
+    font-family:Arial, sans-serif;
 ">
 
     <div style="font-weight:bold; margin-bottom:10px; color:#6f3ba2;">
@@ -1828,6 +1862,7 @@ var donutTicket =`
     background:#fff;
     border-radius:12px;
     box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    font-family:Arial, sans-serif;
 ">
     <div style="font-weight:bold; margin-bottom:10px; color:#6f3ba2;">
         My Ticket Distribution
@@ -1848,11 +1883,16 @@ var overdueCardInner = `
 ">
 
     <div style="
-        background:#8f50df;
+        background:linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;
         color:white;
         padding:10px;
         font-weight:bold;
         font-size:14px;
+        font-family:Arial, sans-serif;
     ">
          Overdue Tickets(${overdueTicketsOfLoggedInUser.length})
     </div>
@@ -1866,6 +1906,7 @@ var overdueCardInner = `
             border-bottom:2px solid #ddd;
             padding-bottom:5px;
             font-size:13px;
+            font-family:Arial, sans-serif;
         ">
             <span>Ticket No</span>
             <span>Days</span>
@@ -1880,9 +1921,10 @@ var overdueCardInner = `
                     padding:6px 0;
                     border-bottom:1px solid #eee;
                     font-size:12px;
+                    font-family:Arial, sans-serif;
                 ">
                     <span>${t.number}</span>
-                    <span style="color:red; font-weight:bold;font-size:11px;">
+                    <span style="color:red; font-weight:bold;font-size:11px;font-family:Arial, sans-serif;">
                         ${t.days + ' days'}
                     </span>
                 </div>
@@ -1910,7 +1952,11 @@ var highPriorityCard = `
 
         <!-- HEADER (same as table header) -->
         <div style="
-            background:#8f50df;
+            background:linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;
             color:white;
             padding:10px;
             font-weight:bold;
@@ -1981,6 +2027,12 @@ html, body {
 
     
 }
+    body{
+    background: var(--bg);
+    background: linear-gradient(135deg, var(--bg), #e9dbeb);
+    font-family: 'Inter', sans-serif;
+}
+    
     .card-container{
     display:flex;
     gap:20px;
@@ -2009,12 +2061,24 @@ html, body {
     padding:8px 15px;
     font-size:10px;
     font-weight:bold;
+    font-family:Arial, sans-serif;
     border-bottom : 1px solid #ddd;
 
     
     
 }
-
+:root{
+    --primary:#6C63FF;
+    --primary-dark:#574BDB;
+    --bg:#F5F7FB;
+    --card:#FFFFFF;
+    --text:#1F2937;
+    --muted:#6B7280;
+    --border:#E5E7EB;
+    --success:#10B981;
+    --warning:#F59E0B;
+    --danger:#EF4444;
+}
 .card-header-row .cust{
     flex:1;
 }
@@ -2031,12 +2095,18 @@ html, body {
 .card-row .cust{
     flex:1;
     font-weight:500;
+    font-family:Arial, sans-serif;
 }
 
 .card-row .proj{
     flex:0.7;
-    color:#8f50df;
+    color:linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;
     font-weight:600;
+    font-family:Arial, sans-serif;
 }
 
 .card-row .date{
@@ -2051,7 +2121,11 @@ html, body {
 }
 .card-row .proj{
     flex:0.7;
-    color:#8f50df;
+    color:linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;
     font-weight:600;
     cursor:pointer;
 }
@@ -2064,16 +2138,22 @@ html, body {
     margin:0;
     padding:12px 15px;
     font-size:12px;
+    font-family: sans-serif;
     font-weight:600;
     color:white;
 
-    background: linear-gradient(135deg, #8f50df, #8e5cd9);
+    background: linear-gradient(135deg, linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);, #8e5cd9);
 }
 
 /* SECTION TITLE */
 .card h4{
     margin:10px 15px 5px;
     font-size:13px;
+    font-family:Arial, sans-serif;
     font-weight:bold;
 }
 
@@ -2095,6 +2175,7 @@ html, body {
 
     font-size:13px;
     color:#444;
+    font-family:Arial, sans-serif;
 }
 
 /* scrollbar (optional nice touch) */
@@ -2102,7 +2183,11 @@ html, body {
     width:5px;
 }
 .card ul::-webkit-scrollbar-thumb{
-    background:#8f50df;
+    background:linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;
     border-radius:10px;
 }
     .card h4:first-of-type {
@@ -2118,6 +2203,10 @@ html, body {
 .data-val:hover{
   background:#E6E6FA;
   color:black;
+}
+.data-val{
+
+
 }
 /* Remove NetSuite spacing */
 #main_form,
@@ -2174,7 +2263,11 @@ transition:all 0.3s ease;
 
 /* Optional styling */
 .stats-header div {
-    background: #8f50df;
+    background: linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;
     color: white;
     padding: 10px;
 }
@@ -2183,20 +2276,39 @@ transition:all 0.3s ease;
     padding: 15px;
     border: 1px solid #ccc;
     font-size: 18px;
+    font-family:Arial, sans-serif;
 }
 
 
 .header{
-    background:#8f50df;
+    
+  background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
     color:white;
     height:60px;
     padding:0 20px;
     display:flex;
+    font-family: sans-serif;
+    font-weight:100;
+    font-size:14px;
+    //text-transform:uppercase;
     align-items:center;
+    position:sticky;
+    top:0;
+    z-index:999;
 }
 /* Left */
 .left-section{
     flex:1;
+    display:flex;
+    flex-direction:row;
+    gap:10px;
+    align-items:center;
+   
 }
 
 /* Center */
@@ -2205,7 +2317,7 @@ transition:all 0.3s ease;
     text-align:center;
     font-size:18px;
     font-weight:bold;
-    font-family: Calibri;
+    font-family: sans-serif;
     
 }
 
@@ -2247,7 +2359,12 @@ cursor:pointer;
     width: 0px;
     height: 1000px;  
 
-    background: #1667a5;
+    background:
+linear-gradient(
+    180deg,
+    #1E3C72,
+    #2A5298
+);
     color: white;
 
     overflow: hidden;
@@ -2262,7 +2379,11 @@ cursor:pointer;
 .section-title{
     font-size:18px;
     font-weight:bold;
-    color:#8f50df;
+    color:linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;
     margin-bottom:10px;
     margin-top:10px;
 }
@@ -2270,6 +2391,8 @@ cursor:pointer;
 padding:12px;
 border-bottom:1px solid #0c4f82;
 cursor:pointer;
+font-family:sans-serif;
+text-transform:capitalize;
 }
 
 .menu:hover{
@@ -2296,7 +2419,11 @@ padding-right:-20px;
 .stats-header{
 display:grid;
 grid-template-columns: repeat(6,1fr);
-background:#8f50df;
+background:linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;
 color:white;
 }
 .stats-header, .stats-values {
@@ -2408,7 +2535,7 @@ font-size:20px;
     background:white;
     border-radius:20px;
     padding:8px 17px;
-        color:#8f50df;
+    color:#8E2DE2;
 }
         .role-text:hover{
         background:#1667a5;
@@ -2418,7 +2545,11 @@ font-size:20px;
 /* REMOVE absolute positioning */
 .logout{
     position:static;   
-    background:#8f50df;
+    background:linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;
     border:1px solid white;
     padding:6px 15px;
     color:white;
@@ -2427,10 +2558,17 @@ font-size:20px;
     
 .logout:hover{
 background:white;
-color:#8f50df;
+color:#1667a5;
 font-weight:bold;
 
 }
+.card-title{
+     background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);}
     .title{
     position:absolute;
     left:50%;
@@ -2442,7 +2580,11 @@ font-weight:bold;
     height: 35px;
     border-radius: 50%;
 
-    background: #8f50df;
+    background: linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;
     color: white;
 
     display: flex;
@@ -2470,6 +2612,7 @@ font-weight:bold;
 .chart-header{
     font-size:18px;
     font-weight:bold;
+    font-family: sans-serif;
     margin-bottom:10px;
     color:#6f3ba2;
 }
@@ -2491,7 +2634,7 @@ font-weight:bold;
     background:white;
     border-radius:20px;
     padding:6px 15px;
-        color:#8f50df;
+   color:#8E2DE2;
 }
      .user-name:hover{
         background:#1667a5;
@@ -2519,7 +2662,7 @@ font-weight:bold;
     background:white;
     border-radius:20px;
     padding:6px 15px;
-        color:#8f50df;
+   color:#8E2DE2;
 }
      .user-name-box:hover{
         background:#1667a5;
@@ -2531,8 +2674,12 @@ font-weight:bold;
     height:22px;
     border-radius:50%;
 
-    background:#8f50df;
-    color:white;
+    background:linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
+   color:white;
 
     display:flex;
     align-items:center;
@@ -2546,7 +2693,7 @@ font-weight:bold;
     
     font-size:10px;
     font-weight:bold;
-    color:#8f50df;
+    color:#8E2DE2;
 }
 .full-name:hover{
     color:white;
@@ -2570,7 +2717,11 @@ font-weight:bold;
 .section-title{
     font-size:18px;
     font-weight:bold;
-    color:#8f50df;
+    color:linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;
     margin-bottom:10px;
     padding-left:5px;
 }
@@ -2602,7 +2753,11 @@ font-weight:bold;
 }
 
 .main-heading{
-    background:#8f50df;
+    background:linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;
     color:white;
 
     padding:8px;
@@ -2658,7 +2813,11 @@ font-weight:bold;
 }
 
 .main-heading{
-    background:#8f50df;
+    background:linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);;
     color:white;
 
     padding:8px;
@@ -2704,7 +2863,63 @@ font-weight:bold;
     padding:12px;
     border:1px solid #ddd;
 }
+    .stats-header{
+
+    background:
+    linear-gradient(
+        135deg,
+        #7F00FF,
+        #A855F7
+    );
+}
+    .card,
+.chart-card{
+
+    background:
+    rgba(255,255,255,0.92);
+
+    backdrop-filter:blur(12px);
+
+    border:1px solid rgba(255,255,255,0.2);
+}
+    .card:hover,
+button:hover{
+
+    transform:translateY(-4px);
+
+    box-shadow:
+    0 10px 25px rgba(168,85,247,0.35);
+}
+.logo{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    height:60px;
+
+    position:relative;
+    top:0;
+    padding:0;
+    margin:0;
+
+    filter:
+        brightness(0)
+        invert(1)
+        drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+
+    opacity:0.95;
+}
+
+.logo img{
+    width:150px;
+    height:38px;
+    padding-top:6px;
+    object-fit:contain;
+    display:block;
+}
 </style>
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -2713,10 +2928,13 @@ font-weight:bold;
 
     <div class="left-section">
         <div class="menu-icon" onmouseover="openMenu()">☰</div>
+        <div class="logo">
+                <img  height="30px" width="150px"  src="https://2771600.app.netsuite.com/core/media/media.nl?id=5690&c=2771600&h=kIUCEpH0C_eyrUBVYGJn7nEHV_vSoKDhpdzpaPF7vFesdytX">
+            </div>
     </div>
 
     <div class="center-section" id="headerTitle">
-        Reachware Project Management Portal
+        Reachware Project Management
     </div>
 
     <div class="right-section">
@@ -2751,7 +2969,7 @@ font-weight:bold;
 
 <div class="sidebar" id="sidebar" onmouseleave="closeMenu()">
 
-<div class="menu" onclick="openHome()">Home</div>
+<div class="menu" onclick="openHome()"><i class="fa-solid fa-house"></i>  Home</div>
 
 ${projectMenu}
 ${ticketMenu}
@@ -2860,7 +3078,7 @@ ${roleType === 'PMO' ? `
     </div>
 ` : ''}
 ${roleType === 'PM' ? `
-<div style="display:flex; gap:10px; margin:8px;">
+<div style="display:flex; gap:8px; margin:8px;">
     ${highPriorityCardOfLoggedInUser}
     ${goLiveCardUser}
     ${overdueProjectCardInneruser}
@@ -2908,7 +3126,106 @@ ${roleType === 'OTHER' ? `
     <p>Opening...</p>
 </div>
 <script>
+
+
+/* ===== BLOCK BACK BUTTON AFTER LOGOUT ===== */
+
+(function () {
+
+    // prevent browser cache
+    window.history.pushState(null, "", window.location.href);
+
+    window.addEventListener("popstate", function () {
+
+        if (localStorage.getItem("isLoggedIn") !== "true") {
+
+            window.location.replace("${loginUrl}");
+
+            setTimeout(function () {
+                window.history.go(1);
+            }, 0);
+        }
+    });
+
+    // prevent bfcache restore
+    window.addEventListener("pageshow", function (event) {
+
+        const isBack =
+            event.persisted ||
+            (window.performance &&
+             window.performance.navigation &&
+             window.performance.navigation.type === 2);
+
+        if (isBack) {
+
+            if (localStorage.getItem("isLoggedIn") !== "true") {
+
+                document.body.innerHTML = "";
+
+                window.location.replace("${loginUrl}");
+            }
+        }
+    });
+
+    // direct access protection
+    if (localStorage.getItem("isLoggedIn") !== "true") {
+
+        document.body.innerHTML = "";
+
+        window.location.replace("${loginUrl}");
+    }
+
+})();
+
+
+/* ===== LOGOUT FUNCTION ===== */
+
+function logout() {
+
+    // clear everything
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // kill browser history
+    history.replaceState(null, null, "${loginUrl}");
+
+    // redirect
+    window.location.href = "${loginUrl}";
+}
+
+
 var currentType = '';
+/* PREVENT BACK AFTER LOGOUT */
+
+history.pushState(null, null, location.href);
+
+window.onpopstate = function () {
+    history.go(1);
+};
+
+/* PREVENT PAGE CACHE */
+
+window.addEventListener("pageshow", function (event) {
+
+    if (
+        event.persisted ||
+        window.performance &&
+        window.performance.navigation.type === 2
+    ) {
+
+        if(localStorage.getItem("isLoggedIn") !== "true"){
+
+            window.location.replace("${loginUrl}");
+        }
+    }
+});
+
+/* SESSION CHECK */
+
+if(localStorage.getItem("isLoggedIn") !== "true"){
+
+    window.location.replace("${loginUrl}");
+}
 if (localStorage.getItem("isLoggedIn") !== "true") {
     window.location.replace('${loginUrl}');
 }
@@ -3490,8 +3807,8 @@ url += "&from=home";   // ✅ ADD THIS
     }
 }
 function openHome(){
-setPageTitle("Home");
-document.getElementById("headerTitle").innerText = "Reachware Project Management Portal";
+setPageTitle("Reachware Project Management");
+document.getElementById("headerTitle").innerText = "Reachware Project Management";
  document.getElementById("projectContent").style.display = "none";
 
 document.getElementById("loader").style.display = "none"; 
@@ -3533,28 +3850,37 @@ window.onload = function(){
    
 /* LOGOUT FUNCTION */
 
- function logout(){
+//  function logout(){
 
-if(confirm("Are you sure you want to logout?")){
+// if(confirm("Are you sure you want to logout?")){
 
 
-  localStorage.clear();
+//   localStorage.clear();
 
     
 
-    localStorage.removeItem("email");
-    localStorage.removeItem("empId");
+//     localStorage.removeItem("email");
+//     localStorage.removeItem("empId");
     
-    localStorage.removeItem("isLoggedIn");
-    localStorage.setItem("logout-event", Date.now());
+//     localStorage.removeItem("isLoggedIn");
+//     localStorage.setItem("logout-event", Date.now());
     
-window.location.replace('${loginUrl}');
+// window.location.replace('${loginUrl}');
     
    
 
-}
+// }
 
- }
+//  }
+// function logout(){
+
+//     localStorage.removeItem("isLoggedIn");
+//     localStorage.removeItem("empId");
+
+//     sessionStorage.clear();
+
+//     window.location.replace("${loginUrl}");
+// }
 document.title="Reachware Project Management Portal";
 window.addEventListener('storage', function(event) {
 

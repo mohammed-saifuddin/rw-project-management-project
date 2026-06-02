@@ -713,7 +713,7 @@ var paginationHtml = `
 <div style="text-align:center; margin-top:20px;">
 
     ${pageIndex > 0 ? `
-        <button onclick="goToPage(${prevPage})" style="padding:8px 15px; background:#8f50df; color:white; border:none; border-radius:5px; cursor:pointer;">Previous</button>
+        <button onclick="goToPage(${prevPage})" style="padding:8px 15px; background:linear-gradient(135deg, #8E2DE2, #C471ED); color:white; border:none; border-radius:5px; cursor:pointer;">Previous</button>
     ` : ''}
 
     <span style="margin:0 15px; font-weight:bold;">
@@ -722,7 +722,7 @@ var paginationHtml = `
 
     ${pageIndex < totalPages - 1 ? `
         
-        <button type="button" onclick="goToPage(${nextPage})" style="padding:8px 15px; background:#8f50df; color:white; border:none; border-radius:5px; cursor:pointer;">Next</button>
+        <button type="button" onclick="goToPage(${nextPage})" style="padding:8px 15px; background:linear-gradient(135deg, #8E2DE2, #C471ED); color:white; border:none; border-radius:5px; cursor:pointer;">Next</button>
     ` : ''}
 
 </div>
@@ -1007,7 +1007,12 @@ table{
 }
 
 th{
-    background:#8f50df;
+    background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
     color:white;
     font-size:13px;
 }
@@ -1122,7 +1127,12 @@ text-decoration: none;
 }
 
 .btn-primary{
-    background:#8f50df;
+    background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
     color:white;
     border:none;
     padding:8px 15px;
@@ -1191,7 +1201,12 @@ text-decoration: none;
     .backBtn{
             margin-top:20px;
             padding:10px 15px;
-            background:#8f50df;
+            background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
             color:white;
             border:none;
             border-radius:5px;

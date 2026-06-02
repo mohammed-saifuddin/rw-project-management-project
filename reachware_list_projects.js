@@ -477,7 +477,7 @@ log.debug(isEdit)
 
     if(roleType === 'PMO'){
     rowHtml = `
-    <tr>
+    <tr class="row-hover">
         <td><select name="rwproduct[]">${rwOptions}</select></td>
         <td><input type="text" name="comments[]"></td>
         <td>
@@ -502,14 +502,14 @@ log.debug(isEdit)
 
         ` : ``}
 
-        <td><button type="button" onclick="removeRow(this)">❌</button></td>
+        <td style="text-align:center;width:20px;"><button type="button" class="revBtn" onclick="removeRow(this)">❌</button></td>
     </tr>
     `;
 
 }
 else if(roleType === 'PM'){
     rowHtml = `
-    <tr>
+    <tr class="row-hover">
        <td><select name="rwproduct[]">${rwOptions}</select></td>
         <td><input type="text" name="comments[]"></td>
         <td><select name="rwpm[]" class="linePM">${empOptions}</select></td>
@@ -521,7 +521,7 @@ else if(roleType === 'PM'){
          <td> <input type="date" id="stdate" name="stdate[]"></td>
 <td><input type="date" id="eddate" name="eddate[]"></td>
 <td><input type="date" id="updateddeadline" name="updateddeadline[]"></td>
-        <td><button type="button" onclick="removeRow(this)">❌</button></td>
+        <td style="text-align:center;width:20px;"><button type="button" class="revBtn" onclick="removeRow(this)">❌</button></td>
 
         
        
@@ -534,7 +534,7 @@ else if(roleType === 'PM'){
 }
 else {
     rowHtml = `
-    <tr>
+    <tr class="row-hover">
         <td><select name="rwproduct[]">${rwOptions}</select></td>
         <td><input type="text" name="comments[]"></td>
         <td><select name="rwpm[]" class="linePM">${empOptions}</select></td>
@@ -544,7 +544,7 @@ else {
         <td><input type="date" name="expgolive[]"></td>
         <td><select name="linestatus[]">${statOptions}</select></td>
         
-        <td><button type="button" onclick="removeRow(this)">❌</button></td>
+        <td style="text-align:center;width:20px;"><button type="button" class="revBtn" onclick="removeRow(this)">❌</button></td>
     </tr>
     `;
 }
@@ -562,6 +562,9 @@ width:100%;
     backdrop-filter: blur(4px);
     padding-left:-30px;
     padding-right:-10px;
+}
+    .row-hover:hover{
+background:#F8F8FF !important;
 }
 html, body {
     width:100%;
@@ -595,7 +598,12 @@ margin:0 !important;
 .backBtn{
             margin-top:20px;
             padding:10px 15px;
-            background:#8f50df;
+             background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
             color:white;
             border:none;
             border-radius:5px;
@@ -659,7 +667,12 @@ table-layout:fixed;
 }
 
 .product-table th{
-background:#8f50df;
+ background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
 color:white;
 padding:10px;
 border:1px solid #ccc;
@@ -709,7 +722,7 @@ body {
     width: 100%;
     max-width: 100%;
     margin: 0;
-    margin-top:30px;
+    margin-top:10px;
 }
 
 
@@ -742,7 +755,8 @@ body {
     color: white;
     padding: 10px;
     border: 1px solid #ccc;
-    font-size: 13px;
+    text-transform: uppercase;
+    font-family: sans-serif;
 }
 
 
@@ -754,13 +768,91 @@ body {
 }
 
 
+/* APPLY ONLY FOR LINE ITEMS */
+
 .product-table input,
-.product-table select {
-    width: 100%;
-    box-sizing: border-box; 
-    font-size: 12px;
+.product-table select{
+
+    width:100%;
+    height:38px;
+
+    padding:0 12px;
+
+    border:1px solid transparent;
+
+    border-radius:3px;
+
+    background:transparent;
+
+    font-size:13px;
+
+    font-weight:500;
+
+    color:#374151;
+
+    outline:none;
+
+    transition:all 0.35s ease;
+
+    box-sizing:border-box;
 }
 
+/* INPUT PLACEHOLDER */
+
+.product-table input::placeholder{
+
+    color:#9CA3AF;
+}
+
+/* INPUT HOVER */
+
+.product-table input:hover,
+.product-table select:hover{
+
+    background:white;
+
+    border-color:#C084FC;
+
+    box-shadow:
+        0 8px 20px rgba(168,85,247,0.15);
+
+    transform:translateY(-2px);
+}
+
+/* INPUT FOCUS */
+
+.product-table input:focus,
+.product-table select:focus{
+
+    background:white;
+
+    border-color:#8B5CF6;
+
+    box-shadow:
+        0 0 0 4px rgba(139,92,246,0.15),
+        0 10px 25px rgba(168,85,247,0.18);
+
+    transform:translateY(-2px);
+}
+
+/* MODERN SELECT */
+
+.product-table select{
+
+    cursor:pointer;
+
+    appearance:none;
+    -webkit-appearance:none;
+    -moz-appearance:none;
+
+    padding-right:35px;
+
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%238B5CF6' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 5.5l6 6 6-6' stroke='%238B5CF6' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+    background-repeat:no-repeat;
+
+    background-position:right 12px center;
+}
 .product-table select {
     white-space: nowrap;
     overflow: hidden;
@@ -769,7 +861,12 @@ body {
 .savebtn{
 margin-top:20px;
 padding:10px 20px;
-background:#8f50df;
+ background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
 color:white;
 border:none;
 cursor:pointer;
@@ -833,7 +930,7 @@ label.required::after {
 .success-circle {
     width: 70px;
     height: 70px;
-    background: #8f50df;
+    background: linear-gradient(135deg, #8E2DE2, #C471ED);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -927,7 +1024,25 @@ label.required::after {
     opacity: 0;
     transition: opacity 0.2s ease;
 }
+    .revBtn{
+font-size:14px;
+cursor:pointer;
+color:#3c5c8a;
+margin-bottom:10px;
+background:none;
+border:none;
+display:flex;
+justify-content:center;
+margin-left:30px;
+align-item:center;
 
+padding:0;
+}
+.revBtn:hover{
+color:#8f50df;
+text-shadow:0 0 5px #8f50df;
+text-decoration: none;
+}
 .customer-wrapper:hover .add-customer-btn {
     opacity: 1;
 }
@@ -1018,12 +1133,115 @@ text-decoration: none;
     input[type="date"]{
     font-family:Arial;
 }
-</style>
+    label{
+    font-family:sans-serif;
+    text-transform:uppercase;
+}
+    /* MODERN INPUTS */
 
+.form-grid input,
+.form-grid select,
+.product-table input,
+.product-table select{
+
+    width:100%;
+    height:33px;
+
+    padding:0 10px;
+
+    border:1px solid #E5E7EB;
+
+    
+
+    background:#FFFFFF;
+
+    font-size:14px;
+
+    font-weight:500;
+
+    color:#374151;
+
+    outline:none;
+
+    transition:all 0.3s ease;
+
+    box-sizing:border-box;
+
+    box-shadow:
+        0 2px 6px rgba(0,0,0,0.04);
+}
+
+/* PLACEHOLDER */
+
+.form-grid input::placeholder{
+    color:#9CA3AF;
+}
+
+/* HOVER EFFECT */
+
+.form-grid input:hover,
+.form-grid select:hover,
+.product-table input:hover,
+.product-table select:hover{
+
+    border-color:#C084FC;
+
+    box-shadow:
+        0 4px 12px rgba(168,85,247,0.12);
+}
+
+/* FOCUS EFFECT */
+
+.form-grid input:focus,
+.form-grid select:focus,
+.product-table input:focus,
+.product-table select:focus{
+
+    border-color:#8B5CF6;
+
+    box-shadow:
+        0 0 0 4px rgba(139,92,246,0.15);
+
+    transform:translateY(-1px);
+}
+
+/* DISABLED */
+
+input:disabled,
+select:disabled{
+
+    background:#F3F4F6;
+
+    cursor:not-allowed;
+
+    opacity:0.8;
+}
+    th{
+     background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
+font-family:sans-serif;
+font-weight:bold;
+font-size:10px;
+}
+.portal-header{
+    font-size:24px;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#333;
+}
+</style>
+<h1 class="portal-header">Create New Project</h1>
 <form method="POST">
 <input type="hidden" name="empid" value="${empId}">
 <input type="hidden" name="email" value="${email}">
 <div class="main-container">
+
 <div id="toast" class="toast"></div>
 <div class="form-grid">
 <label class="required">Project Type</label>
@@ -1058,7 +1276,7 @@ ${classOptions}
 <select name="directproject" id="directproject" required>
 ${dpOptions}
 </select>
-<label class="required">Proforma Invoice</label>
+<label>Proforma Invoice</label>
 
         <input type="file" id="attachment" name="invoice" >
 <input type="hidden" name="fileId" id="fileId">
@@ -1201,7 +1419,12 @@ ${rowHtml}
             <button type="button"
         id="saveCustomerBtn"
         onclick="saveCustomer()" 
-        style="padding:8px 15px; background:#8f50df; color:white; border:none; border-radius:5px;">
+        style="padding:8px 15px;  background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+); color:white; border:none; border-radius:5px;">
     Save
 </button>
 

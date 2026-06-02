@@ -683,22 +683,22 @@ var productList = `
 <table style="width:100%; border-collapse:collapse; margin-top:10px;">
 
     <tr style="background:#eee;">
-        <th style="border:1px solid black;">Project Status</th>
-        <th style="border:1px solid black;">Product</th>
-        <th style="border:1px solid black;">Product Status</th>
-        <th style="border:1px solid black;">PMO Comments</th>
-        <th style="border:1px solid black;">Start Date</th>
-        <th style="border:1px solid black;">End Date</th>
+        <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Project Status</th>
+        <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Product</th>
+        <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Product Status</th>
+        <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">PMO Comments</th>
+        <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Start Date</th>
+        <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">End Date</th>
        
-        <th style="border:1px solid black;">Updated End Date</th>
-        <th style="border:1px solid black;">Duration</th>
+        <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Updated End Date</th>
+        <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Duration</th>
       
 ${roleType === 'PM' ? `
- <th style="border:1px solid black;">Total Tickets</th>
-<th style="border:1px solid black;">Open</th>
-<th style="border:1px solid black;">Closed</th>
-<th style="border:1px solid black;">Functional Consultant</th>
-<th style="border:1px solid black;">Technical Consultant</th>
+ <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Total Tickets</th>
+<th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Open</th>
+<th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Closed</th>
+<th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Functional Consultant</th>
+<th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Technical Consultant</th>
 ` : ``}
     </tr>
 
@@ -713,20 +713,20 @@ ${roleType === 'PM' ? `
 </span>
 
 </td>
-            <td style="border:1px solid black;">${name}</td>
-            <td style="border:1px solid black;">
+            <td style="border:1px solid black; font-family:Arial, sans-serif;">${name}</td>
+            <td style="border:1px solid black; font-family:Arial, sans-serif;">
 
 <span class="status ${getStatusClass(obj.status)}">
     ${obj.status || ''}
 </span>
 
 </td>
-            <td style="border:1px solid black;">${obj.comments || ''}</td>
-            <td style="border:1px solid black;">${obj.startDate || ''}</td>
-            <td style="border:1px solid black;">${obj.endDate || ''}</td>
+            <td style="border:1px solid black; font-family:Arial, sans-serif;">${obj.comments || ''}</td>
+            <td style="border:1px solid black; font-family:Arial, sans-serif;">${obj.startDate || ''}</td>
+            <td style="border:1px solid black; font-family:Arial, sans-serif;">${obj.endDate || ''}</td>
         
-            <td style="border:1px solid black;">${obj.updatedEndDate || ''}</td>
-            <td style="border:1px solid black;">
+            <td style="border:1px solid black; font-family:Arial, sans-serif;">${obj.updatedEndDate || ''}</td>
+            <td style="border:1px solid black; font-family:Arial, sans-serif;">
 ${obj.duration ? obj.duration + ' days' : ''}
 </td>
 
@@ -767,33 +767,33 @@ ${ticketDetails.closed}
     tableRows += `
 <tr class="project-row" >
 
-    <td style="border:1px solid black">
+    <td style="border:1px solid black;font-family:Arial, sans-serif;">
         
         <span class="arrow" id="arrow-${projectId}" onclick="toggleProducts('${projectId}')">▶</span>
         ${projectId}
     </td>
 
     <td style="border:1px solid black;" onclick="openProject('${projectId}')"><u>${data.customer}</u></td>
-    ${!isFromHome ? `<td style="border:1px solid black;">
+    ${!isFromHome ? `<td style="border:1px solid black;font-family:Arial, sans-serif;">
         <span class="status ${getStatusClass(data.status)}">
     ${data.status}
 </span>
 </td>` : ``}
    
-   <td style="border:1px solid black;">${data.startDate}</td>
-<td style="border:1px solid black;">${data.endDate}</td>
-<td style="border:1px solid black;">${data.duration + ' days'}</td>
-<td style="border:1px solid black;">${data.golive}</td>
+   <td style="border:1px solid black; font-family:Arial, sans-serif;">${data.startDate}</td>
+<td style="border:1px solid black; font-family:Arial, sans-serif;">${data.endDate}</td>
+<td style="border:1px solid black; font-family:Arial, sans-serif;">${data.duration + ' days'}</td>
+<td style="border:1px solid black; font-family:Arial, sans-serif;">${data.golive}</td>
 
-<td style="border:1px solid black;">${data.pm}</td>
-<td style="border:1px solid black;">${data.pmocomments}</td>
+<td style="border:1px solid black; font-family:Arial, sans-serif;">${data.pm}</td>
+<td style="border:1px solid black; font-family:Arial, sans-serif;">${data.pmocomments}</td>
 
 
-<td style="border:1px solid black;">${Object.keys(data.products).length}</td>
+<td style="border:1px solid black; font-family:Arial, sans-serif;">${Object.keys(data.products).length}</td>
     ${ticketCols}
 </tr>
 
-<tr id="products-${projectId}" style="display:none; background:#f9f9f9;border:1px solid black;">
+<tr id="products-${projectId}" style="display:none; background:#f9f9f9;border:1px solid black; font-family:Arial, sans-serif;">
     <td colspan="100" style="padding:0;">
         <div style="padding:10px;">
             ${productList}
@@ -848,7 +848,7 @@ var paginationHtml = `
 <div style="text-align:center; margin-top:20px;">
 
     ${page > 0 ? `
-        <button type="button" onclick="goToPage(${prevPage})" style="padding:8px 15px; background:#8f50df; color:white; border:none; border-radius:5px; cursor:pointer;">Previous</button>
+        <button type="button" onclick="goToPage(${prevPage})" style="padding:8px 15px; background:linear-gradient(135deg, #8E2DE2, #C471ED); color:white; border:none; border-radius:5px; cursor:pointer;">Previous</button>
     ` : ''}
 
     <span style="margin:0 15px; font-weight:bold;">
@@ -857,7 +857,7 @@ var paginationHtml = `
 
     ${page < totalPages - 1 ? `
         
-        <button type="button" onclick="goToPage(${nextPage})" style="padding:8px 15px; background:#8f50df; color:white; border:none; border-radius:5px; cursor:pointer;">Next</button>
+        <button type="button" onclick="goToPage(${nextPage})" style="padding:8px 15px; background:linear-gradient(135deg, #8E2DE2, #C471ED); color:white; border:none; border-radius:5px; cursor:pointer;">Next</button>
     ` : ''}
 
 </div>
@@ -928,7 +928,7 @@ overflow-y:auto;
 .backBtn{
             margin-top:20px;
             padding:10px 15px;
-            background:#8f50df;
+            background:linear-gradient(135deg, #8E2DE2, #C471ED);
             color:white;
             border:none;
             border-radius:5px;
@@ -1097,7 +1097,12 @@ table{
 }
 
 th{
-    background:#8f50df;
+    background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
     color:white;
     font-size:13px;
 }
@@ -1252,6 +1257,7 @@ text-decoration: none;
     </div>
 
     <div class="header-right">
+    
         Total: ${totalCount}
     </div>
 

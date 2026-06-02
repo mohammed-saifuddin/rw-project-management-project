@@ -72,56 +72,164 @@ margin-left:-10px !important;
 margin-right:-10px !important;
 width:1580px !important;
 overflow:hidden;
+ background:
+    linear-gradient(
+        135deg,
+        #8E2DE2,
+        #C471ED
+    );
 }
 .login-box{
-    width: 600px;
-    margin: 100px auto;
+    width:600px;
 
-    background: #ffffff;
-    padding: 30px;
+    margin:80px auto;
 
-    border-radius: 15px;
+    background:rgba(254, 253, 254, 0.96);
 
-    /* SHADOW */
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
 
-    transition: 0.3s ease;
+    border-radius:22px;
+
+    border:1px solid rgba(255,255,255,0.25);
+
+    padding:30px;
+
+    position:relative;
+    z-index:5;
+
+    box-shadow:
+        0 15px 35px rgba(0,0,0,0.18);
+
+    animation:
+        fadeFloat 5s ease-in-out infinite;
+
+    transition:
+        transform 0.45s ease,
+        box-shadow 0.45s ease,
+        opacity 0.45s ease;
 }
 
 .login-box:hover{
-    box-shadow: 0 15px 40px rgba(0,0,0,0.25);
-}
-  
-body{
-    background: #f4f6f9;
-}
-.row label{
-    font-size:14px;
-    margin-bottom:5px;
-    color:#333;
-    font-weight:600;
-}
-.btn{
-    background:#8f50df;
-    color:white;
-    padding:10px 20px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    transition:0.3s;
+
+    transform:
+        translateY(-12px)
+        scale(1.02);
+
+    box-shadow:
+        0 25px 50px rgba(0,0,0,0.28);
 }
 
-.btn:hover{
-    background:#5a3390;
+body{
+     background:
+    linear-gradient(
+        135deg,
+        #8E2DE2,
+        #C471ED
+    );
 }
-.row input{
+
+
+/* MODERN BUTTON */
+
+.btn{
+
+    height:38px;
+
+    min-width:150px;
+
+    padding:0 22px;
+
+    border:none;
+
+    border-radius:14px;
+
+    background:
+    linear-gradient(
+        135deg,
+        #8E2DE2,
+        #C471ED
+    );
+
+    color:white;
+
+    font-size:13px;
+
+    font-weight:700;
+
+    letter-spacing:0.5px;
+
+    cursor:pointer;
+
+    position:relative;
+
+    overflow:hidden;
+
+    transition:
+        transform 0.35s ease,
+        box-shadow 0.35s ease,
+        opacity 0.35s ease;
+
+    box-shadow:
+        0 12px 28px rgba(168,85,247,0.30);
+}
+
+/* SHINE EFFECT */
+
+.btn::before{
+
+    content:'';
+
+    position:absolute;
+
+    top:0;
+    left:-120%;
+
     width:100%;
-    padding:10px;
-    border:1px solid #ccc;
-    border-radius:8px;
-    outline:none;
-    transition:0.2s;
+    height:100%;
+
+    background:
+    linear-gradient(
+        120deg,
+        transparent,
+        rgba(255,255,255,0.35),
+        transparent
+    );
+
+    transition:0.6s;
 }
+
+/* HOVER */
+
+.btn:hover{
+
+    transform:
+        translateY(-4px)
+        scale(1.03);
+
+    box-shadow:
+        0 18px 38px rgba(168,85,247,0.42);
+}
+
+/* SHINE MOVE */
+
+.btn:hover::before{
+    left:120%;
+}
+
+/* CLICK EFFECT */
+
+.btn:active{
+
+    transform:
+        scale(0.97);
+
+    box-shadow:
+        0 8px 18px rgba(168,85,247,0.25);
+}
+
+
+
 
 .row input:focus{
     border-color:#8f50df;
@@ -134,16 +242,24 @@ border:1px solid #2d6fa3;
 
 .portal{
 flex:1;
-background:#8f50df;
+ background:
+    linear-gradient(
+        135deg,
+        #8E2DE2,
+        #C471ED
+    );
+    position:sticky;
 color:white;
 height:60px;
 display:flex;
 justify-content:center;
+display:none;
 align-items:center;
 text-align:center;
 padding:12px;
 font-size:18px;
 font-weight:bold;
+font-family:calibri;
 }
 
 .login-box{
@@ -153,37 +269,16 @@ align-items:center;
 margin:80px auto;
 }
 
-.row{
-display:flex;
-margin-bottom:15px;
-justify-content:center;
-gap:40px;
 
-align-items:center;
 
-}
-
-.row label{
-width:120px;
-display:flex;
-text-align:left;
-justify-content:start;
-align-items:center;
-font-size:12px;
-}
-
-.row input{
-width:300px;
-padding:6px;
-display:flex;
-height:30px;
-justify-content:center;
-align-items:center;
-border:1px solid black;
-}
 
 .btn{
-background:#1c6ea4;
+     background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
 color:white;
 padding:8px 20px;
 border:none;
@@ -196,7 +291,7 @@ cursor:pointer;
            align-items:center;
            flex-direction:row;
            gap:10px;
-           margin-left:80px;
+           margin-left:50px;
            }
            .btn:hover{
            background:#155d8a;
@@ -204,7 +299,7 @@ cursor:pointer;
            }
      .card-header{
     text-align:center;
-    margin-bottom:25px;
+    margin-bottom:16px;
 }
 
 .icon{
@@ -213,7 +308,7 @@ cursor:pointer;
 }
 
 .card-title{
-    font-size:22px;
+    font-size:16px;
     font-weight:700;
     color:#8f50df;
 }
@@ -223,9 +318,272 @@ cursor:pointer;
     color:#777;
     margin-top:5px;
 }
+    /* MAIN CONTAINER */
+
+.main-bg{
+    width:100vw;
+    height:100vh;
+
+    position:fixed;
+    top:0;
+    left:0;
+
+    overflow:hidden;
+
+    background:
+    linear-gradient(
+        135deg,
+        #8E2DE2,
+        #C471ED
+    );
+}
+
+/* FLOATING CIRCLES */
+
+.bg-circle{
+    position:absolute;
+
+    border-radius:50%;
+
+    background:rgba(255,255,255,0.08);
+
+    animation:moveCircle 16s infinite linear;
+}
+
+/* CIRCLE POSITIONS */
+
+.bg1{
+    width:260px;
+    height:260px;
+
+    top:-60px;
+    left:-80px;
+}
+
+.bg2{
+    width:140px;
+    height:140px;
+
+    top:120px;
+    right:180px;
+
+    animation-duration:12s;
+}
+
+.bg3{
+    width:200px;
+    height:200px;
+
+    bottom:-70px;
+    right:-50px;
+
+    animation-duration:20s;
+}
+
+.bg4{
+    width:90px;
+    height:90px;
+
+    bottom:180px;
+    left:120px;
+
+    animation-duration:10s;
+}
+
+.bg5{
+    width:70px;
+    height:70px;
+
+    top:300px;
+    left:45%;
+
+    animation-duration:14s;
+}
+
+/* ANIMATION */
+
+@keyframes moveCircle{
+
+    0%{
+        transform:
+        translateY(0px)
+        translateX(0px);
+    }
+
+    25%{
+        transform:
+        translateY(-20px)
+        translateX(12px);
+    }
+
+    50%{
+        transform:
+        translateY(15px)
+        translateX(-12px);
+    }
+
+    75%{
+        transform:
+        translateY(-10px)
+        translateX(8px);
+    }
+
+    100%{
+        transform:
+        translateY(0px)
+        translateX(0px);
+    }
+}
+  /* MODERN INPUT GROUP */
+
+.input-group{
+    position:relative;
+    margin-bottom:22px;
+}
+
+/* LABEL */
+
+.modern-label{
+    display:block;
+
+    font-size:12px;
+    font-weight:700;
+
+    color:#6B7280;
+
+    margin-bottom:4px;
+
+    letter-spacing:1px;
+
+    text-transform:uppercase;
+}
+
+/* MODERN INPUT */
+
+.modern-input{
+
+    width:100%;
+
+    height:34px;
+
+    padding:
+        0 40px 0 14px;
+
+    border:none;
+
+
+
+    background:
+        rgba(255,255,255,0.9);
+
+    backdrop-filter:blur(12px);
+
+    box-shadow:
+        0 8px 22px rgba(0,0,0,0.08);
+
+    font-size:14px;
+
+    font-weight:500;
+
+    color:#374151;
+
+    outline:none;
+
+    transition:all 0.3s ease;
+}
+
+/* PLACEHOLDER */
+
+.modern-input::placeholder{
+    color:#9CA3AF;
+    font-size:13px;
+}
+
+/* FOCUS */
+
+.modern-input:focus{
+
+    transform:translateY(-2px);
+
+    box-shadow:
+        0 0 0 4px rgba(168,85,247,0.15),
+        0 12px 28px rgba(168,85,247,0.22);
+
+    background:white;
+}
+
+/* ICON */
+
+.input-icon{
+
+    position:absolute;
+
+    right:16px;
+    top:67%;
+
+    transform:translateY(-50%);
+
+    color:#A855F7;
+
+    font-size:14px;
+
+    transition:0.3s ease;
+}
+
+/* ICON HOVER */
+
+.input-icon:hover{
+    color:#8E2DE2;
+} 
+    /* OTP GROUP FIX */
+
+.otp-group{
+
+    width:100%;
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:stretch;
+}
+     /* HIDE DEFAULT BROWSER PASSWORD EYE ICON */
+
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-textfield-decoration-container {
+    display: none !important;
+}
+
+input[type="password"]::-webkit-password-toggle-button {
+    display: none !important;
+}
+
+/* EDGE / CHROME */
+
+input[type="password"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
 </style>
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
+
 <body>
+
+<div class="main-bg">
+
+<div class="bg-circle bg1"></div>
+<div class="bg-circle bg2"></div>
+<div class="bg-circle bg3"></div>
+<div class="bg-circle bg4"></div>
+<div class="bg-circle bg5"></div>
 <div class="header">
 <div class="portal">
 Reachware Portal Password Setup
@@ -234,9 +592,11 @@ Reachware Portal Password Setup
 
 <div class="login-box">
 <div class="card-header">
-    <div class="icon">🔒</div>
+    <div class="logo1">
+                <img width="240px" height="40px"  src="https://2771600.app.netsuite.com/core/media/media.nl?id=5690&c=2771600&h=kIUCEpH0C_eyrUBVYGJn7nEHV_vSoKDhpdzpaPF7vFesdytX">
+            </div>
     <div class="card-title">Reset Password</div>
-    <div class="card-subtitle">Secure your account by setting a new password</div>
+    
 </div>
 <form method="POST">
 
@@ -244,32 +604,95 @@ Reachware Portal Password Setup
 <input type="hidden" name="email" value="${emailId}">
 <input type="hidden" name="action" id="action">
 
-<div class="row">
-<label>Email</label>
-<input type="text" value="${emailId}" readonly>
+<div class="input-group">
+
+<label class="modern-label">
+Email
+</label>
+
+<input
+type="text"
+value="${emailId}"
+readonly
+class="modern-input"
+placeholder="Enter email">
+
+<i class="fa-solid fa-envelope input-icon"></i>
+
 </div>
 
-<div class="row">
-<label>Password</label>
-<input type="password" name="password" id="password">
+<div class="input-group">
+<label class="modern-label">
+Password
+</label>
+<input
+type="password"
+name="password"
+id="password"
+class="modern-input"
+placeholder="Enter password">
+ <i class="fa-regular fa-eye input-icon"
+   id="toggleEyePassword"
+   onclick="togglePassword('password','toggleEyePassword')">
+</i>
 </div>
 
-<div class="row">
-<label>Confirm  Password</label>
-<input type="password" name="confirmpassword" id="confirmpassword">
+<div class="input-group">
+
+<label class="modern-label">
+Confirm Password
+</label>
+
+<input
+type="password"
+name="confirmpassword"
+id="confirmpassword"
+class="modern-input"
+placeholder="Confirm password">
+
+ <i class="fa-regular fa-eye input-icon"
+   id="toggleEyeConfirm"
+   onclick="togglePassword('confirmpassword','toggleEyeConfirm')">
+</i>
+
 </div>
 
-<div class="row" id="otpRow" style="display:${showOtp=='T'?'flex':'none'};">
-<label>Enter OTP</label>
-<input type="text" name="otp" id="otp">
+
+
+<div class="input-group otp-group" id="otpRow"
+style="display:${showOtp=='T'?'block':'none'};">
+
+<label class="modern-label">
+Enter OTP
+</label>
+
+<input
+type="text"
+name="otp"
+id="otp"
+class="modern-input"
+placeholder="Enter OTP">
+
+<i class="fa-solid fa-key input-icon"></i>
+
 </div>
 <div class="btn-row">
 <button class="btn" type="button" onclick="confirmReset()">
+
+<i class="fa-solid fa-check"></i>
+&nbsp;&nbsp;
 Confirm
+
 </button>
 
-<button class="btn" id="otpBtn" type="button" onclick="handleGenerateOtp()">
+<button class="btn" id="otpBtn"
+type="button"
+onclick="handleGenerateOtp()">
+
+<i class="fa-solid fa-paper-plane"></i>
+&nbsp;&nbsp;
 Generate OTP
+
 </button>
 </div>
 
@@ -286,6 +709,7 @@ Generate OTP
 <p style="display:flex;margin-left:12px;color:red;">3.It should contains character and numbers Abc 1234</p>
 </div>
 </div>
+</div>
 </body>
 </html>
 <script>
@@ -298,7 +722,27 @@ document.title="Reset password";
 var countdown = 120;
 var timerInterval = null;
 
+window.togglePassword = function (fieldId, iconId) {
 
+    var passwordField = document.getElementById(fieldId);
+
+    var eyeIcon = document.getElementById(iconId);
+
+    if (passwordField.type === "password") {
+
+        passwordField.type = "text";
+
+        eyeIcon.classList.remove("fa-eye");
+        eyeIcon.classList.add("fa-eye-slash");
+
+    } else {
+
+        passwordField.type = "password";
+
+        eyeIcon.classList.remove("fa-eye-slash");
+        eyeIcon.classList.add("fa-eye");
+    }
+};
 function checkPasswords(){
 
     var pwd = document.getElementById("password").value;

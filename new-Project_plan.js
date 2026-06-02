@@ -367,6 +367,23 @@ log.debug(
 );
     return;
 }
+if(action === 'delete'){
+
+    var recId =
+        request.parameters.recid;
+
+    record.delete({
+
+        type:
+        'customrecord_rw_project_plan_temp_child',
+
+        id: recId
+    });
+
+    context.response.write('deleted');
+
+    return;
+}
 if(action === 'update'){
 
     var recId =
@@ -474,7 +491,7 @@ childSearch.run().each(function(res){
 
     <td style="border:1px solid #ddd">
 
-        <span id="sno_text_${recId}">
+        <span id="sno_text_${recId}" class="data">
             ${sno}
         </span>
 
@@ -488,13 +505,23 @@ childSearch.run().each(function(res){
 
     <td style="border:1px solid #ddd">
 
-        <span id="mile_text_${recId}">
+        <span id="mile_text_${recId}" class="data">
             ${milestone}
         </span>
 
-       
+       </td>
 
-    </td>
+    <td style="border:1px solid #ddd;
+text-align:center;">
+
+<button
+type="button"
+class="delete-btn"
+onclick="deleteMilestone('${recId}')">
+
+<i class="fa-solid fa-xmark"></i>
+
+</button>
 
 </tr>
 
@@ -595,7 +622,12 @@ body{
             }
 
             th{
-                background:#8f50df;
+                background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
                 color:white;
                 padding:12px;
                 font-size:12px;
@@ -603,7 +635,7 @@ body{
             }
 
             td{
-                padding:10px;
+                padding:8px;
                 
             }
 .input{
@@ -612,16 +644,58 @@ body{
     border:1px solid #ccc;
     border-radius:6px;
 }
+.delete-btn{
 
+    
+
+    color:red;
+    background:white;
+
+    border:none;
+
+    padding:0;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    font-size:16px;
+
+    font-weight:600;
+
+    transition:0.3s ease;
+}
+
+.delete-btn:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:
+        0 8px 18px rgba(239,68,68,0.25);
+}
 button{
-    background:#8f50df;
+    background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
     color:white;
     border:none;
     padding:8px 14px;
     border-radius:6px;
     cursor:pointer;
 }
+    .data{
+    font-size:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#333;
+    }
         </style>
+            <link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <input type="hidden"
        id="templateId"
        value="${templateId}">
@@ -648,6 +722,7 @@ button{
   <div style="
     margin-bottom:15px;
     display:flex;
+    
     gap:10px;
 ">
 
@@ -660,7 +735,7 @@ button{
 
 </button>
 
-   
+    
 
 <button
     type="button"
@@ -760,7 +835,14 @@ button{
     <th style="border:1px solid #ddd">
         Milestone
     </th>
-
+<th style="border:1px solid #ddd;font-family:Arial, sans-serif;font-size:12px;
+background:linear-gradient(
+135deg,
+#8E2DE2,
+#C471ED
+); width:120px;">
+    Action
+</th>
     
 
 </tr>
@@ -950,6 +1032,10 @@ if(duplicateFound){
     alert(
         'Milestone already exists'
     );
+
+    document.getElementById(
+        'dialog_mile'
+    ).value = '';
 
     return;
 }
@@ -1453,6 +1539,44 @@ async function updateMilestone(recId){
     return fetch(
         url.toString()
     );
+}
+    async function deleteMilestone(recId){
+
+    var confirmDelete =
+        confirm(
+            'Are you sure you want to remove this milestone?'
+        );
+
+    if(!confirmDelete){
+        return;
+    }
+
+    var url =
+        new URL(window.location.href);
+
+    url.searchParams.set(
+        'action',
+        'delete'
+    );
+
+    url.searchParams.set(
+        'recid',
+        recId
+    );
+
+    await fetch(
+        url.toString()
+    );
+
+    alert(
+        'Milestone removed successfully'
+    );
+
+    setTimeout(function(){
+
+        location.reload();
+
+    },500);
 }
 function editRow(recId){
 

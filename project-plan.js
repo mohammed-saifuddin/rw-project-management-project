@@ -229,7 +229,12 @@ data.push({
             }
 
             th{
-                background:#8f50df;
+                background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
                 color:white;
                 padding:12px;
                 text-align:left;
@@ -247,7 +252,7 @@ data.push({
             .count-box{
                 margin-bottom:15px;
                 padding:10px 15px;
-                background:#8f50df;
+                background:linear-gradient(135deg, #8E2DE2, #C471ED);
                 color:white;
                 display:inline-block;
                 border-radius:8px;
@@ -304,7 +309,12 @@ data.push({
 }
 
 .modal-header{
-    background:#8f50df;
+    background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
     color:white;
     padding:15px;
     font-size:18px;
@@ -328,22 +338,89 @@ data.push({
     height:auto !important;
     max-height:none !important;
 }
+/* HEADER ROW */
 
+.header-row{
+
+    width:100%;
+
+    display:flex;
+    margin-top:-30px;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:18px;
+}
+
+/* TITLE */
+
+.title{
+
+    font-size:20px;
+
+    font-weight:700;
+
+    color:#8f50df;
+
+    margin:0;
+    margin-top:10px;
+
+    white-space:nowrap;
+}
+
+/* TOTAL COUNT */
+
+.count-box{
+
+    padding:10px 18px;
+
+    background:
+    linear-gradient(
+        135deg,
+        #8E2DE2,
+        #C471ED
+    );
+
+    color:white;
+    margin-top:14px;
+    border-radius:12px;
+
+    font-size:14px;
+
+    font-weight:700;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    box-shadow:
+        0 8px 18px rgba(168,85,247,0.22);
+}
 .card{
 
     overflow:visible !important;
 }
         </style>
-
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
         <div class="container">
 
-            <div class="title">
-                Project Plan Template
-            </div>
+            <div class="header-row">
 
-            <div class="count-box">
-                Total Records : ${data.length}
-            </div>
+    <div class="title">
+        Project Plan Template
+    </div>
+
+    <div class="count-box">
+        <i class="fa-solid fa-database"></i>
+        Total Records : ${data.length}
+    </div>
+
+</div>
 
             <table>
 
@@ -414,7 +491,7 @@ data.push({
 
     <thead>
 
-        <tr style="background:#8f50df;color:white;">
+        <tr style="background:linear-gradient(135deg, #8E2DE2, #C471ED);color:white;">
 
             <th>S.NO</th>
 

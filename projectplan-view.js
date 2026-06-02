@@ -210,7 +210,23 @@ if(action === 'create'){
 
     rec.save();
 }
+if(action === 'delete'){
 
+    var recId =
+        request.parameters.recid;
+
+    record.delete({
+
+        type:
+        'customrecord_rw_project_plan_temp_child',
+
+        id: recId
+    });
+
+    context.response.write('deleted');
+
+    return;
+}
 if(action === 'update'){
 
     var recId =
@@ -281,7 +297,7 @@ if(action === 'update'){
         })
     );
 }
-
+var totalRecords = 0;
         var i = 1;
 
        var renderedMilestones = {};
@@ -309,14 +325,15 @@ childSearch.run().each(function(res){
     }
 
     renderedMilestones[milestoneId] = true;
+    totalRecords++;
 
     rows += `
 
 <tr>
 
-    <td style="border:1px solid #ddd">
+    <td style="border:1px solid #ddd" >
 
-        <span id="sno_text_${recId}">
+        <span id="sno_text_${recId}" class="data">
             ${sno}
         </span>
 
@@ -330,7 +347,7 @@ childSearch.run().each(function(res){
 
     <td style="border:1px solid #ddd">
 
-        <span id="mile_text_${recId}">
+        <span id="mile_text_${recId}" class="data">
             ${milestone}
         </span>
 
@@ -344,7 +361,23 @@ childSearch.run().each(function(res){
 
         </select>
 
-    </td>
+   </td>
+
+<td style="border:1px solid #ddd;
+text-align:center;">
+
+<button
+type="button"
+class="delete-btn"
+onclick="deleteMilestone('${recId}')">
+
+<i class="fa-solid fa-xmark"></i>
+
+</button>
+
+</td>
+
+</tr>
 
 </tr>
 
@@ -425,7 +458,37 @@ body{
 
     overflow:visible !important;
 }
+/* DELETE BUTTON */
 
+.delete-btn{
+
+    
+
+    color:red;
+    background:white;
+
+    border:none;
+
+    padding:0;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    font-size:16px;
+
+    font-weight:600;
+
+    transition:0.3s ease;
+}
+
+.delete-btn:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:
+        0 8px 18px rgba(239,68,68,0.25);
+}
             .title{
                 font-size:24px;
                 color:#8f50df;
@@ -445,13 +508,18 @@ body{
             }
 
             th{
-                background:#8f50df;
+                background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
                 color:white;
                 padding:12px;
             }
 
             td{
-                padding:10px;
+                padding:8px;
                 
             }
 .input{
@@ -460,16 +528,94 @@ body{
     border:1px solid #ccc;
     border-radius:6px;
 }
-
+.data{
+    font-size:12px;
+    display:flex;
+    padding:0;
+    align-items:center;
+    justify-content:center;
+    color:#333;
+    }
 button{
-    background:#8f50df;
+    background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);
     color:white;
     border:none;
     padding:8px 14px;
     border-radius:6px;
     cursor:pointer;
 }
+    .count-box{
+                margin-bottom:15px;
+                padding:10px 15px;
+                background:linear-gradient(135deg, #8E2DE2, #C471ED);
+                color:white;
+                display:flex;
+                align-items:right;
+                float:right;
+                justify-content:right;
+                gap:8px;
+                
+                display:inline-block;
+                border-radius:8px;
+                font-weight:bold;
+            }
+                /* HEADER ALIGNMENT */
+
+.top-header{
+
+    width:100%;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:15px;
+}
+
+.left-actions{
+
+    display:flex;
+
+    gap:10px;
+}
+
+/* TOTAL RECORD BOX */
+
+.count-box{
+
+    padding:10px 16px;
+
+    background:
+    linear-gradient(
+        135deg,
+        #8E2DE2,
+        #C471ED
+    );
+
+    color:white;
+
+    border-radius:8px;
+
+    font-weight:bold;
+
+    font-size:13px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+}
         </style>
+               <link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <input type="hidden"
        id="templateId"
        value="${templateId}">
@@ -499,32 +645,38 @@ button{
             </div>
 
 
-  <div style="
-    margin-bottom:15px;
-    display:flex;
-    gap:10px;
-">
+ <div class="top-header">
 
-    
+    <div class="left-actions">
 
-    <button
-    type="button"
-    id="topEditBtn"
-    onclick="editAllRows()">
+        <button
+        type="button"
+        id="topEditBtn"
+        onclick="editAllRows()">
 
-    Edit
+        Edit
 
-</button>
+        </button>
 
-<button
-    type="button"
-    id="topSaveBtn"
-    style="display:none;"
-    onclick="saveAllRows()">
+        <button
+        type="button"
+        id="topSaveBtn"
+        style="display:none;"
+        onclick="saveAllRows()">
 
-    Save
+        Save
 
-</button>
+        </button>
+
+    </div>
+
+    <div class="count-box">
+
+        <i class="fa-solid fa-database"></i>
+
+        Total Records : ${totalRecords}
+
+    </div>
 
 </div>
 
@@ -535,13 +687,32 @@ button{
 
                    <tr>
 
-    <th style="border:1px solid #ddd">
+    <th style="border:1px solid #ddd; font-family:Arial, sans-serif; font-size:12px;text-transform:uppercase;font-weight:bold; background:
+linear-gradient(
+    135deg,
+    #8E2DE2,
+    #C471ED
+);">
         S.NO
     </th>
 
-    <th style="border:1px solid #ddd">
-        Milestone
-    </th>
+   <th style="border:1px solid #ddd;font-family:Arial, sans-serif;font-size:12px;text-transform:uppercase;font-weight:bold;
+background:linear-gradient(
+135deg,
+#8E2DE2,
+#C471ED
+);">
+    Milestone
+</th>
+
+<th style="border:1px solid #ddd;font-family:Arial, sans-serif;font-size:12px;text-transform:uppercase;font-weight:bold;
+background:linear-gradient(
+135deg,
+#8E2DE2,
+#C471ED
+); width:120px;">
+    Action
+</th>
 
     
 
@@ -1065,6 +1236,82 @@ function editAllRows(){
     document.getElementById(
         'topSaveBtn'
     ).style.display='inline-block';
+}
+    async function deleteMilestone(recId){
+
+    var confirmDelete =
+        confirm(
+            'Are you sure you want to remove this milestone?'
+        );
+
+    if(!confirmDelete){
+        return;
+    }
+
+    var url =
+        new URL(window.location.href);
+
+    url.searchParams.set(
+        'action',
+        'delete'
+    );
+
+    url.searchParams.set(
+        'recid',
+        recId
+    );
+
+    await fetch(
+        url.toString()
+    );
+
+    alert(
+        'Milestone removed successfully'
+    );
+
+    setTimeout(function(){
+
+        location.reload();
+
+    },500);
+}
+    async function deleteMilestone(recId){
+
+    var confirmDelete =
+        confirm(
+            'Are you sure you want to remove this milestone?'
+        );
+
+    if(!confirmDelete){
+        return;
+    }
+
+    var url =
+        new URL(window.location.href);
+
+    url.searchParams.set(
+        'action',
+        'delete'
+    );
+
+    url.searchParams.set(
+        'recid',
+        recId
+    );
+
+    await fetch(
+        url.toString()
+    );
+
+    alert(
+        'Milestone removed successfully'
+    );
+
+    setTimeout(function(){
+
+        location.reload();
+
+    },500);
 }
 async function updateMilestone(recId){
 
