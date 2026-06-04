@@ -553,12 +553,12 @@ label.required::after {
 
 /* Section */
 .section {
-           background:
-linear-gradient(
+            background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
     // background:#5d8db8;
     color:white;
     padding:8px;
@@ -645,12 +645,12 @@ height:30px;
 button {
    margin-top:20px;
 padding:10px 20px;
-       background:
-linear-gradient(
+        background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 color:white;
 border:none;
 cursor:pointer;
@@ -921,7 +921,8 @@ deadlineField.addEventListener(
 
 document.addEventListener("DOMContentLoaded", function(){
 
-    // TODAY DATE
+    // apply min date to all fields EXCEPT invoice date
+
     var today = new Date();
 
     var yyyy = today.getFullYear();
@@ -930,10 +931,15 @@ document.addEventListener("DOMContentLoaded", function(){
 
     var minDate = yyyy + '-' + mm + '-' + dd;
 
-    // ALL DATE FIELDS
     document.querySelectorAll('input[type="date"]').forEach(function(field){
 
-        field.setAttribute('min', minDate);
+        // allow previous dates for issue occured  Date
+        if(field.id === 'issueOccurredOn'){
+            field.removeAttribute('min');
+        }
+        else{
+            field.setAttribute('min', minDate);
+        }
 
     });
 

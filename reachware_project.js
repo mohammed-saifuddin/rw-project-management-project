@@ -65,15 +65,52 @@ if(filterType === 'open'){
     filters.push([
         'custrecord1513.custrecord_rw_portal_status',
         'noneof',
-        '5'
+        ['6','7','8']
     ]);
 }
-else if(filterType === 'close'){
+else if(filterType == 'done'){
+
     filters.push([
         'custrecord1513.custrecord_rw_portal_status',
         'anyof',
-        '5'
+        ['6','7','8']
     ]);
+
+    filters.push('AND');
+
+    filters.push([
+        'isinactive',
+        'is',
+        'F'
+    ]);
+}
+else if(filterType == 'close'){
+
+    filters.push([
+        'custrecord1513.custrecord_rw_portal_status',
+        'anyof',
+        ['6','7','8']
+    ]);
+
+    filters.push('AND');
+
+    filters.push([
+        'custrecord1513.isinactive',
+        'is',
+        'F'
+    ]);
+
+    // ONLY LOGGED-IN PM PROJECTS
+    if(empId){
+
+        filters.push('AND');
+
+        filters.push([
+            'custrecord1513.custrecord_rw_portal_projectmanager',
+            'anyof',
+            empId
+        ]);
+    }
 }
 else if(filterType === 'inprogress'){
     filters.push([
@@ -86,7 +123,7 @@ else if(filterType === 'kickof'){
     filters.push([
         'custrecord1513.custrecord_rw_portal_status',
         'anyof',
-        '6'
+        '1'
     ]);
 }
 else if(filterType === 'bussinessrequirement'){
@@ -108,14 +145,14 @@ else if(filterType === 'golive'){
     filters.push([
         'custrecord1513.custrecord_rw_portal_status',
         'anyof',
-        '9'
+        '5'
     ]);
 }
 else if(filterType === 'coc'){
     filters.push([
         'custrecord1513.custrecord_rw_portal_status',
         'anyof',
-        '10'
+        '6'
     ]);
 }
 else if(filterType === 'support'){
@@ -129,7 +166,7 @@ else if(filterType === 'uat'){
     filters.push([
         'custrecord1513.custrecord_rw_portal_status',
         'anyof',
-        '3'
+        '4'
     ]);
 }
 else if(filterType === 'myprojects' && empId){
@@ -1100,10 +1137,10 @@ th{
     background:
 linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
+    #E6E6FA,
+    #E6E6FA
 );
-    color:white;
+    color:darkblue;
     font-size:13px;
 }
 
@@ -1116,8 +1153,8 @@ td{
 }
 
 .project-row:hover{
-    background:#E6E6FA;
-color:black;
+    background:MediumPurple;
+color:white;
     font-weight:bold;
 }
 @keyframes slideDown{

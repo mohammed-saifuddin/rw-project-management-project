@@ -491,7 +491,7 @@ body{
 }
             .title{
                 font-size:24px;
-                color:#8f50df;
+                color:darkblue;
                 font-weight:bold;
                 margin-bottom:20px;
             }
@@ -508,13 +508,8 @@ body{
             }
 
             th{
-                background:
-linear-gradient(
-    135deg,
-    #8E2DE2,
-    #C471ED
-);
-                color:white;
+                background:#E6E6FA;
+                color:darkblue;
                 padding:12px;
             }
 
@@ -537,12 +532,12 @@ linear-gradient(
     color:#333;
     }
 button{
-    background:
-linear-gradient(
+    background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
     color:white;
     border:none;
     padding:8px 14px;
@@ -552,7 +547,12 @@ linear-gradient(
     .count-box{
                 margin-bottom:15px;
                 padding:10px 15px;
-                background:linear-gradient(135deg, #8E2DE2, #C471ED);
+                    background:linear-gradient(
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
                 color:white;
                 display:flex;
                 align-items:right;
@@ -592,12 +592,12 @@ linear-gradient(
 
     padding:10px 16px;
 
-    background:
-    linear-gradient(
-        135deg,
-        #8E2DE2,
-        #C471ED
-    );
+        background:linear-gradient(
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 
     color:white;
 
@@ -687,30 +687,17 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 
                    <tr>
 
-    <th style="border:1px solid #ddd; font-family:Arial, sans-serif; font-size:12px;text-transform:uppercase;font-weight:bold; background:
-linear-gradient(
-    135deg,
-    #8E2DE2,
-    #C471ED
-);">
+    <th style="border:1px solid #ddd; font-family:Arial, sans-serif; font-size:12px;text-transform:uppercase;font-weight:bold; background:#E6E6FA">
         S.NO
     </th>
 
    <th style="border:1px solid #ddd;font-family:Arial, sans-serif;font-size:12px;text-transform:uppercase;font-weight:bold;
-background:linear-gradient(
-135deg,
-#8E2DE2,
-#C471ED
-);">
+background:#E6E6FA">
     Milestone
 </th>
 
 <th style="border:1px solid #ddd;font-family:Arial, sans-serif;font-size:12px;text-transform:uppercase;font-weight:bold;
-background:linear-gradient(
-135deg,
-#8E2DE2,
-#C471ED
-); width:120px;">
+background:#E6E6FA; width:120px;">
     Action
 </th>
 

@@ -34,13 +34,53 @@ define([
         });
 
         var rows = '';
-        var milestoneOptions = '';
+//         var milestoneOptions = '';
 
-var addedMilestones = {};
+// var addedMilestones = {};
 
-var milestoneSearch = search.create({
+// var milestoneSearch = search.create({
 
-    type:'customrecord_rw_project_mile_stone_types',
+//     type:'customrecord_rw_project_mile_stone_types',
+
+//     filters:[
+//         ['isinactive','is','F']
+//     ],
+
+//     columns:[
+//         'internalid',
+//         'name'
+//     ]
+// });
+
+// milestoneSearch.run().each(function(r){
+
+//     var id =
+//         r.getValue('internalid');
+
+//     var name =
+//         r.getValue('name');
+
+//     if(!addedMilestones[name]){
+
+//         milestoneOptions +=
+
+//             '<option value="' +
+//             id +
+//             '">' +
+//             name +
+//             '</option>';
+
+//         addedMilestones[name] = true;
+//     }
+
+//     return true;
+// });
+
+var milestoneOptions = '';
+
+var listSearch = search.create({
+
+    type:'customrecord_rw_proj_rev_stream',
 
     filters:[
         ['isinactive','is','F']
@@ -52,7 +92,7 @@ var milestoneSearch = search.create({
     ]
 });
 
-milestoneSearch.run().each(function(r){
+listSearch.run().each(function(r){
 
     var id =
         r.getValue('internalid');
@@ -60,18 +100,13 @@ milestoneSearch.run().each(function(r){
     var name =
         r.getValue('name');
 
-    if(!addedMilestones[name]){
+    milestoneOptions +=
 
-        milestoneOptions +=
-
-            '<option value="' +
-            id +
-            '">' +
-            name +
-            '</option>';
-
-        addedMilestones[name] = true;
-    }
+        '<option value="' +
+        id +
+        '">' +
+        name +
+        '</option>';
 
     return true;
 });
@@ -231,7 +266,7 @@ if(action === 'createmilestone'){
     var mileSearch = search.create({
 
         type:
-        'customrecord_rw_project_mile_stone_types',
+        'customrecord_rw_proj_rev_stream',
 
         filters:[
             ['name','is',milestoneName]
@@ -256,7 +291,8 @@ if(action === 'createmilestone'){
             record.create({
 
                 type:
-                'customrecord_rw_project_mile_stone_types'
+                'customrecord_rw_proj_rev_stream',
+                isDynamic:true
             });
 
         mileRec.setValue({
@@ -424,66 +460,15 @@ if(action === 'update'){
 
     return;
 }
-        var childSearch = search.create({
-
-            type: 'customrecord_rw_project_plan_temp_child',
-
-            filters: [
-                
-            ],
-
-            columns: [
-                'internalid',
-
-                'custrecord_rw_proj_plan_temp_child_sno',
-
-                'custrecord_rw_project_temp_child_miles',
-                'custrecord_rw_proj_plan_temp_child_link'
-
-            ]
-        });
-
-        if(templateId){
-
-    childSearch.filters.push(
-        search.createFilter({
-            name:
-            'custrecord_rw_proj_plan_temp_child_link',
-
-            operator: search.Operator.ANYOF,
-
-            values: [templateId]
-        })
-    );
-}
-
         var i = 1;
 
-       //var renderedMilestones = {};
-
-childSearch.run().each(function(res){
+listSearch.run().each(function(res){
 
     var recId =
         res.getValue('internalid');
 
-    var sno = i;
-
-    var milestone =
-        res.getText(
-            'custrecord_rw_project_temp_child_miles'
-        ) || '';
-
-    var milestoneId =
-        res.getValue(
-            'custrecord_rw_project_temp_child_miles'
-        ) || '';
-
-    // if(renderedMilestones[milestoneId]){
-
-    //     return true;
-    // }
-
-    // renderedMilestones[milestoneId] = true;
+    var projectType =
+        res.getValue('name');
 
     rows += `
 
@@ -491,60 +476,36 @@ childSearch.run().each(function(res){
 
     <td style="border:1px solid #ddd">
 
-        <span id="sno_text_${recId}" class="data">
-            ${sno}
+        <span class="data">
+            ${i}
         </span>
-
-        <input type="text"
-               value="${sno}"
-               id="sno_${recId}"
-               class="input"
-               style="display:none;"/>
 
     </td>
 
     <td style="border:1px solid #ddd">
 
-        <span id="mile_text_${recId}" class="data">
-            ${milestone}
+        <span class="data">
+            ${projectType}
         </span>
 
-       </td>
+    </td>
 
-    <td style="border:1px solid #ddd;
-text-align:center;">
+    <td style="
+        border:1px solid #ddd;
+        text-align:center;
+    ">
 
-<button
-type="button"
-class="delete-btn"
-onclick="deleteMilestone('${recId}')">
+        <button
+            type="button"
+            class="delete-btn">
 
-<i class="fa-solid fa-xmark"></i>
+            <i class="fa-solid fa-eye"></i>
 
-</button>
+        </button>
+
+    </td>
 
 </tr>
-
-<script>
-
-window.addEventListener(
-    'load',
-    function(){
-
-        var sel =
-            document.getElementById(
-                'mile_${recId}'
-            );
-
-        if(sel){
-
-            sel.value =
-                '${milestoneId}';
-        }
-    }
-);
-
-</script>
 `;
 
     i++;
@@ -622,11 +583,12 @@ body{
             }
 
             th{
-      background:linear-gradient(
+                background:
+linear-gradient(
     135deg,
     #E6E6FA,
     #E6E6FA
-);;
+);
                 color:darkblue;
                 padding:12px;
                 font-size:12px;
@@ -673,7 +635,7 @@ body{
         0 8px 18px rgba(239,68,68,0.25);
 }
 button{
-     background:linear-gradient(
+        background:linear-gradient(
     135deg,
     #002855 0%,
     #5b2d8e 50%,
@@ -730,7 +692,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     id="topEditBtn"
     onclick="openMilestoneDialog()">
 
-    + Add Milestone
+    + Add Revenue Stream
 
 </button>
 
@@ -772,20 +734,20 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
             margin-top:0;
             color:#8f50df;
         ">
-            Add New Milestone
+            Add New Revenue Stream
         </h3>
 
         <div style="margin-bottom:15px;">
 
             <label>
-                Milestone
+                Revenue Stream
             </label>
 
            <input
     type="text"
     id="dialog_mile"
     class="input"
-    placeholder="Enter Milestone Name"
+    placeholder="Enter Revenue Stream Name"
     style="margin-top:8px;" />
 
         </div>
@@ -832,13 +794,13 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     </th>
 
     <th style="border:1px solid #ddd">
-        Milestone
+        Revenue Stream
     </th>
 <th style="border:1px solid #ddd;font-family:Arial, sans-serif;font-size:12px;
 background:linear-gradient(
 135deg,
-#E6E6FA,
-#E6E6FA
+    #E6E6FA,
+    #E6E6FA
 ); width:120px;">
     Action
 </th>
@@ -1006,7 +968,7 @@ async function saveNewMilestone(){
 if(!milestoneName){
 
     alert(
-        'Please enter milestone name'
+        'Please enter revenue stream name'
     );
 
     return;
@@ -1028,9 +990,7 @@ document.querySelectorAll(
 
 if(duplicateFound){
 
-    alert(
-        'Milestone already exists'
-    );
+    alert('Revenue Stream already exists');
 
     document.getElementById(
         'dialog_mile'
@@ -1166,7 +1126,7 @@ var result =
 if(result == 'duplicate'){
 
     alert(
-        'Milestone already exists'
+        'Revenue stream already exists'
     );
 
     return;
@@ -1178,7 +1138,7 @@ if(result == 'duplicate'){
     if(result == 'success'){
 
     alert(
-        'Milestone added successfully'
+        'Revenue stream added successfully'
     );
 
 }else if(result == 'invalidsno'){
@@ -1191,7 +1151,7 @@ if(result == 'duplicate'){
 }
     else{
         alert(
-            'Error adding milestone'
+            'Error adding Revenue stream'
         );}
     setTimeout(function(){
 
@@ -1394,7 +1354,7 @@ rows.forEach(function(row){
     // showToast(
     //     'Milestones updated successfully'
     // );
-    alert('Milestones updated successfully');
+    alert('Revenue stream updated successfully');
 
     setTimeout(function(){
 

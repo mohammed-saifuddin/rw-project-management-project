@@ -229,13 +229,8 @@ data.push({
             }
 
             th{
-                background:
-linear-gradient(
-    135deg,
-    #8E2DE2,
-    #C471ED
-);
-                color:white;
+                background:#E6E6FA;
+                color:darkblue;
                 padding:12px;
                 text-align:left;
                 font-size:14px;
@@ -252,7 +247,12 @@ linear-gradient(
             .count-box{
                 margin-bottom:15px;
                 padding:10px 15px;
-                background:linear-gradient(135deg, #8E2DE2, #C471ED);
+                    background:linear-gradient(
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
                 color:white;
                 display:inline-block;
                 border-radius:8px;
@@ -260,7 +260,7 @@ linear-gradient(
             }
 
             .clickable{
-    color:#8f50df;
+    color:darkblue;
     font-weight:bold;
     cursor:pointer;
 }
@@ -310,11 +310,12 @@ linear-gradient(
 
 .modal-header{
     background:
-linear-gradient(
+    background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
     color:white;
     padding:15px;
     font-size:18px;
@@ -362,7 +363,7 @@ linear-gradient(
 
     font-weight:700;
 
-    color:#8f50df;
+    color:darkblue;
 
     margin:0;
     margin-top:10px;
@@ -376,12 +377,12 @@ linear-gradient(
 
     padding:10px 18px;
 
-    background:
-    linear-gradient(
-        135deg,
-        #8E2DE2,
-        #C471ED
-    );
+        background:linear-gradient(
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 
     color:white;
     margin-top:14px;

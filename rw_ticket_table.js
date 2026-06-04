@@ -807,8 +807,8 @@ html, body{
     display:none;
 }
 .ho:hover{
-background:#E6E6FA;
-color:black;
+background:MediumPurple;
+color:white;
 font-weight:bold;
 }
 .filter-card{
@@ -1007,13 +1007,8 @@ table{
 }
 
 th{
-    background:
-linear-gradient(
-    135deg,
-    #8E2DE2,
-    #C471ED
-);
-    color:white;
+    background:#E6E6FA;
+    color:darkblue;
     font-size:13px;
 }
 
@@ -1127,12 +1122,12 @@ text-decoration: none;
 }
 
 .btn-primary{
-    background:
-linear-gradient(
+   background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
     color:white;
     border:none;
     padding:8px 15px;

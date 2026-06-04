@@ -100,7 +100,7 @@ function getKickOffCount(){
         filters:[
              ['isinactive','is','F'],
              'AND',
-            ['custrecord_rw_portal_status','anyof',['6']]
+            ['custrecord_rw_portal_status','anyof',['1']]
         ],
         columns:[],
         
@@ -126,7 +126,7 @@ function getTrainingCount(){
     var projectSearch = search.create({
         type:'customrecord_rw_portal_access',
         filters:[
-            ['custrecord_rw_portal_status','anyof','8']
+            ['custrecord_rw_portal_status','anyof','9']
         ],
         columns:[],
         
@@ -139,7 +139,7 @@ function getUATCount(){
     var projectSearch = search.create({
         type:'customrecord_rw_portal_access',
         filters:[
-            ['custrecord_rw_portal_status','anyof','3']
+            ['custrecord_rw_portal_status','anyof','4']
         ],
         columns:[],
         
@@ -152,7 +152,7 @@ function getGoliveCount(){
     var projectSearch = search.create({
         type:'customrecord_rw_portal_access',
         filters:[
-            ['custrecord_rw_portal_status','anyof','9']
+            ['custrecord_rw_portal_status','anyof','5']
         ],
         columns:[],
         
@@ -187,7 +187,7 @@ function getCOCCount(){
         filters:[
             ['isinactive','is','F'],
              'AND',
-            ['custrecord_rw_portal_status','is','10']
+            ['custrecord_rw_portal_status','is','6']
         ],
         columns:[],
         
@@ -212,27 +212,69 @@ function getSupportCount(){
     return count;
 }
 function getOpenProjectCount(){
-    var projectSearch=search.create({
+
+    var projectSearch = search.create({
         type:'customrecord_rw_portal_access',
+
         filters:[
-            ['custrecord_rw_portal_status','noneof','5']
+
+            ['isinactive','is','F'],
+            'AND',
+
+            ['custrecord_rw_portal_status','noneof',['6','7','8']],
+            'AND',
+
+            ['custrecord_rw_portal_status','isnotempty','']
         ]
-    })
-    var count=projectSearch.runPaged().count;
-    log.debug("Total open projects",count);
+    });
+
+    var count = projectSearch.runPaged().count;
+
+    log.debug("Total open projects", count);
+
     return count;
 }
+
 function getClosedProjectCount(){
-    var projectSearch=search.create({
+
+    var projectSearch = search.create({
         type:'customrecord_rw_portal_access',
+
         filters:[
-            ['custrecord_rw_portal_status','anyof','5']
+
+            ['isinactive','is','F'],
+            'AND',
+
+            ['custrecord_rw_portal_status','anyof',['6','7','8']]
         ]
-    })
-    var count=projectSearch.runPaged().count;
-    log.debug("Total open projects",count);
+    });
+
+    var count = projectSearch.runPaged().count;
+
+    log.debug("Total closed projects", count);
+
     return count;
 }
+function getMyClosedProjectCount(empId){
+
+    if(!empId) return 0;
+
+    var projectSearch = search.create({
+
+        type:'customrecord_rw_portal_access',
+
+        filters:[
+            ['isinactive','is','F'],
+            'AND',
+            ['custrecord_rw_portal_projectmanager','anyof',empId],
+            'AND',
+            ['custrecord_rw_portal_status','anyof',['6','7','8']]
+        ]
+    });
+
+    return projectSearch.runPaged().count;
+}
+
 function getOpenTicketsCount(){
     var ticketSearch=search.create({
         type:'customrecord_rw_ticket',
@@ -244,6 +286,30 @@ function getOpenTicketsCount(){
     log.debug("Total open tickets",count);
     return count;
 }
+var debugSearch = search.create({
+    type:'customrecord_rw_portal_access',
+
+    filters:[
+        ['isinactive','is','F']
+    ],
+
+    columns:[
+        'internalid',
+        'custrecord_rw_portal_status'
+    ]
+});
+
+debugSearch.run().each(function(res){
+
+    log.debug(
+        "PROJECT",
+        "ID: " + res.getValue('internalid') +
+        " STATUS: " + res.getValue('custrecord_rw_portal_status') +
+        " TEXT: " + res.getText('custrecord_rw_portal_status')
+    );
+
+    return true;
+});
 var openTicketCount=getOpenTicketCount();
 function getclosedTicketsCount(){
     
@@ -371,6 +437,13 @@ const projectPlanUrl = url.resolveScript({
     deploymentId: 'customdeploy1',
     returnExternalUrl: true
 });
+
+ const newRevenueStreamUrl = url.resolveScript({
+    scriptId: 'customscript3168',
+    deploymentId: 'customdeploy1',
+    returnExternalUrl: true
+});
+
 var viewProjectUrl = url.resolveScript({
 scriptId: 'customscript2892',
 deploymentId: 'customdeploy1',
@@ -435,6 +508,7 @@ var kickOffCount=getKickOffCount();
 var bussinesCount=getBussinessCount();
 var training=getTrainingCount();
 var uatCount=getUATCount();
+var myClosedProjects = getMyClosedProjectCount(empId);
 var golive=getGoliveCount();
 var coc=getCOCCount();
 var pmProjectCount = getPMProjectCount(empId);
@@ -484,7 +558,7 @@ function getCurrentGoLiveProducts(){
     var searchObj = search.create({
         type: 'customrecord_rw_portal_access2',
         filters: [
-            ['custrecord1513.custrecord_rw_portal_status','anyof','9'] // Go-Live
+            ['custrecord1513.custrecord_rw_portal_status','anyof','5'] // Go-Live
         ],
         columns: [
             'custrecord_rw_portal_rwproduct',
@@ -531,18 +605,18 @@ log.debug("DMS ROLE", dmsRole);
 log.debug("ROLE TYPE", roleType);
 if(roleType === 'PMO'){
     statsHeader = `
-        <div>Total Projects</div>
-        <div>Open Projects</div>
+        <div class="st-header">Total Projects</div>
+        <div class="st-header">Open Projects</div>
         
         
-        <div>Kickoff</div>
+        <div class="st-header">Kickoff</div>
         
-        <div>Training</div>
-        <div>UAT</div>
-        <div>Go live</div>
-        <div>COC</div>
-        <div>Support</div>
-        <div>Closed Projects</div>
+        
+        <div class="st-header">UAT</div>
+        <div class="st-header">Go live</div>
+        <div class="st-header">COC</div>
+       
+        <div class="st-header">Closed Projects</div>
     `;
 
    statsValues = `
@@ -552,22 +626,22 @@ if(roleType === 'PMO'){
    
     <div class="data-val" id="tit" onclick="openProjects('kickof')">${kickOffCount}</div>
     
-    <div class="data-val" id="tit" onclick="openProjects('training')">${training}</div>
+    
     <div class="data-val" id="tit" onclick="openProjects('uat')">${uatCount}</div>
     <div class="data-val" id="tit" onclick="openProjects('golive')">${golive}</div>
     <div class="data-val" id="tit" onclick="openProjects('coc')">${coc}</div>
-    <div class="data-val" id="tit" onclick="openProjects('support')">${support}</div>
-     <div class="data-val" id="tit" onclick="openProjects('close')">${closedProjects}</div>
+    
+     <div class="data-val" id="tit" onclick="openProjects('done')">${closedProjects}</div>
 `;
 }
 else if(roleType === 'PM'){
     
     projectStatsHeader = `
-    <div>Total Projects</div>
-    <div>Open Projects</div>
-    <div>In Progress</div>
-    <div>My Closed Projects</div>
-    <div>My Projects</div>
+    <div class="st-header">Total Projects</div>
+    <div class="st-header">Open Projects</div>
+    <div class="st-header">In Progress</div>
+    <div class="st-header">My Closed Projects</div>
+    <div class="st-header">My Projects</div>
 `;
 
 projectStatsValues = `
@@ -575,15 +649,15 @@ projectStatsValues = `
         
         <div class="data-val" id="tit" onclick="openProjects('open')">${openProjects}</div>
         <div class="data-val" id="tit" onclick="openProjects('inprogress')">${inProgressCount}</div>
-         <div class="data-val" id="tit" onclick="openProjects('close')">${closedProjects}</div>
+         <div class="data-val" id="tit" onclick="openProjects('close')">${myClosedProjects}</div>
          <div class="data-val" id="tit" onclick="openProjects('myprojects')">${pmProjectCount}</div>
 `;
 
 ticketStatsHeader = `
-    <div>Total Tickets</div>
-    <div>Total Open Tickets</div>
-    <div>My Assigned Tickets</div>
-    <div>My Open Tickets</div>
+    <div class="st-header">Total Tickets</div>
+    <div class="st-header">Total Open Tickets</div>
+    <div class="st-header">My Assigned Tickets</div>
+    <div class="st-header">My Open Tickets</div>
 `;
 
 ticketStatsValues = `
@@ -597,12 +671,12 @@ ticketStatsValues = `
 }
 else if(roleType === 'DEV'){
     statsHeader = `
-    <div>My Projects</div>
+    <div class="st-header">My Projects</div>
         
         
-        <div>My  Tickets</div>
-        <div>My Open Tickets</div>
-        <div>My Closed Tickets</div>
+        <div class="st-header">My  Tickets</div>
+        <div class="st-header">My Open Tickets</div>
+        <div class="st-header">My Closed Tickets</div>
     `;
 
     statsValues = `
@@ -616,9 +690,9 @@ else if(roleType === 'DEV'){
 else{
      statsHeader = `
      
-        <div>My Tickets</div>
-        <div>My Open Tickets</div>
-        <div>My Closed Tickets</div>
+        <div class="st-header">My Tickets</div>
+        <div class="st-header">My Open Tickets</div>
+        <div class="st-header">My Closed Tickets</div>
     `;
 
     
@@ -639,7 +713,7 @@ function getCurrentGoLiveProducts(empId, roleType){
     var data = [];
 
     var filters = [
-        ['custrecord1513.custrecord_rw_portal_status','anyof','9']
+        ['custrecord1513.custrecord_rw_portal_status','anyof','5']
     ];
 
     // PM → projects managed by PM
@@ -714,6 +788,10 @@ if(roleType === 'PM'){
 var newProjectPlan ='';
 if(roleType === 'PM'){
     newProjectPlan = `<div class="menu" onclick="openNewProjectPlan(); closeMenu()"><i class="fa-solid fa-file-circle-plus"></i>  Milestone</div>`;
+}
+var newRevenueStream ='';
+if(roleType === 'PM'){
+    newRevenueStream = `<div class="menu" onclick="openRevenueStream(); closeMenu()"><i class="fa-solid fa-file-circle-plus"></i>   Revenue Stream</div>`;
 }
 var projectMenu = '';
 if(roleType !== 'OTHER'){
@@ -801,9 +879,9 @@ function getEmployeeName(empId){
 
     return fullName || empData.entityid || '';
 }
-var uatCustomers = getCustomersByStatus('3');
-var goliveCustomers = getCustomersByStatus('9');
-var cocCustomers = getCustomersByStatus('10');
+var uatCustomers = getCustomersByStatus('4');
+var goliveCustomers = getCustomersByStatus('5');
+var cocCustomers = getCustomersByStatus('6');
 
 function buildCard(title, customers){
     var list = customers.length 
@@ -951,20 +1029,20 @@ var uatUpcoming = getCustomersByDate(
 var goliveCurrent = getCustomersByDate(
     'custrecord_rw_portal_start_date',
     'current',
-    '9'
+    '5'
 );
 
 var goliveUpcoming = getCustomersByDate(
     'custrecord_rw_portal_start_date',
     'upcoming',
-    '9'
+    '5'
 );
 
 // COC
 var cocCurrent = getCustomersByDate(
     'custrecord_rw_portal_end_date',
     'current',
-    '10'
+    '6'
 );
 
 
@@ -1098,8 +1176,8 @@ function buildCard(title, currentList, upcomingList){
 
             <h4 style="color:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
+    #E6E6FA,
+    #E6E6FA
 );;">Current Month</h4>
             <ul>${currentHtml}</ul>
 
@@ -1272,10 +1350,10 @@ var goLiveCardUser = `
         <div style="
             background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
+    #E6E6FA,
+    #E6E6FA
 );;
-            color:white;
+            color:black;
             padding:10px;
             font-weight:bold;
             font-size:14px;
@@ -1303,21 +1381,49 @@ var goLiveCardUser = `
             <!-- DATA -->
             <div style="max-height:200px; overflow-y:auto;">
 
-                ${goLiveProductsForUser.map(p => `
+                ${goLiveProductsForUser.length ? goLiveProductsForUser.map(p => `
     <div style="
-        display:flex;
-        justify-content:space-around;
-        padding:6px 0;
-        border-bottom:1px solid #eee;
-        font-size:12px;
-        white-space:nowrap;
-        font-family:Arial, sans-serif;
-        gap:12px;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    padding:6px 0;
+    border-bottom:1px solid #eee;
+    font-size:12px;
+    font-family:Arial, sans-serif;
+    flex-wrap:wrap;
+    overflow:hidden;
+">
+
+    <span style="
+        flex:1;
+        min-width:120px;
+        word-break:break-word;
+        text-align:left;
     ">
-        <span style="font-family:Arial, sans-serif;float:left;">${p.project}</span>
-        <span style="font-family:Arial, sans-serif;float:right;">${p.product}</span>
-    </div>
-`).join('')}
+        ${p.project}
+    </span>
+
+    <span style="
+        flex:1;
+        min-width:120px;
+        word-break:break-word;
+        text-align:right;
+    ">
+        ${p.product}
+    </span>
+
+</div>
+`).join('') : `
+<div style="
+    padding:15px;
+    text-align:center;
+    color:#999;
+    font-size:13px;
+">
+    No data
+</div>
+`}
 
             </div>
 
@@ -1468,10 +1574,10 @@ var highPriorityCardOfLoggedInUser = `
         <div style="
             background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
+    #E6E6FA,
+    #E6E6FA
 );;
-            color:white;
+            color:black;
             padding:10px;
             font-weight:bold;
             font-size:14px;
@@ -1499,7 +1605,7 @@ var highPriorityCardOfLoggedInUser = `
             <!-- DATA -->
             <div style="max-height:none; overflow-y:auto;">
 
-                ${priorityTickets.map(t => `
+                ${priorityTickets.length ? priorityTickets.map(t => `
                     <div style="
                         display:flex;
                         justify-content:space-between;
@@ -1511,7 +1617,16 @@ var highPriorityCardOfLoggedInUser = `
                         <span>${t.number}</span>
                         <span>${t.deadline || '-'}</span>
                     </div>
-                `).join('')}
+                `).join('') : `
+<div style="
+    padding:15px;
+    text-align:center;
+    color:#999;
+    font-size:13px;
+">
+    No data
+</div>
+`}
 
             </div>
 
@@ -1709,10 +1824,10 @@ var overdueProjectCardInner = `
     <div style="
         background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
+    #E6E6FA,
+    #E6E6FA
 );;
-        color:white;
+        color:black;
         padding:10px;
         font-weight:bold;
         font-size:14px;
@@ -1781,10 +1896,10 @@ var overdueProjectCardInneruser = `
     <div style="
         background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
+    #E6E6FA,
+    #E6E6FA
 );;
-        color:white;
+        color:black;
         padding:10px;
         font-weight:bold;
         font-size:14px;
@@ -1811,7 +1926,7 @@ var overdueProjectCardInneruser = `
         <!-- DATA -->
         <div style="max-height:none; overflow:visible;">
 
-            ${overdueProjectsUsers.map(p => `
+            ${overdueProjectsUsers.length ? overdueProjectsUsers.map(p => `
                 <div style="
                     display:flex;
                     justify-content:space-between;
@@ -1828,7 +1943,16 @@ var overdueProjectCardInneruser = `
                         ${p.duration ? p.duration + ' days' : '-'}
                     </span>
                 </div>
-            `).join('')}
+            `).join('') : `
+<div style="
+    padding:15px;
+    text-align:center;
+    color:#999;
+    font-size:13px;
+">
+    No data
+</div>
+`}
 
         </div>
 
@@ -1837,6 +1961,7 @@ var overdueProjectCardInneruser = `
 </div>
 </div>
 `;
+
 var donutCard = `
 <div style="
     margin:20px;
@@ -1885,10 +2010,10 @@ var overdueCardInner = `
     <div style="
         background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
+    #E6E6FA,
+    #E6E6FA
 );;
-        color:white;
+        color:black;
         padding:10px;
         font-weight:bold;
         font-size:14px;
@@ -1914,7 +2039,7 @@ var overdueCardInner = `
 
         <div style="max-height:none; overflow-y:auto;">
 
-            ${overdueTicketsOfLoggedInUser.map(t => `
+           ${overdueTicketsOfLoggedInUser.length ? overdueTicketsOfLoggedInUser.map(t => `
                 <div style="
                     display:flex;
                     justify-content:space-between;
@@ -1928,7 +2053,16 @@ var overdueCardInner = `
                         ${t.days + ' days'}
                     </span>
                 </div>
-            `).join('')}
+            `).join('') : `
+<div style="
+    padding:15px;
+    text-align:center;
+    color:#999;
+    font-size:13px;
+">
+    No data
+</div>
+`}
 
         </div>
 
@@ -1954,10 +2088,10 @@ var highPriorityCard = `
         <div style="
             background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
+    #E6E6FA,
+    #E6E6FA
 );;
-            color:white;
+            color:black;
             padding:10px;
             font-weight:bold;
             font-size:14px;
@@ -2121,11 +2255,7 @@ html, body {
 }
 .card-row .proj{
     flex:0.7;
-    color:linear-gradient(
-    135deg,
-    #8E2DE2,
-    #C471ED
-);;
+   
     font-weight:600;
     cursor:pointer;
 }
@@ -2140,13 +2270,13 @@ html, body {
     font-size:12px;
     font-family: sans-serif;
     font-weight:600;
-    color:white;
+    color:darkblue;
 
-    background: linear-gradient(135deg, linear-gradient(
+    background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);, #8e5cd9);
+    #E6E6FA,
+    #E6E6FA
+);;
 }
 
 /* SECTION TITLE */
@@ -2201,8 +2331,8 @@ html, body {
 // }
     
 .data-val:hover{
-  background:#E6E6FA;
-  color:black;
+  background:MediumPurple;
+  color:white;
 }
 .data-val{
 
@@ -2235,59 +2365,30 @@ html, body {
     transition:all 0.3s ease;
 }
 
-.stats-header,
-.stats-values {
-    display: flex;
-    width: 100%;
-    transition:all 0.3s ease;
 
-   text-transform: uppercase;
-   
-   font-family:calibri;
-     white-space: nowrap;      /* Prevents text from wrapping */
-    overflow: hidden;         /* Hides overflow text */
-    text-overflow: ellipsis;
-   
-}
+.st-header{
+                font-size:14px;
+                
+                font-family:calibri;
+                color:#0000CD;
+                white-space:nowrap;
 
-.stats-header div,
-.stats-values div {
-    flex: 1;   
+                text-transform:uppercase;
+                }
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-transition:all 0.3s ease;
-    text-align: center;
-}
 
-/* Optional styling */
-.stats-header div {
-    background: linear-gradient(
-    135deg,
-    #8E2DE2,
-    #C471ED
-);;
-    color: white;
-    padding: 10px;
-}
 
-.stats-values div {
-    padding: 15px;
-    border: 1px solid #ccc;
-    font-size: 18px;
-    font-family:Arial, sans-serif;
-}
+
 
 
 .header{
     
-  background:
-linear-gradient(
+       background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
     color:white;
     height:60px;
     padding:0 20px;
@@ -2416,39 +2517,7 @@ margin-right:-20px;
 padding-right:-20px;
 
 }
-.stats-header{
-display:grid;
-grid-template-columns: repeat(6,1fr);
-background:linear-gradient(
-    135deg,
-    #8E2DE2,
-    #C471ED
-);;
-color:white;
-}
-.stats-header, .stats-values {
-    display: flex;
-    flex-wrap: nowrap;   
-    width: 100%;
-}
 
-.stats-header div,
-.stats-values div {
-    flex: 1;
-    width:100%;
-    
-
-    display: flex;              
-    justify-content: center;    
-    align-items: center;        
-
-    text-align: center;
-}
-.stats-header div{
-padding:10px;
-text-align:center;
-border-right:1px solid white;
-}
 
 
 #loader {
@@ -2465,39 +2534,7 @@ border-right:1px solid white;
 
  
 }
- .stats-container{
-    display:flex;
-    flex-direction:column;
-
-    margin:0 !important;
-    padding:0 !important;
-    gap:0 !important;
-}
-
-.stats-header,
-.stats-values{
-    display: flex;
-    flex-wrap: nowrap;
-    width:100%;
-}
-
-.stats-header div,
-.stats-values div{
-    
-    flex: 1;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-    th{
-   text-transform: uppercase;
-   
-   font-family:calibri;
-     white-space: nowrap;      /* Prevents text from wrapping */
-    overflow: hidden;         /* Hides overflow text */
-    text-overflow: ellipsis;
-   }
+ 
 .spinner {
   position:absolute;
   top:50%;
@@ -2545,12 +2582,14 @@ font-size:20px;
 /* REMOVE absolute positioning */
 .logout{
     position:static;   
-    background:linear-gradient(
+     background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
 );;
     border:1px solid white;
+    border-radius:4px;
     padding:6px 15px;
     color:white;
     cursor:pointer;
@@ -2739,7 +2778,7 @@ linear-gradient(
 }
     .stats-main-wrapper{
     display:flex;
-    gap:0px;
+    gap:10px;
     width:100%;
 }
 
@@ -2750,18 +2789,20 @@ linear-gradient(
 /* MAIN HEADING ROW */
 .main-heading-row{
     width:100%;
+    border:1px solid #ccc;
 }
 
 .main-heading{
     background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
+    #D8BFD8,
+    #D8BFD8
 );;
     color:white;
 
     padding:8px;
     text-align:center;
+    border-radius:6px 6px 0 0;
 
     font-size:16px;
     font-weight:bold;
@@ -2795,10 +2836,12 @@ linear-gradient(
     padding:12px;
     border:1px solid #ddd;
 }
-    .stats-main-wrapper{
+   .stats-main-wrapper{
     display:flex;
-    gap:0px;
+    gap:25px;   /* space between Project and Ticket */
     width:100%;
+    border-radius:8px;
+    margin-top:15px;
 }
 
 .status-section{
@@ -2815,10 +2858,10 @@ linear-gradient(
 .main-heading{
     background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
+    #E6E6FA,
+    #E6E6FA
 );;
-    color:white;
+    color:black;
 
     padding:8px;
     text-align:center;
@@ -2827,6 +2870,7 @@ linear-gradient(
     font-weight:bold;
 
     margin:0 !important;
+    border:1px solid #ccc;
 
     border-radius:0;
     border-bottom:none;
@@ -2863,15 +2907,7 @@ linear-gradient(
     padding:12px;
     border:1px solid #ddd;
 }
-    .stats-header{
-
-    background:
-    linear-gradient(
-        135deg,
-        #7F00FF,
-        #A855F7
-    );
-}
+    
     .card,
 .chart-card{
 
@@ -2917,6 +2953,45 @@ button:hover{
     object-fit:contain;
     display:block;
 }
+    .stats-header,
+.stats-values{
+    display:grid;
+    width:100%;
+    grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
+}
+
+/* HEADER */
+.stats-header div{
+    background:linear-gradient(
+        135deg,
+        #E6E6FA,
+        #E6E6FA
+    );
+
+    color:#00008B;
+
+    padding:12px 8px;
+
+    text-align:center;
+
+    font-size:13px;
+    font-weight:bold;
+
+    border:1px solid #ccc;
+}
+
+/* VALUES */
+.stats-values div{
+    background:#fff;
+
+    padding:16px 8px;
+
+    text-align:center;
+
+    font-size:18px;
+
+    border:1px solid #ddd;
+}
 </style>
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -2934,7 +3009,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     </div>
 
     <div class="center-section" id="headerTitle">
-        Reachware Project Management
+        RW Project Management Portal
     </div>
 
     <div class="right-section">
@@ -2975,6 +3050,7 @@ ${projectMenu}
 ${ticketMenu}
 ${projectPlan}
 ${newProjectPlan}
+${newRevenueStream}
 
 </div>
 
@@ -3411,7 +3487,7 @@ var taskUrl ='${taskUrl}';
 var ticketUrl = '${ticketUrl}';
 function openProjects(){
 setPageTitle("Projects");
-document.getElementById("headerTitle").innerText = "Reachware Project Management Portal";
+document.getElementById("headerTitle").innerText = "RW Project Management Portal";
  document.getElementById("homeContent").style.display = "none";
 document.getElementById("loader").style.display = "block"; 
 document.getElementById("mainFrame").src = projectUrl  ;
@@ -3513,10 +3589,26 @@ setPageTitle("New Project Plan template");
 
     closeMenu();
 }
+    function openRevenueStream(){
+setPageTitle("New Project Plan template");
+    document.getElementById('homeContent').style.display = 'none';
+    document.getElementById('projectContent').style.display = 'block';
+    var frame = document.getElementById('mainFrame');
+
+    frame.style.display = 'block';
+
+    document.getElementById('loader').style.display = 'block';
+
+    frame.src = '${newRevenueStreamUrl}';
+
+    
+
+    closeMenu();
+}
 function openProjects(type){
 
     setPageTitle("Projects");
-document.getElementById("headerTitle").innerText = "Reachware Project Management Portal";
+document.getElementById("headerTitle").innerText = "RW Project Management Portal";
     document.getElementById("homeContent").style.display = "none";
     document.getElementById("loader").style.display = "block";
 
@@ -3567,7 +3659,7 @@ url += "&from=home";   //  ADD THIS
 function openTasks(){
 alert("task are opening");
 setPageTitle("Task");
-document.getElementById("headerTitle").innerText = "Reachware Ticketing APP - Task";
+document.getElementById("headerTitle").innerText = "RW Ticketing APP - Task";
  document.getElementById("homeContent").style.display = "none";
 document.getElementById("loader").style.display = "block"; 
 document.getElementById("mainFrame").src = taskUrl  ;
@@ -3575,7 +3667,7 @@ document.getElementById("projectContent").style.display = "block";
 }
 // function openTickets(){
 // setPageTitle("Tickets");
-// document.getElementById("headerTitle").innerText = "Reachware Ticketing APP - ISSUE";
+// document.getElementById("headerTitle").innerText = "RW Ticketing APP - ISSUE";
 //  document.getElementById("homeContent").style.display = "none";
 // document.getElementById("loader").style.display = "block"; 
 // document.getElementById("mainFrame").src = ticketUrl  ;
@@ -3584,7 +3676,7 @@ document.getElementById("projectContent").style.display = "block";
 // function openTickets(type){
 
 //     setPageTitle("Tickets");
-//     document.getElementById("headerTitle").innerText = "Reachware Ticketing APP - ISSUE";
+//     document.getElementById("headerTitle").innerText = "RW Ticketing APP - ISSUE";
 
 //     document.getElementById("homeContent").style.display = "none";
 //     document.getElementById("loader").style.display = "block";
@@ -3755,7 +3847,7 @@ function renderAllCharts(){
 function openTickets(type){
 
     setPageTitle("Tickets");
-document.getElementById("headerTitle").innerText = "Reachware Project Management Portal";
+document.getElementById("headerTitle").innerText = "RW Project Management Portal";
     document.getElementById("homeContent").style.display = "none";
     document.getElementById("loader").style.display = "block";
 
@@ -3808,7 +3900,7 @@ url += "&from=home";   // ✅ ADD THIS
 }
 function openHome(){
 setPageTitle("Reachware Project Management");
-document.getElementById("headerTitle").innerText = "Reachware Project Management";
+document.getElementById("headerTitle").innerText = "RW Project Management Portal";
  document.getElementById("projectContent").style.display = "none";
 
 document.getElementById("loader").style.display = "none"; 
@@ -3881,7 +3973,7 @@ window.onload = function(){
 
 //     window.location.replace("${loginUrl}");
 // }
-document.title="Reachware Project Management Portal";
+document.title="RW Project Management Portal";
 window.addEventListener('storage', function(event) {
 
     if (event.key === 'logout-event') {
@@ -3900,12 +3992,12 @@ var chartData = {
     "Open Projects",
         
         "Kickoff",
-        "Business",
-        "Training",
+        // "Business",
+        // "Training",
         "UAT",
         "Go Live",
         "COC",
-        "Support",
+        // "Support",
         "Closed"
     ],
     values: [
@@ -3913,12 +4005,12 @@ var chartData = {
         ${openProjects},
         
         ${kickOffCount},
-        ${bussinesCount},
-        ${training},
+        // ${bussinesCount},
+        // ${training},
         ${uatCount},
         ${golive},
         ${coc},
-        ${support},
+        // ${support},
         ${closedProjects}
     ]
 };

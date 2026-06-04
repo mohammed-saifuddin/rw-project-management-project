@@ -1191,12 +1191,12 @@ margin-bottom:15px;
         onclick="saveComment()"
         style="
             margin-top:10px;
-            background:
-linear-gradient(
+         background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
             color:white;
             border:none;
             padding:10px 15px;
@@ -1261,12 +1261,12 @@ linear-gradient(
     width:42px;
     height:42px;
     border-radius:50%;
-    background:
-linear-gradient(
+ background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 
     color:white;
     display:flex;
@@ -1503,12 +1503,12 @@ linear-gradient(
         .backBtn{
             margin-top:20px;
             padding:10px 15px;
-            background:
-linear-gradient(
+         background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
             color:white;
             border:none;
             border-radius:5px;
@@ -1663,12 +1663,12 @@ linear-gradient(
 }
 
 .statusBtn{
-    background:
-linear-gradient(
+ background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
     color:white;
     border:none;
     padding:10px 16px;

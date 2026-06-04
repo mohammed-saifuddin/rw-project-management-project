@@ -72,12 +72,18 @@ margin-left:-10px !important;
 margin-right:-10px !important;
 width:1580px !important;
 overflow:hidden;
- background:
-    linear-gradient(
-        135deg,
-        #8E2DE2,
-        #C471ED
-    );
+//  background:
+//     linear-gradient(
+//         135deg,
+//         #8E2DE2,
+//         #C471ED
+//     );
+background:linear-gradient(
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 }
 .login-box{
     width:600px;
@@ -122,11 +128,17 @@ overflow:hidden;
 
 body{
      background:
-    linear-gradient(
-        135deg,
-        #8E2DE2,
-        #C471ED
-    );
+    // linear-gradient(
+    //     135deg,
+    //     #8E2DE2,
+    //     #C471ED
+    // );
+    background:linear-gradient(
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 }
 
 
@@ -242,12 +254,12 @@ border:1px solid #2d6fa3;
 
 .portal{
 flex:1;
- background:
-    linear-gradient(
-        135deg,
-        #8E2DE2,
-        #C471ED
-    );
+ background:linear-gradient(
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
     position:sticky;
 color:white;
 height:60px;
@@ -330,12 +342,12 @@ cursor:pointer;
 
     overflow:hidden;
 
-    background:
-    linear-gradient(
-        135deg,
-        #8E2DE2,
-        #C471ED
-    );
+  background:linear-gradient(
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 }
 
 /* FLOATING CIRCLES */

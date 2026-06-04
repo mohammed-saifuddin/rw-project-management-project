@@ -65,7 +65,7 @@ classSearch.run().each(function(result){
 
 
 var statSearch = search.create({
-    type: 'customlist_rw_portal_access_pjstlist',
+    type: 'customlist_rw_portal_statuslist_line',
     columns: ['internalid','name']
 });
 var erpOptions = '<option value="">--Select--</option>';
@@ -107,10 +107,10 @@ statSearch.run().each(function(result){
     var id = result.getValue('internalid');
     var name = result.getValue('name');
 
-    var isSelected = (name === 'To-do') ? 'selected' : '';
+    var isSelected = (name === 'Kick off') ? 'selected' : '';
 
 
-var isDisabled = (name !== 'To-do') ? 'disabled' : '';
+var isDisabled = (name !== 'Kick off') ? 'disabled' : '';
 
 statOptions += '<option value="'+id+'" '+isSelected+' '+isDisabled+'>'+name+'</option>';
 
@@ -120,7 +120,7 @@ statOptions += '<option value="'+id+'" '+isSelected+' '+isDisabled+'>'+name+'</o
 });
 var statOptions1 ='<option value="">--Select--</option>';
 var statSearch1 = search.create({
-    type: 'customlist_rw_portal_statuslist',
+    type: 'customlist_rw_portal_statuslist_header',
     filters:[
         ['isinactive','is','F']
     ],
@@ -412,9 +412,46 @@ function getRoleTypeFromDMS(roleName){
 
     return 'OTHER';
 }
+
+function getEmployeeDetails(empId){
+
+    if(!empId) return {};
+
+    var empData = search.lookupFields({
+        type: search.Type.EMPLOYEE,
+        id: empId,
+        columns: [
+            'subsidiary',
+            'class'
+        ]
+    });
+
+    return {
+
+        subsidiary:
+            (empData.subsidiary &&
+             empData.subsidiary.length > 0)
+            ? empData.subsidiary[0].value
+            : '',
+
+        class:
+            (empData.class &&
+             empData.class.length > 0)
+            ? empData.class[0].value
+            : ''
+    };
+}
 var dmsRole = getEmployeeDMSRole(empInternalId);
 var roleType = getRoleTypeFromDMS(dmsRole);
 
+var employeeDetails =
+    getEmployeeDetails(empInternalId);
+
+var empSubsidiary =
+    employeeDetails.subsidiary || '';
+
+var empClass =
+    employeeDetails.class || '';
 log.debug("DMS ROLE", dmsRole);
 log.debug("ROLE TYPE", roleType);
 if(roleType === 'PMO'){
@@ -513,8 +550,8 @@ else if(roleType === 'PM'){
        <td><select name="rwproduct[]">${rwOptions}</select></td>
         <td><input type="text" name="comments[]"></td>
         <td><select name="rwpm[]" class="linePM">${empOptions}</select></td>
-        <td><select name="functional[]">${empOptions}</select></td>
-        <td><select name="technical[]">${empOptions}</select></td>
+        <td><select name="functional[]" class="lineFunctional">${empOptions}</select></td>
+        <td><select name="technical[]" class="lineTechnical">${empOptions}</select></td>
         <td><input type="date" name="expuat[]"></td>
         <td><input type="date" name="expgolive[]"></td>
         <td><select name="linestatus[]">${statOptions}</select></td>
@@ -538,8 +575,8 @@ else {
         <td><select name="rwproduct[]">${rwOptions}</select></td>
         <td><input type="text" name="comments[]"></td>
         <td><select name="rwpm[]" class="linePM">${empOptions}</select></td>
-        <td><select name="functional[]">${empOptions}</select></td>
-        <td><select name="technical[]">${empOptions}</select></td>
+        <td><select name="functional[]" class="lineFunctional">${empOptions}</select></td>
+        <td><select name="technical[]" class="lineTechnical">${empOptions}</select></td>
         <td><input type="date" name="expuat[]"></td>
         <td><input type="date" name="expgolive[]"></td>
         <td><select name="linestatus[]">${statOptions}</select></td>
@@ -598,12 +635,12 @@ margin:0 !important;
 .backBtn{
             margin-top:20px;
             padding:10px 15px;
-             background:
-linear-gradient(
+         background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
             color:white;
             border:none;
             border-radius:5px;
@@ -667,12 +704,12 @@ table-layout:fixed;
 }
 
 .product-table th{
- background:
-linear-gradient(
+  background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 color:white;
 padding:10px;
 border:1px solid #ccc;
@@ -751,8 +788,13 @@ body {
 
 
 .product-table th {
-    background: #8f50df;
-    color: white;
+          background:
+linear-gradient(
+    135deg,
+    #E6E6FA,
+    #E6E6FA
+);
+    color: darkblue;
     padding: 10px;
     border: 1px solid #ccc;
     text-transform: uppercase;
@@ -861,12 +903,12 @@ body {
 .savebtn{
 margin-top:20px;
 padding:10px 20px;
- background:
-linear-gradient(
+ background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 color:white;
 border:none;
 cursor:pointer;
@@ -1220,9 +1262,10 @@ select:disabled{
      background:
 linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
+    #E6E6FA,
+    #E6E6FA
 );
+color:darkblue;
 font-family:sans-serif;
 font-weight:bold;
 font-size:10px;
@@ -1263,13 +1306,23 @@ ${projectOptions}
 </div>
 
 <label>Subsidiary</label>
-<select name="subsidiary" id="subsidiary" >
-${subsidiaryOptions}
+<select name="subsidiary" id="subsidiary">
+
+${subsidiaryOptions.replace(
+    'value="' + empSubsidiary + '"',
+    'value="' + empSubsidiary + '" selected'
+)}
+
 </select>
 
 <label>Class</label>
 <select name="class" id="class" required>
-${classOptions}
+
+${classOptions.replace(
+    'value="' + empClass + '"',
+    'value="' + empClass + '" selected'
+)}
+
 </select>
 
 <label class="required">Revenue Stream</label>
@@ -1326,7 +1379,7 @@ ${isEdit ? `
 
 
 
-<label class="required">Technical Consultant</label>
+<label>Technical Consultant</label>
 <select name="technical1" id="technical1" required>
 ${empOptions}
 </select>
@@ -1334,8 +1387,8 @@ ${empOptions}
 <label>Project Duration</label>
 <input type="type" name="duration" id="duration">
 
-<label class="required">Functional Consultant</label>
-<select name="functional1" id="functional1" required>
+<label>Functional Consultant</label>
+<select name="functional1" id="functional1" required id="headerFunc">
 ${empOptions}
 </select>
 
@@ -1419,12 +1472,12 @@ ${rowHtml}
             <button type="button"
         id="saveCustomerBtn"
         onclick="saveCustomer()" 
-        style="padding:8px 15px;  background:
-linear-gradient(
+        style="padding:8px 15px;  background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-); color:white; border:none; border-radius:5px;">
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);; color:white; border:none; border-radius:5px;">
     Save
 </button>
 
@@ -1454,7 +1507,8 @@ function showToast(message){
 
 document.addEventListener("DOMContentLoaded", function(){
 
-    // TODAY DATE
+    // apply min date to all fields EXCEPT invoice date
+
     var today = new Date();
 
     var yyyy = today.getFullYear();
@@ -1463,10 +1517,15 @@ document.addEventListener("DOMContentLoaded", function(){
 
     var minDate = yyyy + '-' + mm + '-' + dd;
 
-    // ALL DATE FIELDS
     document.querySelectorAll('input[type="date"]').forEach(function(field){
 
-        field.setAttribute('min', minDate);
+        // allow previous dates for Performa Invoice Date
+        if(field.id === 'invoicedate'){
+            field.removeAttribute('min');
+        }
+        else{
+            field.setAttribute('min', minDate);
+        }
 
     });
 
@@ -1904,12 +1963,47 @@ function addRow() {
 
 // 🔥 auto apply PM to new row
 var headerPM = document.getElementById("headerPM").value;
-
+var headerFunc = document.getElementById("functional1").value;
+var headerTech = document.getElementById("technical1").value;
 var lastRow = table.lastElementChild;
 var pmField = lastRow.querySelector(".linePM");
 
 if(pmField){
     pmField.value = headerPM;
+}
+    if(headerFunc){
+        var funcField = lastRow.querySelector(".lineFunctional");
+        if(funcField && !funcField.value){
+            funcField.value = headerFunc;
+        }
+    }
+
+    if(headerTech){
+        var techField = lastRow.querySelector(".lineTechnical");
+        if(techField && !techField.value){
+            techField.value = headerTech;
+        }
+    }
+
+// AUTO START/END DATE
+var startDate =
+    document.getElementById("startdate").value;
+
+var endDate =
+    document.getElementById("enddate").value;
+
+var startField =
+    lastRow.querySelector('[name="stdate[]"]');
+
+var endField =
+    lastRow.querySelector('[name="eddate[]"]');
+
+if(startField){
+    startField.value = startDate;
+}
+
+if(endField){
+    endField.value = endDate;
 }
 }
    var homeUrl = '${homeUrl}';
@@ -1989,6 +2083,128 @@ document.addEventListener("DOMContentLoaded", function(){
     headerPM.addEventListener("change", syncPM);
 
 });
+
+document.addEventListener("DOMContentLoaded", function(){
+
+    var headerFunc =
+        document.getElementById("functional1");
+
+    function syncFunctional(){
+
+        var selectedFunctional =
+            headerFunc.value;
+
+        document
+            .querySelectorAll(".lineFunctional")
+            .forEach(function(select){
+
+                // only empty rows
+                if(!select.value){
+                    select.value =
+                        selectedFunctional;
+                }
+
+            });
+    }
+
+    // initial load
+    syncFunctional();
+
+    // when header changes
+    headerFunc.addEventListener(
+        "change",
+        syncFunctional
+    );
+
+});
+document.addEventListener("DOMContentLoaded", function(){
+
+    var headerTech =
+        document.getElementById("technical1");
+
+    function syncTechnical(){
+
+        var selectedTech =
+            headerTech.value;
+
+        document
+            .querySelectorAll(".lineTechnical")
+            .forEach(function(select){
+
+                // only empty rows
+                if(!select.value){
+                    select.value =
+                        selectedTech;
+                }
+
+            });
+    }
+
+    // initial load
+    syncTechnical();
+
+    // when header changes
+    headerTech.addEventListener(
+        "change",
+        syncTechnical
+    );
+
+});
+document.addEventListener("DOMContentLoaded", function(){
+
+    var bodyStartDate =
+        document.getElementById("startdate");
+
+    var bodyEndDate =
+        document.getElementById("enddate");
+
+    function syncLineDates(){
+
+        var startValue =
+            bodyStartDate.value;
+
+        var endValue =
+            bodyEndDate.value;
+
+        document
+            .querySelectorAll('[name="stdate[]"]')
+            .forEach(function(field){
+
+                // only empty rows
+                if(!field.value){
+                    field.value = startValue;
+                }
+
+            });
+
+        document
+            .querySelectorAll('[name="eddate[]"]')
+            .forEach(function(field){
+
+                // only empty rows
+                if(!field.value){
+                    field.value = endValue;
+                }
+
+            });
+
+    }
+
+    // initial load
+    syncLineDates();
+
+    // when body dates change
+    bodyStartDate.addEventListener(
+        "change",
+        syncLineDates
+    );
+
+    bodyEndDate.addEventListener(
+        "change",
+        syncLineDates
+    );
+
+});
 document.addEventListener("DOMContentLoaded", function () {
     var form = document.querySelector("form");
     if(form){
@@ -1996,6 +2212,50 @@ document.addEventListener("DOMContentLoaded", function () {
             showLoader();
         });
     }
+});
+document.addEventListener("DOMContentLoaded", function(){
+
+    var headerFunc =
+        document.getElementById("functional1");
+
+    headerFunc.addEventListener("change", function(){
+
+        var selectedFunctional =
+            this.value;
+
+        document
+            .querySelectorAll(".lineFunctional")
+            .forEach(function(select){
+
+                select.value =
+                    selectedFunctional;
+
+            });
+
+    });
+
+});
+document.addEventListener("DOMContentLoaded", function(){
+
+    var headerTech =
+        document.getElementById("technical1");
+
+    headerTech.addEventListener("change", function(){
+
+        var selectedTechnical =
+            this.value;
+
+        document
+            .querySelectorAll(".lineTechnical")
+            .forEach(function(select){
+
+                select.value =
+                    selectedTechnical;
+
+            });
+
+    });
+
 });
 document.getElementById('attachment').addEventListener('change', function(){
 

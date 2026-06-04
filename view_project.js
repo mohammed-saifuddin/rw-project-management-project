@@ -391,7 +391,7 @@ var newProjectStatusText = '';
 if(projectStatus){
 
     var projStatusSearch = search.create({
-        type: 'customlist_rw_portal_statuslist',
+        type: 'customlist_rw_portal_statuslist_header',
         filters: [
             ['internalid','anyof', projectStatus]
         ],
@@ -423,6 +423,24 @@ if(roleType === 'PMO'){
         updateValues.custrecord_rw_portal_status =
             projectStatus;
     }
+
+    if(updatedEndDate){
+
+        updateValues.custrecord_rw_portal_updatedenddate =
+            safeDate(updatedEndDate);
+    }
+
+    updateValues.custrecord_rw_portal_pmocommnts =
+        pmoComments || '';
+}
+
+if(projectStatus){
+
+    updateValues.custrecord_rw_portal_status =
+        projectStatus;
+}
+
+if(roleType === 'PMO'){
 
     if(updatedEndDate){
 
@@ -542,7 +560,17 @@ newRec.setValue({
             'custrecord_rw_cust_proj_plan_time_spent',
             value: ms.timespent || ''
         });
+newRec.setValue({
+    fieldId:
+    'custrecord_rw_portal_milestone_status',
+    value: ms.status || ''
+});
 
+newRec.setValue({
+    fieldId:
+    'custrecord_re_portal_milestone_comments',
+    value: ms.comments || ''
+});
         var newId = newRec.save({
             enableSourcing:true,
             ignoreMandatoryFields:true
@@ -583,7 +611,13 @@ custrecord_rw_cust_proj_plan_sno:
 
 
                 custrecord_rw_cust_proj_plan_time_spent:
-                    ms.timespent || ''
+    ms.timespent || '',
+
+custrecord_rw_portal_milestone_status:
+    ms.status || '',
+
+	custrecord_re_portal_milestone_comments:
+    ms.comments || ''
             }
         });
     }
@@ -594,6 +628,213 @@ custrecord_rw_cust_proj_plan_sno:
         type: 'customrecord_rw_portal_access',
         id: projectId,
         values: updateValues
+    });
+}// ============================================
+// AUTO SYNC PRODUCT STATUS FROM MILESTONES
+// ============================================
+
+function getCompletedMilestoneStatusId(){
+
+    var completedId = '';
+
+    search.create({
+        type: 'customlist_rw_portal_milestone_status',
+        filters: [
+            ['name','is','Completed']
+        ],
+        columns: ['internalid']
+    })
+    .run()
+    .each(function(r){
+
+        completedId = r.getValue('internalid');
+        return false;
+    });
+
+    return completedId;
+}
+
+function getCompletedProductStatusId(){
+
+    var completedId = '';
+
+    search.create({
+        type: 'customlist_rw_portal_statuslist_line',
+        filters: [
+            ['name','is','Completed']
+        ],
+        columns: ['internalid']
+    })
+    .run()
+    .each(function(r){
+
+        completedId = r.getValue('internalid');
+        return false;
+    });
+
+    return completedId;
+}
+
+function getCompletedProjectStatusId(){
+
+    var completedId = '';
+
+    search.create({
+        type: 'customlist_rw_portal_statuslist_header',
+        filters: [
+            ['name','is','Done']
+        ],
+        columns: ['internalid']
+    })
+    .run()
+    .each(function(r){
+
+        completedId = r.getValue('internalid');
+        return false;
+    });
+
+    return completedId;
+}
+
+var completedMilestoneStatusId =
+    getCompletedMilestoneStatusId();
+
+var completedProductStatusId =
+    getCompletedProductStatusId();
+
+var completedProjectStatusId =
+    getCompletedProjectStatusId();
+
+
+// ============================================
+// CHECK EACH PRODUCT
+// ============================================
+
+var lineSearchSync = search.create({
+
+    type: 'customrecord_rw_portal_access2',
+
+    filters: [
+        ['custrecord1513','anyof', projectId]
+    ],
+
+    columns: [
+        'internalid',
+        'custrecord_rw_portal_rwproduct'
+    ]
+});
+
+var allProductsCompleted = true;
+
+lineSearchSync.run().each(function(lineRes){
+
+    var lineId =
+        lineRes.getValue('internalid');
+
+    var productId =
+        lineRes.getValue(
+            'custrecord_rw_portal_rwproduct'
+        );
+
+    var totalMilestones = 0;
+    var completedMilestones = 0;
+
+    var milestoneSearchSync = search.create({
+
+        type:
+        'customrecord_rw_customer_project_plan',
+
+        filters: [
+
+            [
+                'custrecord_rw_cust_proj_plan_prod_serv',
+                'anyof',
+                productId
+            ],
+
+            'AND',
+
+            [
+                'custrecord_rw_cust_proj_plan_link',
+                'anyof',
+                customerId
+            ]
+        ],
+
+        columns: [
+            'custrecord_rw_portal_milestone_status'
+        ]
+    });
+
+    milestoneSearchSync.run().each(function(ms){
+
+        totalMilestones++;
+
+        var msStatus =
+            ms.getValue(
+                'custrecord_rw_portal_milestone_status'
+            );
+
+        if(
+            String(msStatus) ===
+            String(completedMilestoneStatusId)
+        ){
+            completedMilestones++;
+        }
+
+        return true;
+    });
+
+    // ============================================
+    // PRODUCT STATUS UPDATE
+    // ============================================
+
+    if(
+        totalMilestones > 0 &&
+        totalMilestones === completedMilestones
+    ){
+
+        record.submitFields({
+
+            type:
+            'customrecord_rw_portal_access2',
+
+            id: lineId,
+
+            values: {
+
+                custrecord_rw_portal_projstat:
+                    completedProductStatusId
+            }
+        });
+
+    }else{
+
+        allProductsCompleted = false;
+    }
+
+    return true;
+});
+
+
+// ============================================
+// PROJECT STATUS UPDATE
+// ============================================
+
+if(allProductsCompleted){
+
+    record.submitFields({
+
+        type:
+        'customrecord_rw_portal_access',
+
+        id: projectId,
+
+        values: {
+
+            custrecord_rw_portal_status:
+                completedProjectStatusId
+        }
     });
 }
     context.response.write('success');
@@ -617,7 +858,7 @@ var statOptions ='<option value="">--Select--</option>';
 //     return true;
 // });
 var statSearch = search.create({
-    type: 'customlist_rw_portal_access_pjstlist',
+    type: 'customlist_rw_portal_statuslist_line',
     columns: ['internalid','name']
 });
 
@@ -738,9 +979,9 @@ if(roleType === 'PMO'){
         <tr style="background:
 linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-); color:white;">
+    #E6E6FA,
+    #E6E6FA
+); color:darkblue;">
             <th style="border:1px solid #ccc;padding:8px;">RW Product</th>
             <th style="border:1px solid #ccc;padding:8px;">Comments</th>
             <th style="border:1px solid #ccc;padding:8px;">Status</th>
@@ -755,9 +996,9 @@ linear-gradient(
         <tr style="background:
 linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-); color:white;">
+    #E6E6FA,
+    #E6E6FA
+); color:darkblue;">
             <th style="border:1px solid #ccc;padding:8px;">RW Product</th>
             <th style="border:1px solid #ccc;padding:8px;">Comments</th>
             <th style="border:1px solid #ccc;padding:8px;">Project Manager</th>
@@ -773,7 +1014,7 @@ linear-gradient(
     `;
 }else {
     tableHeader = `
-        <tr style="background:linear-gradient(135deg, #8E2DE2, #C471ED); color:white;">
+        <tr style="background:linear-gradient(135deg, #E6E6FA, #E6E6FA); color:darkblue;">
             <th style="border:1px solid #ccc;padding:8px;">RW Product</th>
             <th style="border:1px solid #ccc;padding:8px;">Comments</th>
             <th style="border:1px solid #ccc;padding:8px;">Project Manager</th>
@@ -868,8 +1109,24 @@ eddate=projectRec.getValue('custrecord_rw_portal_end_date');
 updatedenddate=projectRec.getValue('custrecord_rw_portal_updatedenddate') || 'NIL'
 pmoComments=projectRec.getValue('custrecord_rw_portal_pmocommnts');
 duration=projectRec.getValue('custrecord_rw_portal_duration')
-functional1 =projectRec.getText('custrecord_rw_portal_functional_consulta');
-technical1 =projectRec.getText('custrecord_rw_portal_technical');
+functional1 =
+    projectRec.getText(
+        'custrecord_rw_portal_functional_consulta'
+    ) || '';
+
+technical1 =
+    projectRec.getText(
+        'custrecord_rw_portal_technical'
+    ) || '';
+var functionalText =
+    projectRec.getText(
+        'custrecord_rw_portal_functional_consulta'
+    ) || '';
+
+var technicalText =
+    projectRec.getText(
+        'custrecord_rw_portal_technical'
+    ) || '';
 performaDate=projectRec.getValue('custrecord_rw_portal_invoice_date') || 'NIL'
   
         // var isProjectManager = (empId === projectManagerId);
@@ -916,7 +1173,7 @@ log.debug("USER", runtime.getCurrentUser().id);
 var projectStatusOptions = '<option value="">--Select--</option>';
 
 var projectStatusSearch = search.create({
-    type: 'customlist_rw_portal_statuslist',
+    type: 'customlist_rw_portal_statuslist_header',
     filters:[[
         'isinactive','is','F'
     ]],
@@ -1036,7 +1293,39 @@ function toInputDate(date){
 }
 
 
+var milestoneStatusOptions =
+    '<option value="">--Select--</option>';
 
+var milestoneStatusSearch = search.create({
+
+    type:
+    'customlist_rw_portal_milestone_status',
+
+    filters: [
+        ['isinactive','is','F']
+    ],
+
+    columns: [
+        'internalid',
+        'name'
+    ]
+});
+
+milestoneStatusSearch.run().each(function(res){
+
+    var id =
+        res.getValue('internalid');
+
+    var name =
+        res.getValue('name');
+
+    milestoneStatusOptions +=
+        '<option value="' + id + '">' +
+        name +
+        '</option>';
+
+    return true;
+});
 var lineItemsHtml = '';
 
 var lineSearch = search.create({
@@ -1111,48 +1400,55 @@ if(productId){
             .value;
     }
 }
+var startdate=result.getValue('custrecord_rw_portal_startdateline') || '';
+var enddate=result.getValue('custrecord_rw_portal_enddateline') || '';
+var updateddeadline=result.getValue('custrecord_rw_portal_updateddeadline') || '';
 var startDate = '';
 var milestoneenddate = '';
 var estDuration = '';
 var actualCompleted = '';
 var aging = '';
 var timeSpent = '';
+var milestoneStatusId = '';
+
+var milestoneStatus = '';
+var milestoneComments = '';
+var milestoneRowColor = '#ffffff';
 var canEditMilestone =
     (roleType === 'PM');
 var milestoneRows = '';
 
+
 if(templateId){
 
     var milestoneSearch =
-        search.create({
+    search.create({
 
-            type:
-            'customrecord_rw_project_plan_temp_child',
+        type:
+        'customrecord_rw_project_plan_temp_child',
 
-            filters: [
-                [
-                    'custrecord_rw_proj_plan_temp_child_link',
-                    'anyof',
-                    templateId
-                ]
-            ],
-
-            columns: [
-
-                search.createColumn({
-    name:
-    'formulanumeric',
-    formula:
-    '{custrecord_rw_proj_plan_temp_child_sno}',
-    sort:
-    search.Sort.ASC
-}),
-'custrecord_rw_proj_plan_temp_child_sno',
-
-                'custrecord_rw_project_temp_child_miles'
+        filters: [
+            [
+                'custrecord_rw_proj_plan_temp_child_link',
+                'anyof',
+                templateId
             ]
-        });
+        ],
 
+        columns: [
+
+            search.createColumn({
+                name: 'formulanumeric',
+                formula:
+                'TO_NUMBER({custrecord_rw_proj_plan_temp_child_sno})',
+                sort: search.Sort.ASC
+            }),
+
+            'custrecord_rw_proj_plan_temp_child_sno',
+
+            'custrecord_rw_project_temp_child_miles'
+        ]
+});
 
        
    milestoneSearch.run().each(function(ms){
@@ -1228,7 +1524,9 @@ var customerPlanId = '';
 
             'custrecord_rw_cust_proj_plan_aging',
 
-            'custrecord_rw_cust_proj_plan_time_spent'
+            'custrecord_rw_cust_proj_plan_time_spent',
+            'custrecord_rw_portal_milestone_status',
+            'custrecord_re_portal_milestone_comments',
         ]
     });
 
@@ -1266,6 +1564,63 @@ var customerPlanId = '';
                 'custrecord_rw_cust_proj_plan_time_spent'
             ) || '';
 
+          milestoneStatusId =
+    cp.getValue(
+        'custrecord_rw_portal_milestone_status'
+    ) || '';
+
+milestoneStatus =
+    cp.getText(
+        'custrecord_rw_portal_milestone_status'
+    ) || '';
+
+var milestoneStatusText =
+    milestoneStatus;
+
+          var milestoneStatusText =
+    cp.getText(
+        'custrecord_rw_portal_milestone_status'
+    ) || '';
+
+milestoneRowColor = '#ffffff';
+
+if(
+    milestoneStatusText.toLowerCase()
+    === 'to do'
+){
+
+    milestoneRowColor = '#ffffff';
+
+}
+else if(
+    milestoneStatusText.toLowerCase()
+    === 'in progress'
+){
+
+    milestoneRowColor = '#dbeafe';
+
+}
+else if(
+    milestoneStatusText.toLowerCase()
+    === 'completed'
+){
+
+    milestoneRowColor = '#d4edda';
+
+}
+else if(
+    milestoneStatusText.toLowerCase()
+    === 'pending from customer'
+){
+
+    milestoneRowColor = '#f8d7da';
+
+}
+            milestoneComments =
+            cp.getValue(
+                'custrecord_re_portal_milestone_comments'
+            ) || '';
+
         return false;
     });
 
@@ -1282,6 +1637,10 @@ milestoneRows += `
     data-milestoneid="${milestoneId}"
     data-productid="${productId}"
     data-sno="${sno}"
+     style="
+        background:${milestoneRowColor};
+        transition:0.3s;
+    "
 >
 
 <td style="border:1px solid #ddd;padding:8px;">
@@ -1295,30 +1654,46 @@ milestoneRows += `
 <td style="border:1px solid #ddd;padding:8px;">
 
     <span class="view-mode">
-        ${startDate || ''}
+        ${
+    getDateValues(
+        startDate || startdate
+    ).display
+}
     </span>
 
-    <input
-        type="date"
-        class="edit-mode ms-startdate"
-        value="${getDateValues(startDate).input}"
-        style="display:none;width:100%;"
-    />
+   <input
+    type="date"
+    class="edit-mode ms-startdate"
+ value="${
+    getDateValues(
+        startDate || startdate
+    ).input
+}"
+    style="display:none;width:100%;"
+/>
 
 </td>
 
 <td style="border:1px solid #ddd;padding:8px;">
 
     <span class="view-mode">
-        ${milestoneenddate || ''}
+      ${
+    getDateValues(
+        milestoneenddate || enddate
+    ).display
+}
     </span>
 
-    <input
-        type="date"
-        class="edit-mode ms-enddate"
-        value="${getDateValues(milestoneenddate).input}"
-        style="display:none;width:100%;"
-    />
+   <input
+    type="date"
+    class="edit-mode ms-enddate"
+  value="${
+    getDateValues(
+        milestoneenddate || enddate
+    ).input
+}"
+    style="display:none;width:100%;"
+/>
 
 </td>
 
@@ -1340,15 +1715,130 @@ milestoneRows += `
 
 <td style="border:1px solid #ddd;padding:8px;">
 
-    <span class="view-mode">
-        ${actualCompleted || ''}
-    </span>
+   <span
+    class="view-mode"
+    style="
+        ${
+            actualCompleted &&
+            milestoneenddate &&
+            (
+                function(){
+
+                    function parseDate(str){
+
+                        if(!str) return null;
+
+                        // DD/MM/YYYY
+                        if(String(str).indexOf('/') > -1){
+
+                            var p =
+                                String(str).split('/');
+
+                            return new Date(
+                                p[2],
+                                p[1]-1,
+                                p[0]
+                            );
+                        }
+
+                        return new Date(str);
+                    }
+
+                    var actualDate =
+                        parseDate(actualCompleted);
+
+                    var endDate =
+                        parseDate(milestoneenddate);
+
+                    return actualDate > endDate;
+
+                }
+            )()
+
+            ?
+
+            `
+            border:2px solid red;
+            color:red;
+            padding:4px 8px;
+            border-radius:6px;
+            font-weight:bold;
+            background:#fff5f5;
+            display:inline-block;
+            `
+
+            :
+
+            ''
+        }
+    "
+>
+    ${
+        getDateValues(actualCompleted).display ||
+        actualCompleted ||
+        ''
+    }
+</span>
 
     <input
         type="date"
         class="edit-mode ms-actual"
         value="${getDateValues(actualCompleted).input}"
-        style="display:none;width:100%;"
+        style="
+            display:none;
+            width:100%;
+           ${
+    actualCompleted &&
+    milestoneenddate &&
+    (
+        function(){
+
+            function parseDate(str){
+
+                if(!str) return null;
+
+                // HANDLE DD/MM/YYYY
+                if(str.indexOf('/') > -1){
+
+                    var p = str.split('/');
+
+                    return new Date(
+                        p[2],
+                        p[1]-1,
+                        p[0]
+                    );
+                }
+
+                // HANDLE YYYY-MM-DD
+                return new Date(str);
+            }
+
+            var actualDate =
+                parseDate(actualCompleted);
+
+            var endDate =
+                parseDate(milestoneenddate);
+
+            return actualDate > endDate;
+
+        }
+    )()
+
+
+                ?
+
+                `
+                border:2px solid red;
+                background:#fff5f5;
+                color:red;
+                `
+
+                :
+
+                ''
+            }
+        "
+        onchange="validateActualCompleted(this)"
     />
 
 </td>
@@ -1383,6 +1873,42 @@ milestoneRows += `
     />
 
 </td>
+<td style="border:1px solid #ddd;padding:8px;">
+
+    <span class="view-mode">
+        ${milestoneComments || ''}
+    </span>
+
+    <textarea
+        class="edit-mode ms-comments"
+        style="
+            display:none;
+            width:100%;
+            min-height:60px;
+        "
+    >${milestoneComments || ''}</textarea>
+
+</td>
+<td style="border:1px solid #ddd;padding:8px;">
+
+    <span class="view-mode">
+        ${milestoneStatus || ''}
+    </span>
+
+    <select
+    class="edit-mode ms-status"
+    style="display:none;width:100%;"
+>
+${milestoneStatusOptions.replace(
+
+    'value="' + milestoneStatusId + '"',
+
+    'value="' + milestoneStatusId + '" selected'
+)}
+</select>
+
+</td>
+
 
 </tr>
 `;
@@ -1424,7 +1950,12 @@ milestoneRows += `
 <td style="border:1px solid #ddd;padding:8px;">
     ${timeSpent || ''}
 </td>
-
+<td style="border:1px solid #ddd;padding:8px;">
+    ${milestoneComments || ''}
+</td>
+<td style="border:1px solid #ddd;padding:8px;">
+    ${milestoneStatus || ''}
+</td>
 </tr>
 `;
 
@@ -1434,22 +1965,77 @@ milestoneRows += `
 });
 }
     var comments = result.getValue('custrecord_rw_portal_additionalcomments') || '';
-    var pm = result.getText('custrecord_rw_rwprojectmanager') || '';
-    var functional = result.getText('custrecord_rw_portal_funcconsultant') || '';
-    var technical = result.getText('custrecord_rw_portal_techconsultant') || '';
-    var functionalId = result.getValue('custrecord_rw_portal_funcconsultant');
-var technicalId  = result.getValue('custrecord_rw_portal_techconsultant');
+    var pmId =
+    result.getValue('custrecord_rw_rwprojectmanager') ||
+    projectManagerId ||
+    '';
+
+var pm =
+    result.getText('custrecord_rw_rwprojectmanager') ||
+    projectManager ||
+    '';
+   var functionalId =
+    result.getValue(
+        'custrecord_rw_portal_funcconsultant'
+    ) ||
+
+    functional1 ||
+
+    '';
+
+var technicalId =
+    result.getValue(
+        'custrecord_rw_portal_techconsultant'
+    ) ||
+
+    technical1 ||
+
+    '';
+
+var functional =
+    result.getText(
+        'custrecord_rw_portal_funcconsultant'
+    ) ||
+
+    functionalText ||
+
+    '';
+
+var technical =
+    result.getText(
+        'custrecord_rw_portal_techconsultant'
+    ) ||
+
+    technicalText ||
+
+    '';
 var duration =result.getValue('custrecord_rw_portal_durationline')
 
-var functional   = result.getText('custrecord_rw_portal_funcconsultant');
-var technical    = result.getText('custrecord_rw_portal_techconsultant');
+var functional =
+    result.getText(
+        'custrecord_rw_portal_funcconsultant'
+    ) ||
+
+    projectRec.getText(
+        'custrecord_rw_portal_functional_consulta'
+    ) ||
+
+    '';
+
+var technical =
+    result.getText(
+        'custrecord_rw_portal_techconsultant'
+    ) ||
+
+    projectRec.getText(
+        'custrecord_rw_portal_technical'
+    ) ||
+
+    '';
    var uatRaw = result.getValue('custrecord_rw_portal_lineexpecteduatdate');
 var goliveRaw = result.getValue('custrecord_rw_portal_lineexptgolivedate');
 var linestatus = result.getText('custrecord_rw_portal_projstat'); // for display
 var linestatusId = result.getValue('custrecord_rw_portal_projstat'); // for dropdown
-var startdate=result.getValue('custrecord_rw_portal_startdateline') || '';
-var enddate=result.getValue('custrecord_rw_portal_enddateline') || '';
-var updateddeadline=result.getValue('custrecord_rw_portal_updateddeadline') || '';
 
 
 
@@ -1519,9 +2105,9 @@ employeeList.forEach(function(emp){
         '</option>';
 pmDropdown +=
     '<option value="' + emp.id + '" ' +
-    (emp.id == result.getValue('custrecord_rw_rwprojectmanager')
-        ? 'selected'
-        : '') +
+    (emp.id == pmId
+    ? 'selected'
+    : '') +
     '>' +
     emp.name +
     '</option>';
@@ -1579,7 +2165,11 @@ var startLineObj =
 
 var endLineObj =
     getDateValues(enddate);
+var uatLineObj =
+    getDateValues(uat);
 
+var goliveLineObj =
+    getDateValues(golive);
 var updatedLineObj =
     getDateValues(updateddeadline); 
 var empRoleMap = {};
@@ -1969,7 +2559,16 @@ historyHtml += `</div>`;
             <thead>
 
                 <tr style="
-                    background:#8f50df;
+                        background:linear-gradient(
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
+font-weight:bold;
+font-size:10px;
+text-transform:uppercase;
+font-family:Arial, sans-serif;
                     color:white;
                 ">
 
@@ -2011,6 +2610,14 @@ historyHtml += `</div>`;
                         padding:10px;
                         border:1px solid #ddd;
                     ">Time Spent</th>
+                    <th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Status</th>
+                    <th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Comments</th>
                 </tr>
 
             </thead>
@@ -2335,16 +2942,25 @@ historyHtml += `</div>`;
 <td style="border:1px solid #ccc;padding:8px;">
     <span class="view-mode">${pm}</span>
 
-    <select class="edit-mode rwpm" style="display:none;">
+    
+<select 
+    class="edit-mode rwpm" 
+    style="display:none;"
+    onchange="syncProjectManager(this)"
+>
     ${pmDropdown}
 </select>
 </td>
 
 <td style="border:1px solid #ccc;padding:8px;">
     <span class="view-mode">${functional}</span>
-    <select class="edit-mode functional" style="display:none;">
-       ${funcDropdown}
-    </select>
+    <select
+    class="edit-mode functional"
+    style="display:none;"
+    
+>
+   ${funcDropdown}
+</select>
 </td>
 
 <td style="border:1px solid #ccc; padding:8px;">
@@ -2355,13 +2971,29 @@ historyHtml += `</div>`;
 </td>
 
 <td style="border:1px solid #ccc;padding:8px;">
-    <span class="view-mode">${uat}</span>
-    <input class="edit-mode uat" type="date" value="${toInputDate(uatRaw)}" style="display:none;" />
+    <span class="view-mode">
+        ${uatLineObj.display}
+    </span>
+
+    <input
+        class="edit-mode uat"
+        type="date"
+        value="${uatLineObj.input}"
+        style="display:none;"
+    />
 </td>
 
 <td style="border:1px solid #ccc;padding:8px;">
-    <span class="view-mode">${golive}</span>
-    <input class="edit-mode golive" type="date" value="${toInputDate(goliveRaw)}" style="display:none;" />
+    <span class="view-mode">
+        ${goliveLineObj.display}
+    </span>
+
+    <input
+        class="edit-mode golive"
+        type="date"
+        value="${goliveLineObj.input}"
+        style="display:none;"
+    />
 </td>
 
 <td style="border:1px solid #ccc;padding:8px;">
@@ -2451,8 +3083,17 @@ historyHtml += `</div>`;
             <thead>
 
                 <tr style="
-                    background:#8f50df;
-                    color:white;
+                        background:linear-gradient(
+    135deg,
+    #E6E6FA,
+    #E6E6FA
+);;
+                    font-weight:bold;
+                    font-size:10px;
+                    text-transform:uppercase;
+                    font-family:Arial, sans-serif;
+
+                    color:darkblue;
                 ">
 
                     <th style="
@@ -2480,7 +3121,7 @@ historyHtml += `</div>`;
 <th style="
                         padding:10px;
                         border:1px solid #ddd;
-                    ">Estimated Duration</th>
+                    ">Duration</th>
 <th style="
                         padding:10px;
                         border:1px solid #ddd;
@@ -2493,6 +3134,15 @@ historyHtml += `</div>`;
                         padding:10px;
                         border:1px solid #ddd;
                     ">Time Spent</th>
+                    
+                    <th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Comments</th>
+                    <th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Status</th>
                 </tr>
 
             </thead>
@@ -2830,8 +3480,8 @@ else {
 
 .milestoneTable th{
 
-    background:linear-gradient(135deg, #8E2DE2, #C471ED);
-    color:white;
+    background:linear-gradient(135deg, #E6E6FA, #E6E6FA);
+    color:darkblue;
     padding:10px;
 
     border:1px solid #ccc;
@@ -3288,7 +3938,7 @@ function bindMilestoneAutoCalc(){
 //      function goBack(){
 
 //     var loader = document.getElementById("loader");
-//     loader.style.display = "block";   // ✅ show loader
+//     loader.style.display = "block";   //  show loader
 
 //     setTimeout(function(){
 //         //window.parent.location.href = projectUrl;
@@ -3433,22 +4083,71 @@ var statusFlow = [
 'Business requirement',
 'System configuration',
 'In Progress',
+'In-Progress',
+'On Hold',
 'UAT',
-'Training',
-'Data Migration',
-'Data cleansing',
+
+
 'Go live',
-'COC',
+
 'Post Go-live',
 'Support',
     
    
     'Testing',
+    
     'Done',
      
     'COC',
+    'Terminated'
 
 ];
+
+function autopopulateConsultants(){
+
+    // BODY VALUES
+    var bodyPM =
+        '${projectManagerId || ""}';
+
+    var bodyFunctional =
+        '${functional1 || ""}';
+
+    var bodyTechnical =
+        '${technical1 || ""}';
+
+    // PROJECT MANAGER
+    document
+        .querySelectorAll('.rwpm')
+        .forEach(function(pm){
+
+            if(!pm.value){
+                pm.value = bodyPM;
+            }
+
+        });
+
+    // FUNCTIONAL
+    document
+        .querySelectorAll('.functional')
+        .forEach(function(func){
+
+            if(!func.value){
+                func.value = bodyFunctional;
+            }
+
+        });
+
+    // TECHNICAL
+    document
+        .querySelectorAll('.technical')
+        .forEach(function(tech){
+
+            if(!tech.value){
+                tech.value = bodyTechnical;
+            }
+
+        });
+}
 function disablePreviousStatuses(selectEl){
 
     if(!selectEl) return;
@@ -3503,6 +4202,44 @@ function disablePreviousStatuses(selectEl){
         }
     });
 }
+    function syncProjectManager(currentSelect){
+
+    var selectedValue = currentSelect.value;
+
+    document.querySelectorAll('.rwpm').forEach(function(pm){
+
+        pm.value = selectedValue;
+
+    });
+
+}
+    function syncFunctional(currentSelect){
+
+    var selectedValue =
+        currentSelect.value;
+
+    document
+        .querySelectorAll('.functional')
+        .forEach(function(func){
+
+            func.value = selectedValue;
+
+        });
+}
+
+function syncTechnical(currentSelect){
+
+    var selectedValue =
+        currentSelect.value;
+
+    document
+        .querySelectorAll('.technical')
+        .forEach(function(tech){
+
+            tech.value = selectedValue;
+
+        });
+}
   function saveData(){
 
     var rows =
@@ -3551,7 +4288,16 @@ document.querySelectorAll('.milestoneRow')
             row.querySelector('.ms-aging')?.value || '',
 
         timespent:
-            row.querySelector('.ms-timespent')?.value || ''
+            row.querySelector('.ms-timespent')?.value || '',
+            status:
+    row.querySelector('.ms-status')
+    ? row.querySelector('.ms-status').value
+    : '',
+
+comments:
+    row.querySelector('.ms-comments')
+    ? row.querySelector('.ms-comments').value
+    : '',
     });
 });
 
@@ -3953,6 +4699,36 @@ document.addEventListener('change', function(e){
     }
 
 });
+function validateActualCompleted(el){
+
+    var row =
+        el.closest('tr');
+
+    var endDate =
+        row.querySelector('.ms-enddate').value;
+
+    var actualDate =
+        el.value;
+
+    if(!endDate || !actualDate){
+        return true;
+    }
+
+    var end =
+        new Date(endDate);
+
+    var actual =
+        new Date(actualDate);
+
+    if(actual > end){
+
+        alert(
+            'Warning: you are execeding the milestone end date!'
+        );
+    }
+
+    return true;
+}
 document.getElementById("saveBadge").style.display = "inline";
 
 setTimeout(()=>{
@@ -3998,6 +4774,7 @@ function enableEdit(){
 
     document.getElementById("saveBtn")
     .style.display = "inline-block";
+    autopopulateConsultants();
 }
   document.addEventListener("DOMContentLoaded", function () {
 

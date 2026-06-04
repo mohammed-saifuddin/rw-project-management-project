@@ -251,6 +251,7 @@ div.uir-page-wrapper {
     margin-top:150px;
 
     background:white;
+    border-radius:3px;
 
     backdrop-filter:blur(20px);
     -webkit-backdrop-filter:blur(20px);
@@ -494,6 +495,7 @@ body{
     width:100%;
 
     height:40px;
+    border-radius:3px;
 
     padding:
         0 46px 0 16px;
@@ -690,13 +692,20 @@ input[type="password"] {
     padding-bottom:-10px;
 
     overflow:hidden;
-             background:
-linear-gradient(
-    135deg,
-    #C471ED,
-    #8E2DE2
+//              background:
+// linear-gradient(
+//     135deg,
+//     #8E2DE2,
+//     #C471ED
     
-);
+    
+// );
+ background:linear-gradient(
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 }
 
 /* LEFT PANEL */
@@ -747,7 +756,7 @@ linear-gradient(
 }
 
 .side-desc{
-    font-size:14px;
+    font-size:16px;
     line-height:1.7;
     color:lightgray;
     width:85%;
@@ -762,13 +771,13 @@ linear-gradient(
     padding:0;
     margin-top:30px;
     font-family:Arial, sans-serif;
-    font-size:14px;
-    color:lightgray;
+    font-size:16px;
+    color:white;
 }
 
 .feature-list li{
-    margin-bottom:18px;
-    font-size:14px;
+    margin-bottom:16px;
+    font-size:16px;
     display:flex;
     
     font-family:Arial, sans-serif;
@@ -1111,7 +1120,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
             <div class="logo2">
                 <img src="https://2771600.app.netsuite.com/core/media/media.nl?id=5690&c=2771600&h=kIUCEpH0C_eyrUBVYGJn7nEHV_vSoKDhpdzpaPF7vFesdytX">
              <div class="side-name">
-                    Reachware Project Management
+                    RW Project Management Portal
                 </div>
                 </div>
 
@@ -1123,7 +1132,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
                 </div>
 
                 <div class="side-desc">
-                        Streamline your project management processes with our all-in-one solution, designed to provide complete visibility, control, and confidence from planning to delivery.
+                         
                 </div>
 
                 <ul class="feature-list">
@@ -1131,7 +1140,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
                     <li>From Planning to Delivery ,Manage Every Project with Confidence</li>
                     <li>Gain complete visibility into project status through a centralized dashboard.</li>
                     <li>Keep projects on schedule with clear timelines, milestones and deadlines.</li>
-                    <li>Multi-subsidiary support</li>
+                    
                 </ul>
 
             </div>
@@ -1166,7 +1175,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
                 <img width="240px" height="40px"  src="https://2771600.app.netsuite.com/core/media/media.nl?id=5690&c=2771600&h=kIUCEpH0C_eyrUBVYGJn7nEHV_vSoKDhpdzpaPF7vFesdytX">
             </div>
     <div class="card-title">Login</div>
-    <div class="card-subtitle">Access your Reachware account</div>
+    <div class="card-subtitle">Access your RW PM Portal</div>
 </div>
             <form method="POST">
 
