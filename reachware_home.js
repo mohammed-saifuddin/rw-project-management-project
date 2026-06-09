@@ -3,7 +3,7 @@
  * @NScriptType Suitelet
  */
 
-define(['N/ui/serverWidget','N/url','N/search','N/runtime','N/redirect'], (serverWidget,url,search,runtime,redirect) => {
+define(['N/ui/serverWidget','N/url','N/search','N/runtime','N/redirect','N/record'], (serverWidget,url,search,runtime,redirect,record) => {
 
 const onRequest = (context) => {
 
@@ -435,13 +435,21 @@ const projectPlanUrl = url.resolveScript({
  const newProjectPlanUrl = url.resolveScript({
     scriptId: 'customscript3146',
     deploymentId: 'customdeploy1',
-    returnExternalUrl: true
+    returnExternalUrl: true,
+    params: {
+        empid: empId,
+        email: email
+    }
 });
 
  const newRevenueStreamUrl = url.resolveScript({
     scriptId: 'customscript3168',
     deploymentId: 'customdeploy1',
-    returnExternalUrl: true
+    returnExternalUrl: true,
+    params: {
+        empid: empId,
+        email: email
+    }
 });
 
 var viewProjectUrl = url.resolveScript({
@@ -805,6 +813,215 @@ function getCurrentMonthDates(){
 
     return { firstDay, lastDay };
 }
+function getCalendarEvents(){
+
+    var events = [];
+
+    var projectSearch = search.create({
+        type:'customrecord_rw_portal_access',
+
+        filters:[
+            ['isinactive','is','F']
+        ],
+
+        columns:[
+            'internalid',
+            'custrecord_rw_portal_customername',
+            'custrecord_rw_portal_start_date',
+            'custrecord_rw_portal_end_date',
+            'custrecord_rw_portal_status'
+        ]
+    });
+
+    projectSearch.run().each(function(res){
+
+        var projectName =
+            res.getText('custrecord_rw_portal_customername');
+
+        var status =
+            res.getValue('custrecord_rw_portal_status');
+
+        var startDate =
+            res.getValue('custrecord_rw_portal_start_date');
+
+        var endDate =
+            res.getValue('custrecord_rw_portal_end_date');
+
+        var projectId =
+            res.getValue('internalid');
+
+        // UAT
+        if(status == '4' && startDate){
+
+            events.push({
+                title:'UAT - ' + projectName,
+                start: formatCalendarDate(startDate),
+                color:'#3b82f6',
+                url:'${viewProjectUrl}&projectId=' + projectId
+            });
+        }
+
+        // Go Live
+        if(status == '5' && startDate){
+
+            events.push({
+                title:'Go Live - ' + projectName,
+                start: formatCalendarDate(startDate),
+                color:'#10b981',
+                url:'${viewProjectUrl}&projectId=' + projectId
+            });
+        }
+
+        // COC
+        if(status == '6' && endDate){
+
+            events.push({
+                title:'COC - ' + projectName,
+                start: formatCalendarDate(endDate),
+                color:'#8b5cf6',
+                url:'${viewProjectUrl}&projectId=' + projectId
+            });
+        }
+
+        return true;
+    });
+
+    return events;
+}
+function formatCalendarDate(nsDate){
+
+    if(!nsDate) return '';
+
+    var parts = nsDate.split('/');
+
+    return parts[2] + '-' +
+           parts[1].padStart(2,'0') + '-' +
+           parts[0].padStart(2,'0');
+}
+function getProjectProgress(){
+
+    var data = [];
+
+    var projectSearch = search.create({
+
+        type:'customrecord_rw_portal_access',
+
+        filters:[
+            ['isinactive','is','F']
+        ],
+
+        columns:[
+            'internalid',
+            'custrecord_rw_portal_customername',
+            'custrecord_rw_portal_status'
+        ]
+    });
+
+    projectSearch.run().each(function(project){
+
+        var projectId =
+            project.getValue('internalid');
+
+        var projectName =
+            project.getText(
+                'custrecord_rw_portal_customername'
+            ) || 'Project';
+
+        var totalMilestones = 0;
+var completedMilestones = 0;
+        var totalProgress = 0;
+
+        var milestoneSearch = search.create({
+
+            type:'customrecord_rw_portal_access2',
+
+            filters:[
+                ['custrecord1513','anyof',projectId]
+            ],
+
+            columns:[
+                'custrecord_rw_portal_projstat'
+            ]
+        });
+
+        milestoneSearch.run().each(function(ms){
+
+            totalMilestones++;
+
+            var status =
+                ms.getValue(
+                    'custrecord_rw_portal_projstat'
+                );
+
+            var progressValue = 0;
+
+            // KICKOFF
+            if(status == '1'){
+                progressValue = 10;
+            }
+
+            // IN PROGRESS
+            else if(status == '2'){
+                progressValue = 50;
+            }
+
+            // UAT
+            else if(status == '4'){
+                progressValue = 75;
+            }
+
+            // GOLIVE
+            else if(status == '5'){
+                progressValue = 90;
+            }
+
+            // COC / DONE / COMPLETED
+            else if(
+                status == '6' ||
+                status == '7' ||
+                status == '8'
+            ){
+                progressValue = 100;
+                completedMilestones++;
+            }
+            
+            totalProgress += progressValue;
+            
+
+            return true;
+        });
+
+        var finalProgress = 0;
+
+        if(totalMilestones > 0){
+
+            finalProgress = Math.round(
+                totalProgress / totalMilestones
+            );
+        }
+
+        if(finalProgress > 100){
+            finalProgress = 100;
+        }
+
+       data.push({
+
+    projectId: projectId,
+
+    projectName: projectName,
+
+    progress: finalProgress,
+
+    completed: completedMilestones,
+
+    total: totalMilestones
+});
+
+        return true;
+    });
+
+    return data;
+}
 function getCustomersByStatus(statusId){
 
     var today = new Date();
@@ -1018,7 +1235,11 @@ var uatCurrent = getCustomersByDate(
     'current',
     '3'
 );
-
+var kickoffCurrent = getCustomersByDate(
+    'custrecord_rw_portal_start_date',
+    'current',
+    '1'
+);
 var uatUpcoming = getCustomersByDate(
     'custrecord_rw_portal_start_date',
     'upcoming',
@@ -1032,10 +1253,10 @@ var goliveCurrent = getCustomersByDate(
     '5'
 );
 
-var goliveUpcoming = getCustomersByDate(
+var completedCurrent = getCustomersByDate(
     'custrecord_rw_portal_start_date',
-    'upcoming',
-    '5'
+    'current',
+    '8'
 );
 
 // COC
@@ -1215,11 +1436,11 @@ var specialCards = `
 
     ${buildSingleCard('UAT - Current Month', uatCurrent)}
 
-    ${buildSingleCard('UAT - Upcoming', uatUpcoming)}
+    ${buildSingleCard('Kick off - Current Month', kickoffCurrent)}
 
     ${buildSingleCard('Go Live - Current Month', goliveCurrent)}
 
-    ${buildSingleCard('Go Live - Upcoming', goliveUpcoming)}
+    ${buildSingleCard('Completed - Current Month', completedCurrent)}
 
     ${buildSingleCard('COC - Current Month', cocCurrent)}
 
@@ -1434,7 +1655,8 @@ var goLiveCardUser = `
 </div>
 `;
 var overdueTickets =getOverdueTickets(empId);
-
+var projectProgressData =
+    getProjectProgress();
 var overdueCardInner = `
 <div style="display:flex; gap:15px; margin:10px;">
 <div style="
@@ -2071,7 +2293,102 @@ var overdueCardInner = `
 </div>
 </div>
 `;
+var visibleProjects = projectProgressData.slice(0,5);
 
+var hiddenProjects = projectProgressData.slice(5);
+
+function buildTimelineItem(p){
+
+    return `
+
+    <div class="modern-progress-item">
+
+        <div class="modern-progress-top">
+
+            <div>
+
+                <div class="modern-project-name">
+                    ${p.projectName}
+                </div>
+
+                <div class="modern-meta">
+                    ${p.completed}/${p.total} Products Completed
+                </div>
+
+            </div>
+
+            <div class="modern-percent">
+                ${p.progress}%
+            </div>
+
+        </div>
+
+        <div class="modern-progress-bar">
+
+            <div
+                class="modern-progress-fill"
+                style="width:${p.progress}%"
+            ></div>
+
+        </div>
+
+    </div>
+    `;
+}
+
+var timelineProgressCard = `
+
+<div class="modern-timeline-card">
+
+    <div class="modern-timeline-header">
+
+        <div>
+             Project Timeline Progress
+        </div>
+
+        <div class="timeline-count">
+            ${projectProgressData.length} Projects
+        </div>
+
+    </div>
+
+    <div class="modern-timeline-body">
+
+        ${visibleProjects.map(buildTimelineItem).join('')}
+
+        <div
+            id="moreTimelineProjects"
+            style="display:none;"
+        >
+
+            ${hiddenProjects.map(buildTimelineItem).join('')}
+
+        </div>
+
+        ${
+            hiddenProjects.length > 0
+            ?
+            `
+            <div class="timeline-btn-wrap">
+
+                <button
+                    class="modern-view-btn"
+                    id="timelineViewBtn"
+                    onclick="toggleTimelineProjects()"
+                >
+                    View More
+                </button>
+
+            </div>
+            `
+            :
+            ''
+        }
+
+    </div>
+
+</div>
+`;
 var highPriorityCard = `
 <div style="display:flex; gap:15px; margin:10px;">
 
@@ -2138,7 +2455,242 @@ var highPriorityCard = `
 
 </div>
 `;
+function getNotifications(empId){
 
+    var data = [];
+
+    var notifSearch = search.create({
+
+        type:'customrecord2517',
+
+        filters:[
+
+            [
+                'custrecord_rw_notif_employee',
+                'anyof',
+                empId
+            ],
+
+            'AND',
+
+            [
+                'isinactive',
+                'is',
+                'F'
+            ]
+        ],
+
+        columns:[
+
+            search.createColumn({
+                name:'created',
+                sort:search.Sort.DESC
+            }),
+
+            'internalid',
+            'custrecord_rw_notif_message',
+            'isinactive'
+        ]
+    });
+
+    notifSearch.run().each(function(res){
+
+        data.push({
+
+    id: res.getValue('internalid'),
+
+    message: res.getValue(
+        'custrecord_rw_notif_message'
+    ),
+
+    created: res.getValue('created'),
+
+    inactive: res.getValue('isinactive')
+});
+
+        return true;
+    });
+
+    return data;
+}
+function getUnreadNotificationCount(empId){
+
+    var count = 0;
+
+    var notifSearch = search.create({
+
+        type:'customrecord2517',
+
+        filters:[
+
+            [
+                'custrecord_rw_notif_employee',
+                'anyof',
+                empId
+            ],
+
+            'AND',
+
+            [
+                'isinactive',
+                'is',
+                'F'
+            ]
+        ],
+
+        columns:['internalid']
+    });
+
+    notifSearch.run().each(function(){
+
+        count++;
+
+        return true;
+    });
+
+    return count;
+}
+var notifications = getNotifications(empId);
+
+var unreadCount = getUnreadNotificationCount(empId);
+var notifHtml = `
+<div class="notif-wrapper">
+
+    <div class="notif-bell"
+         onclick="toggleNotifications()">
+
+        <i class="fa-solid fa-bell"></i>
+
+        <span class="notif-count"
+      style="
+      display:${unreadCount > 0 ? 'flex' : 'none'};
+      ">
+    ${unreadCount}
+</span>
+
+    </div>
+
+    <div class="notif-dropdown"
+         id="notifDropdown">
+
+        <div class="notif-header">
+            Notifications
+        </div>
+
+        ${
+    notifications.length
+
+?
+
+notifications.map((n,index) => `
+
+   
+
+<div class="notif-item unread"
+     id="notif_${n.id}">
+
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-start;
+        gap:10px;
+    ">
+
+        <div>
+
+            <div class="notif-title">
+                ${n.message}
+            </div>
+
+            <div class="notif-time">
+                ${n.created}
+            </div>
+
+        </div>
+
+        <span
+            class="notif-remove"
+            onclick="removeNotification('${n.id}')">
+
+            ✖
+
+        </span>
+
+    </div>
+
+</div>
+
+`).join('')
+
+    :
+
+    `
+    <div class="notif-item no-notif">
+        No Notifications
+    </div>
+    `
+}
+    </div>
+
+</div>
+`;
+if(
+    context.request.parameters.action
+    === 'getUnreadCount'
+){
+
+    context.response.write(
+        getUnreadNotificationCount(empId)
+    );
+
+    return;
+}
+if(
+    context.request.parameters.action
+    === 'removeNotification'
+){
+
+    var notifId =
+        context.request.parameters.notifId;
+
+    if(notifId){
+
+        record.submitFields({
+
+            type:'customrecord2517',
+
+            id:notifId,
+
+            values:{
+                isinactive:true
+            }
+        });
+    }
+
+    context.response.write('success');
+
+    return;
+}
+if(
+context.request.parameters.action
+=== 'getNotifications'
+){
+
+
+var data = getNotifications(empId);
+
+context.response.setHeader({
+    name:'Content-Type',
+    value:'application/json'
+});
+
+context.response.write(
+    JSON.stringify(data)
+);
+
+return;
+
+}
 
 let html = `
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -2630,8 +3182,8 @@ linear-gradient(
     align-items: center;
     justify-content: center;
 
-    font-weight: bold;
-    font-size: 14px;
+    
+    font-size: 10px;
 }
     .card-container{
     display:flex;
@@ -2992,6 +3544,1474 @@ button:hover{
 
     border:1px solid #ddd;
 }
+    .right-section{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:flex-end;
+
+    gap:14px;
+}
+
+/* USER CARD */
+
+.modern-user-box{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:6px 14px;
+
+    border-radius:14px;
+
+    background:
+        rgba(255,255,255,0.16);
+
+    backdrop-filter:blur(10px);
+
+    border:
+        1px solid rgba(255,255,255,0.18);
+
+    transition:0.3s ease;
+}
+
+.modern-user-box:hover{
+
+    transform:translateY(-1px);
+
+    background:
+        rgba(255,255,255,0.22);
+}
+
+/* AVATAR */
+
+.modern-avatar{
+
+    width:34px;
+
+    height:34px;
+
+    border-radius:50%;
+
+    background:
+        linear-gradient(
+            135deg,
+            #ffffff,
+            #d8b4fe
+        );
+
+    color:#5b2d8e;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:11px;
+
+    font-weight:600;
+
+    letter-spacing:0.5px;
+}
+
+/* USER DETAILS */
+
+.modern-user-details{
+
+    display:flex;
+
+    flex-direction:column;
+
+    line-height:1.2;
+}
+
+.modern-user-name{
+
+    font-size:13px;
+
+    font-weight:700;
+
+    color:white;
+}
+
+.modern-user-role{
+
+    font-size:11px;
+
+    color:#E9D5FF;
+
+    font-weight:500;
+}
+
+/* LOGOUT BUTTON */
+
+.modern-logout-btn{
+
+    height:38px;
+
+    padding:0 16px;
+
+    border:none;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    color:white;
+
+    background:
+        rgba(255,255,255,0.14);
+
+    border:
+        1px solid rgba(255,255,255,0.18);
+
+    backdrop-filter:blur(10px);
+
+    transition:0.3s ease;
+}
+
+.modern-logout-btn:hover{
+
+    background:white;
+
+    color:#5b2d8e;
+
+    transform:translateY(-1px);
+}
+    .right-section{
+
+    display:flex;
+
+    justify-content:flex-end;
+
+    align-items:center;
+}
+
+/* MAIN PROFILE */
+
+.profile-dropdown{
+
+    position:relative;
+}
+
+/* TOP BAR */
+
+.profile-top{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:12px;
+
+    min-width:220px;
+    height:40px;
+
+    padding:8px 10px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    background:
+        rgba(255,255,255,0.14);
+
+    border:
+        1px solid rgba(255,255,255,0.16);
+
+    backdrop-filter:blur(10px);
+
+    transition:0.3s ease;
+}
+
+.profile-top:hover{
+
+    background:
+        rgba(255,255,255,0.22);
+}
+
+.profile-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+}
+
+/* AVATAR */
+
+.modern-avatar{
+
+    width:30px;
+
+    height:30px;
+
+    border-radius:50%;
+
+    background:
+        linear-gradient(
+            135deg,
+            #ffffff,
+            #d8b4fe
+        );
+
+    color:#5b2d8e;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:14px;
+
+    font-weight:700;
+}
+
+/* NAME */
+
+.profile-name{
+
+    color:white;
+
+    font-size:13px;
+
+    font-weight:700;
+}
+
+/* ARROW */
+
+.profile-arrow{
+
+    color:white;
+
+    font-size:11px;
+
+    transition:0.3s ease;
+}
+
+/* MENU */
+
+.profile-menu{
+
+    position:absolute;
+
+    top:55px;
+
+    right:0;
+
+    width:260px;
+
+    background:white;
+
+    border-radius:14px;
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,0.14);
+
+    padding:16px;
+
+    display:none;
+
+    z-index:9999;
+}
+
+/* DETAIL ROW */
+
+.profile-detail-row{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:10px 0;
+
+    border-bottom:1px solid #ECECEC;
+}
+
+.detail-label{
+
+    font-size:12px;
+
+    color:#6B7280;
+
+    font-weight:600;
+}
+
+.detail-value{
+
+    font-size:12px;
+
+    color:#172B4D;
+
+    font-weight:700;
+
+    text-align:right;
+}
+
+/* LOGOUT */
+
+.modern-logout-btn{
+
+    width:100%;
+
+    margin-top:16px;
+
+    height:40px;
+
+    border:none;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    background:
+        linear-gradient(
+            135deg,
+            #5b2d8e,
+            #8f50df
+        );
+
+    color:white;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    transition:0.3s ease;
+}
+
+.modern-logout-btn:hover{
+
+    transform:translateY(-1px);
+
+    opacity:0.92;
+}
+    .modern-avatar{
+
+    width:32px !important;
+
+    height:32px !important;
+
+    font-size:10px !important;
+
+    font-weight:600 !important;
+
+    letter-spacing:0.3px !important;
+}
+   .profile-menu{
+
+    position:absolute;
+
+    top:55px;
+
+    right:0;
+
+    width:260px;
+
+    background:white;
+
+    border-radius:14px;
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,0.14);
+
+    padding:16px;
+
+    display:none;
+
+    z-index:9999;
+}
+
+/* CLOSE ICON */
+
+.profile-close{
+
+    position:absolute;
+
+    top:10px;
+
+    right:12px;
+
+    width:24px;
+
+    height:24px;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    cursor:pointer;
+    margin-bottom:20px;
+    padding:20px;
+    font-size:12px;
+
+    font-weight:700;
+
+    color:#6B7280;
+
+    transition:0.3s ease;
+}
+
+.profile-close:hover{
+
+    background:#F3F4F6;
+
+    color:#5b2d8e;
+
+    transform:scale(1.08);
+}
+    .profile-menu{
+
+    position:absolute;
+    top:55px;
+    right:0;
+
+    width:280px;
+
+    background:white;
+    border-radius:16px;
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,0.14);
+
+    padding:18px 18px 14px;
+
+    display:none;
+
+    z-index:9999;
+}
+
+/* TOP AREA */
+
+.profile-top{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:10px;
+
+    margin-bottom:14px;
+
+    padding-right:6px;
+}
+
+/* USER ROLE */
+
+.profile-role{
+
+    font-size:12px;
+
+    font-weight:600;
+
+    color:#5b2d8e;
+
+    background:#F3F0FF;
+
+    padding:7px 14px;
+
+    border-radius:20px;
+
+    max-width:200px;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+    white-space:nowrap;
+}
+
+/* CLOSE BUTTON */
+
+.profile-close{
+
+    width:28px;
+
+    height:28px;
+
+    min-width:28px;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    cursor:pointer;
+
+    font-size:13px;
+
+    font-weight:700;
+
+    color:#666;
+
+    transition:0.3s ease;
+}
+
+.profile-close:hover{
+
+    background:#F3F4F6;
+
+    color:#5b2d8e;
+
+    transform:scale(1.08);
+}
+    /* PROFILE WRAPPER */
+
+.profile-wrapper{
+
+    position:relative;
+
+    display:flex;
+
+    align-items:center;
+}
+
+/* TRIGGER */
+
+.profile-trigger{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    background:white;
+
+    padding:8px 14px;
+
+    border-radius:40px;
+
+    cursor:pointer;
+
+    transition:0.3s ease;
+
+    min-width:240px;
+
+    box-shadow:
+        0 4px 12px rgba(0,0,0,0.08);
+}
+
+.profile-trigger:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:
+        0 8px 20px rgba(0,0,0,0.12);
+}
+
+/* AVATAR */
+
+.profile-avatar{
+
+    width:40px;
+
+    height:40px;
+
+    border-radius:50%;
+
+    background:linear-gradient(
+        135deg,
+        #8E2DE2,
+        #C471ED
+    );
+
+    color:white;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:16px;
+
+    font-weight:700;
+
+    flex-shrink:0;
+}
+
+/* USER INFO */
+
+.profile-user-info{
+
+    flex:1;
+
+    min-width:0;
+}
+
+.profile-user-name{
+
+    font-size:13px;
+
+    font-weight:700;
+
+    color:#222;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+}
+
+.profile-user-role{
+
+    font-size:11px;
+
+    color:#777;
+
+    margin-top:2px;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+}
+
+/* ARROW */
+
+.profile-arrow{
+
+    color:#777;
+
+    font-size:12px;
+
+    flex-shrink:0;
+}
+
+/* MENU */
+
+.profile-menu{
+
+    position:absolute;
+
+    top:70px;
+
+    right:0;
+
+    width:320px;
+
+    background:white;
+
+    border-radius:18px;
+
+    box-shadow:
+        0 15px 40px rgba(0,0,0,0.15);
+
+    padding:18px;
+
+    display:none;
+
+    z-index:99999;
+
+    animation:profileFade 0.25s ease;
+}
+
+@keyframes profileFade{
+
+    from{
+        opacity:0;
+        transform:translateY(-10px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+/* TOP */
+
+.profile-top{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:10px;
+
+    margin-bottom:16px;
+}
+
+/* ROLE BADGE */
+
+.profile-role-badge{
+
+    background:#F3F0FF;
+
+    color:#6C2BD9;
+
+    font-size:12px;
+
+    font-weight:700;
+
+    padding:8px 14px;
+
+    border-radius:30px;
+
+    max-width:220px;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+    white-space:nowrap;
+}
+
+/* CLOSE */
+
+.profile-close{
+
+    width:30px;
+
+    height:30px;
+
+    min-width:30px;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    cursor:pointer;
+
+    font-size:14px;
+
+    transition:0.3s ease;
+
+    color:#666;
+}
+
+.profile-close:hover{
+
+    background:#F4F4F4;
+
+    color:#8E2DE2;
+
+    transform:rotate(90deg);
+}
+
+/* PROFILE CARD */
+
+.profile-card{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    background:#fafafa;
+
+    padding:14px;
+
+    border-radius:14px;
+
+    margin-bottom:18px;
+}
+
+/* CARD AVATAR */
+
+.profile-card-avatar{
+
+    width:52px;
+
+    height:52px;
+
+    border-radius:50%;
+
+    background:linear-gradient(
+        135deg,
+        #8E2DE2,
+        #C471ED
+    );
+
+    color:white;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:20px;
+
+    font-weight:700;
+
+    flex-shrink:0;
+}
+
+/* DETAILS */
+
+.profile-card-details{
+
+    flex:1;
+
+    min-width:0;
+}
+
+.profile-card-name{
+
+    font-size:14px;
+
+    font-weight:700;
+
+    color:#222;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+}
+
+.profile-card-email{
+
+    font-size:12px;
+
+    color:#777;
+
+    margin-top:4px;
+
+    word-break:break-word;
+}
+
+/* MENU ITEMS */
+
+.profile-menu-items{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:8px;
+}
+
+.profile-menu-item{
+
+    display:flex;
+
+    align-items:center;
+    justify-content:space-between;
+
+    gap:12px;
+
+    padding:12px 14px;
+
+    border-radius:12px;
+
+    cursor:pointer;
+
+    transition:0.25s ease;
+
+    font-size:16px;
+
+    font-weight:700;
+
+    color:#333;
+}
+
+.profile-menu-item:hover{
+
+    background:#F3F0FF;
+
+    color:#6C2BD9;
+}
+
+/* LOGOUT */
+
+.logout-item{
+
+    color:#dc2626;
+}
+
+.logout-item:hover{
+
+    background:#fef2f2;
+
+    color:#dc2626;
+}
+    /* PROFILE BUTTON */
+
+.profile-trigger{
+
+    padding:6px 12px;      /* reduced */
+
+    min-width:200px;       /* reduced */
+
+    border-radius:16px;
+
+    gap:10px;
+}
+
+/* AVATAR */
+
+.profile-avatar{
+
+    width:34px;            /* reduced */
+
+    height:34px;
+
+    font-size:13px;
+}
+
+/* USER NAME */
+
+.profile-user-name{
+
+    font-size:12px;
+}
+
+/* ROLE */
+
+.profile-user-role{
+
+    font-size:10px;
+}
+
+/* ARROW */
+
+.profile-arrow{
+
+    font-size:10px;
+}
+
+/* DROPDOWN */
+
+.profile-menu{
+
+    width:260px;           /* reduced */
+
+    padding:14px;
+}
+
+/* PROFILE CARD */
+
+.profile-card{
+
+    padding:10px;
+
+    gap:10px;
+
+    margin-bottom:14px;
+}
+
+/* CARD AVATAR */
+
+.profile-card-avatar{
+
+    width:42px;
+
+    height:42px;
+
+    font-size:16px;
+}
+
+/* MENU ITEMS */
+
+.profile-menu-item{
+
+    padding:10px 12px;
+
+    font-size:12px;
+}
+    .profile-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    width:100%;
+    padding:10px 14px;
+
+    border-bottom:1px solid #e5e7eb;
+}
+
+/* title */
+.profile-header h3{
+    margin:0;
+    font-size:14px;
+    font-weight:600;
+}
+
+/* close icon */
+.profile-close{
+    margin-left:auto;
+    cursor:pointer;
+
+    font-size:16px;
+    font-weight:bold;
+
+    line-height:1;
+}
+    /* NOTIFICATION */
+
+.notif-wrapper{
+    position:relative;
+    display:flex;
+    align-items:center;
+}
+
+.notif-bell{
+
+    position:relative;
+
+    width:40px;
+    height:40px;
+
+    border-radius:50%;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    cursor:pointer;
+
+    background:rgba(255,255,255,0.15);
+
+    transition:0.3s ease;
+
+    backdrop-filter:blur(10px);
+}
+
+.notif-bell:hover{
+
+    background:white;
+    color:#8E2DE2;
+
+    transform:translateY(-2px);
+}
+
+.notif-bell i{
+    font-size:18px;
+    color:white;
+}
+
+.notif-bell:hover i{
+    color:#8E2DE2;
+}
+
+/* COUNT */
+
+.notif-count{
+
+    position:absolute;
+
+    top:-5px;
+    right:-5px;
+
+    width:18px;
+    height:18px;
+
+    border-radius:50%;
+
+    background:red;
+    color:white;
+
+    font-size:10px;
+    font-weight:bold;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+/* DROPDOWN */
+
+.notif-dropdown{
+
+    position:absolute;
+
+    top:55px;
+    right:0;
+
+    width:340px;
+
+    background:white;
+
+    border-radius:14px;
+
+    box-shadow:0 10px 30px rgba(0,0,0,0.15);
+
+    overflow:hidden;
+
+    display:none;
+
+    z-index:99999;
+}
+
+/* HEADER */
+
+.notif-header{
+
+    padding:14px;
+
+    font-size:15px;
+    font-weight:bold;
+
+    background:linear-gradient(
+        135deg,
+        #8E2DE2,
+        #C471ED
+    );
+
+    color:white;
+}
+
+/* ITEM */
+
+.notif-item{
+
+    padding:14px;
+
+    border-bottom:1px solid #eee;
+
+    cursor:pointer;
+
+    transition:0.3s ease;
+}
+
+.notif-item:hover{
+
+    background:#f8f5ff;
+}
+
+/* UNREAD */
+
+.notif-item.unread{
+
+    background:#f3e8ff;
+}
+
+/* TITLE */
+
+.notif-title{
+
+    font-size:13px;
+    font-weight:600;
+    color:#333;
+
+    margin-bottom:4px;
+}
+
+/* TIME */
+
+.notif-time{
+
+    font-size:11px;
+    color:#888;
+}
+    .timeline-card{
+
+    margin:20px;
+    background:#fff;
+    border-radius:18px;
+    padding:20px;
+
+    box-shadow:
+        0 4px 20px rgba(0,0,0,0.08);
+}
+
+.timeline-header{
+
+    font-size:18px;
+    font-weight:600;
+    margin-bottom:20px;
+
+    color:#2d2d2d;
+
+    font-family:Arial,sans-serif;
+}
+
+.progress-item{
+
+    margin-bottom:22px;
+}
+
+.progress-top{
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    margin-bottom:8px;
+}
+
+.project-name{
+
+    font-size:14px;
+    font-weight:600;
+    color:#222;
+}
+
+.project-percent{
+
+    font-size:13px;
+    font-weight:bold;
+
+    color:#6f3ba2;
+}
+
+.progress-bar{
+
+    width:100%;
+    height:14px;
+
+    background:#ececec;
+
+    border-radius:20px;
+
+    overflow:hidden;
+}
+
+.progress-fill{
+
+    height:100%;
+
+    border-radius:20px;
+
+    background:linear-gradient(
+        90deg,
+        #8E2DE2,
+        #C471ED
+    );
+
+    transition:width 0.5s ease;
+}
+
+.progress-meta{
+
+    margin-top:6px;
+
+    font-size:11px;
+
+    color:#888;
+}
+    .modern-timeline-card{
+
+    margin:20px;
+
+    background:rgba(255,255,255,0.75);
+
+    backdrop-filter:blur(12px);
+
+    border-radius:22px;
+
+    padding:22px;
+
+    box-shadow:
+        0 8px 30px rgba(0,0,0,0.08);
+
+    border:1px solid rgba(255,255,255,0.4);
+
+    transition:0.3s ease;
+}
+
+.modern-timeline-card:hover{
+
+    transform:translateY(-3px);
+}
+
+.modern-timeline-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:22px;
+
+    font-size:18px;
+
+    font-weight:700;
+
+    color:#2d1457;
+}
+
+.timeline-count{
+
+    background:linear-gradient(
+        135deg,
+        #8E2DE2,
+        #C471ED
+    );
+
+    color:white;
+
+    padding:7px 14px;
+
+    border-radius:30px;
+
+    font-size:12px;
+
+    font-weight:600;
+}
+
+.modern-progress-item{
+
+    margin-bottom:20px;
+
+    padding:16px;
+
+    border-radius:18px;
+
+    background:white;
+
+    box-shadow:
+        0 4px 15px rgba(0,0,0,0.05);
+
+    transition:0.3s ease;
+}
+
+.modern-progress-item:hover{
+
+    transform:scale(1.01);
+}
+
+.modern-progress-top{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:12px;
+}
+
+.modern-project-name{
+
+    font-size:15px;
+
+    font-weight:700;
+
+    color:#222;
+
+    margin-bottom:4px;
+}
+
+.modern-meta{
+
+    font-size:12px;
+
+    color:#777;
+}
+
+.modern-percent{
+
+    font-size:15px;
+
+    font-weight:700;
+
+    color:#8E2DE2;
+}
+
+.modern-progress-bar{
+
+    width:100%;
+
+    height:12px;
+
+    background:#ececec;
+
+    border-radius:30px;
+
+    overflow:hidden;
+}
+
+.modern-progress-fill{
+
+    height:100%;
+
+    border-radius:30px;
+
+    background:linear-gradient(
+        90deg,
+        #8E2DE2,
+        #C471ED
+    );
+
+    transition:width 0.5s ease;
+}
+
+.timeline-btn-wrap{
+
+    display:flex;
+
+    justify-content:center;
+
+    margin-top:20px;
+}
+
+.modern-view-btn{
+
+    border:none;
+
+    outline:none;
+
+    cursor:pointer;
+
+    padding:12px 24px;
+
+    border-radius:40px;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    color:white;
+
+    background:linear-gradient(
+        135deg,
+        #8E2DE2,
+        #C471ED
+    );
+
+    transition:0.3s ease;
+
+    box-shadow:
+        0 5px 15px rgba(142,45,226,0.3);
+}
+
+.modern-view-btn:hover{
+
+    transform:translateY(-2px) scale(1.03);
+
+    box-shadow:
+        0 8px 20px rgba(142,45,226,0.4);
+}
 </style>
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -3012,31 +5032,111 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         RW Project Management Portal
     </div>
 
-    <div class="right-section">
-      <div class="user-info">
+ <div class="right-section">
+${notifHtml}
+    <!-- PROFILE SECTION -->
 
-    <div class="user-name-box">
+<div class="profile-wrapper">
 
-        <span class="initials">
-            ${loggedInUserName
-                .split(' ')
-                .map(n => n.charAt(0).toUpperCase())
-                .join('')}
-        </span>
+    <!-- PROFILE BUTTON -->
+    <div class="profile-trigger" onclick="toggleProfileMenu(event)">
 
-        <span class="full-name">
-            ${loggedInUserName}
-        </span>
+        <div class="profile-avatar">
 
-    </div>
+    ${
+        loggedInUserName
+        ? loggedInUserName
+            .split(' ')
+            .map(word => word.charAt(0))
+            .join('')
+            .substring(0,2)
+            .toUpperCase()
 
-    <span class="role-text">
-        ${dmsRole || empRole}
-    </span>
+        : 'US'
+    }
 
 </div>
-        <button class="logout" onclick="logout()">Logout</button>
+
+        <div class="profile-user-info">
+
+            <div class="profile-user-name">
+                ${loggedInUserName || 'User'}
+            </div>
+
+            <div class="profile-user-role">
+                ${dmsRole || 'Employee'}
+            </div>
+
+        </div>
+
+        <div class="profile-arrow">
+            <i class="fa-solid fa-chevron-down"></i>
+        </div>
+
     </div>
+
+    <!-- DROPDOWN -->
+    <div class="profile-menu" id="profileMenu">
+
+        <!-- TOP -->
+
+        <div class="profile-top">
+
+            <div class="profile-menu-item">
+                <i class="fa-solid fa-user"></i>
+                My Profile
+            </div>
+
+            <div
+                class="profile-close"
+                onclick="closeProfileMenu(event)"
+            >
+                ✕
+            </div>
+
+        </div>
+
+        <!-- USER CARD -->
+
+        <div class="profile-card">
+
+          
+
+           
+
+        
+
+        <!-- MENU -->
+
+        <div class="profile-menu-items">
+
+            <div class="profile-card-name">
+                    ${loggedInUserName || 'User'}
+                </div>
+
+                <div class="profile-card-email">
+                    ${email || ''}
+                </div>
+<div class="profile-role-badge">
+                ${dmsRole || 'Employee'}
+            </div>
+            
+
+            <div
+                class="profile-menu-item logout-item"
+                onclick="logout()"
+            >
+                <i class="fa-solid fa-right-from-bracket"></i>
+                Logout
+            </div>
+
+        </div>
+
+    </div>
+</div>
+</div>
+
+</div>
 
 </div>
 
@@ -3144,7 +5244,7 @@ ${roleType === 'PM' ? `
         </div>
 ${roleType === 'PMO' ? `
     ${specialCards}
-
+${timelineProgressCard}
     <div style="margin:10px;">
         ${chartHtml}
     </div>
@@ -3152,6 +5252,7 @@ ${roleType === 'PMO' ? `
     <div style="margin:10px;">
         ${pieChartCard}
     </div>
+    
 ` : ''}
 ${roleType === 'PM' ? `
 <div style="display:flex; gap:8px; margin:8px;">
@@ -3201,9 +5302,60 @@ ${roleType === 'OTHER' ? `
     <div class="spinner"></div>
     <p>Opening...</p>
 </div>
+<audio id="notifSound">
+
+<source
+src="https://actions.google.com/sounds/v1/alarms/notification_simple-02.mp3"
+type="audio/mpeg">
+
+</audio>
 <script>
 
+function removeNotification(notifId){
 
+    fetch(
+        window.location.href +
+        '&action=removeNotification' +
+        '&notifId=' + notifId
+    )
+    .then(() => {
+
+        // remove only clicked notification
+        var notifEl =
+            document.getElementById(
+                'notif_' + notifId
+            );
+
+        if(notifEl){
+            notifEl.remove();
+        }
+
+        // update count
+        var countEl =
+            document.querySelector('.notif-count');
+
+        var current =
+            parseInt(countEl.innerText || '0');
+
+        current--;
+
+        if(current <= 0){
+
+            countEl.style.display = 'none';
+
+            current = 0;
+
+            document.getElementById(
+                'notifDropdown'
+            ).innerHTML +=
+                '<div class="notif-item no-notif">' +
+                'No Notifications' +
+                '</div>';
+        }
+
+        countEl.innerText = current;
+    });
+}
 /* ===== BLOCK BACK BUTTON AFTER LOGOUT ===== */
 
 (function () {
@@ -3253,7 +5405,18 @@ ${roleType === 'OTHER' ? `
 
 })();
 
+function closeProfileMenu(event){
 
+    event.stopPropagation();
+
+    document.getElementById(
+        'profileMenu'
+    ).style.display = 'none';
+
+    document.getElementById(
+        'profileArrow'
+    ).style.transform = 'rotate(0deg)';
+}
 /* ===== LOGOUT FUNCTION ===== */
 
 function logout() {
@@ -3268,7 +5431,111 @@ function logout() {
     // redirect
     window.location.href = "${loginUrl}";
 }
+function toggleProfileMenu(){
 
+    var menu =
+        document.getElementById(
+            'profileMenu'
+        );
+
+    var arrow =
+        document.getElementById(
+            'profileArrow'
+        );
+
+    if(menu.style.display === 'block'){
+
+        menu.style.display = 'none';
+
+        arrow.style.transform =
+            'rotate(0deg)';
+    }
+    else{
+
+        menu.style.display = 'block';
+
+        arrow.style.transform =
+            'rotate(180deg)';
+    }
+}
+
+/* CLOSE WHEN CLICK OUTSIDE */
+
+document.addEventListener(
+    'click',
+    function(e){
+
+        var dropdown =
+            document.querySelector(
+                '.profile-dropdown'
+            );
+
+        var menu =
+            document.getElementById(
+                'profileMenu'
+            );
+
+        var arrow =
+            document.getElementById(
+                'profileArrow'
+            );
+
+        if(
+            dropdown &&
+            !dropdown.contains(e.target)
+        ){
+
+            menu.style.display='none';
+
+            arrow.style.transform=
+                'rotate(0deg)';
+        }
+    }
+);
+
+function toggleProfileMenu(event){
+
+    event.stopPropagation();
+
+    const menu =
+        document.getElementById('profileMenu');
+
+    if(menu.style.display === 'block'){
+
+        menu.style.display = 'none';
+
+    }else{
+
+        menu.style.display = 'block';
+    }
+}
+
+function closeProfileMenu(event){
+
+    event.stopPropagation();
+
+    document.getElementById(
+        'profileMenu'
+    ).style.display = 'none';
+}
+
+/* OUTSIDE CLICK */
+
+document.addEventListener('click', function(){
+
+    document.getElementById(
+        'profileMenu'
+    ).style.display = 'none';
+});
+
+/* PREVENT CLOSE INSIDE MENU */
+
+document.getElementById(
+    'profileMenu'
+).addEventListener('click', function(event){
+
+    event.stopPropagation();
+});
 
 var currentType = '';
 /* PREVENT BACK AFTER LOGOUT */
@@ -3589,6 +5856,35 @@ setPageTitle("New Project Plan template");
 
     closeMenu();
 }
+    var lastNotifCount =
+    ${unreadCount};
+
+async function toggleNotifications(){
+
+    var dropdown =
+        document.getElementById(
+            'notifDropdown'
+        );
+
+    dropdown.style.display =
+        dropdown.style.display === 'block'
+        ? 'none'
+        : 'block';
+}
+
+
+
+/* CLOSE WHEN CLICK OUTSIDE */
+
+document.addEventListener('click', function(event){
+
+    var wrapper = document.querySelector('.notif-wrapper');
+
+    if(!wrapper.contains(event.target)){
+
+        document.getElementById('notifDropdown').style.display = 'none';
+    }
+});
     function openRevenueStream(){
 setPageTitle("New Project Plan template");
     document.getElementById('homeContent').style.display = 'none';
@@ -4136,6 +6432,178 @@ window.addEventListener('focus', function(){
 
 });
 
+  
+window.addEventListener(
+
+    'notificationUpdated',
+
+    function(){
+
+        refreshNotifications();
+    }
+);
+
+// AUTO REFRESH NOTIFICATIONS
+setInterval(function(){
+
+    refreshNotifications();
+
+}, 3000);
+// ============================
+// REALTIME NOTIFICATION SYSTEM
+// ============================
+
+var lastNotificationCount = 0;
+
+// START POLLING
+setInterval(function(){
+
+    refreshNotifications();
+
+}, 2000);
+
+
+// LOAD IMMEDIATELY
+refreshNotifications();
+
+
+// ============================
+// REFRESH FUNCTION
+// ============================
+
+function refreshNotifications(){
+
+    fetch('/app/site/hosting/scriptlet.nl?script=YOUR_SCRIPT_ID&deploy=1&action=getNotifications')
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        var badge =
+            document.getElementById('notifCount');
+
+        var container =
+            document.getElementById('notifContainer');
+
+        // =====================
+        // UPDATE COUNT
+        // =====================
+
+        if(data.length > 0){
+
+            badge.style.display = 'flex';
+            badge.innerText = data.length;
+
+        } else {
+
+            badge.style.display = 'none';
+        }
+
+        // =====================
+        // PLAY SOUND FOR NEW
+        // =====================
+
+        if(data.length > lastNotificationCount){
+
+            var audio =
+                new Audio(
+                    'https://actions.google.com/sounds/v1/alarms/notification_simple-02.mp3'
+                );
+
+            audio.play();
+        }
+
+        lastNotificationCount = data.length;
+
+        // =====================
+        // BUILD HTML
+        // =====================
+
+        var html = '';
+
+        if(data.length === 0){
+
+            html =
+                '<div class="notif-item no-notif">No Notifications</div>';
+
+        } else {
+
+            data.forEach(function(n){
+
+                html +=
+                '<div class="notif-item">' +
+
+                    '<div class="notif-text">' +
+                        n.message +
+                    '</div>' +
+
+                    '<span class="notif-remove" onclick="removeNotification(' + n.id + ')">✖</span>' +
+
+                '</div>';
+
+            });
+        }
+
+        container.innerHTML = html;
+
+    });
+}
+    setInterval(function(){
+
+    fetch(window.location.href + '&action=getUnreadCount')
+
+    .then(function(res){
+        return res.text();
+    })
+
+    .then(function(count){
+
+        var countEl =
+            document.querySelector('.notif-count');
+
+        if(!countEl) return;
+
+        count = parseInt(count || '0');
+
+        if(count > 0){
+
+            countEl.style.display = 'flex';
+            countEl.innerText = count;
+
+        }else{
+
+            countEl.style.display = 'none';
+            countEl.innerText = '0';
+        }
+    });
+
+}, 1000);
+
+function toggleTimelineProjects(){
+
+    var more =
+        document.getElementById(
+            'moreTimelineProjects'
+        );
+
+    var btn =
+        document.getElementById(
+            'timelineViewBtn'
+        );
+
+    if(more.style.display === 'none'){
+
+        more.style.display = 'block';
+
+        btn.innerHTML = 'View Less';
+
+    }else{
+
+        more.style.display = 'none';
+
+        btn.innerHTML = 'View More';
+    }
+}
 </script>
 
 `;

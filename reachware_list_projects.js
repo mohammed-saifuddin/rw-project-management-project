@@ -585,6 +585,54 @@ else {
     </tr>
     `;
 }
+function createNotification(empId, message, type, refId){
+
+    if(!empId) return;
+
+    var notifRec = record.create({
+        type:'customrecord2517'
+    });
+
+    // REQUIRED NAME FIELD
+    notifRec.setValue({
+        fieldId:'name',
+        value: message
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_employee',
+        value:empId
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_message',
+        value:message
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_type',
+        value:type
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_refid',
+        value:refId || ''
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_read',
+        value:false
+    });
+
+    notifRec.save();
+}
+createNotification(
+    empId,
+    'New Project Created : ' + customername,
+    'PROJECT_CREATED',
+    parentId
+);
+
 html.defaultValue = `
 
 <style>
@@ -676,17 +724,58 @@ padding:0 !important;
 .main-container{
 font-family:Arial;
 }
+.section-card{
 
+    background:#fff;
+
+    border:1px solid #E5E7EB;
+
+    border-radius:14px;
+
+    padding:20px;
+
+    margin-bottom:25px;
+
+    box-shadow:
+        0 4px 14px rgba(0,0,0,0.05);
+}
+
+.section-title{
+
+    font-size:16px;
+
+    font-weight:700;
+
+    color:#5b2d8e;
+
+    margin-bottom:18px;
+
+    padding-bottom:10px;
+
+    border-bottom:1px solid #E5E7EB;
+
+    text-transform:uppercase;
+
+    letter-spacing:0.5px;
+}
 .form-grid{
-display:grid;
-grid-template-columns:200px 1fr 200px 1fr;
-gap:10px;
-align-items:center;
-margin-bottom:25px;
+
+    display:grid;
+
+    grid-template-columns:
+        180px 280px
+        180px 280px;
+
+    column-gap:30px;
+
+    row-gap:18px;
+
+    align-items:center;
 }
 
 .form-grid label{
 font-weight:600;
+margin-right:24px;
 }
 
 .form-grid input,
@@ -1186,10 +1275,11 @@ text-decoration: none;
 .product-table input,
 .product-table select{
 
-    width:100%;
+    width:300px;
     height:33px;
 
     padding:0 10px;
+    margin-left:20px;
 
     border:1px solid #E5E7EB;
 
@@ -1278,6 +1368,57 @@ font-size:10px;
     justify-content:center;
     color:#333;
 }
+    .form-grid{
+
+    display:grid;
+
+    grid-template-columns:
+        180px 300px
+    180px 300px;
+
+    justify-content:space-between;
+
+    column-gap:70px;
+
+    row-gap:16px;
+
+    padding:0 60px;
+
+    width:100%;
+
+    box-sizing:border-box;
+
+    align-items:center;
+}
+
+/* LABELS */
+.form-grid label{
+
+    width:180px;
+
+    margin:0;
+
+    padding:0;
+
+    font-weight:600;
+
+    text-align:left;
+}
+
+/* INPUTS + SELECTS */
+.form-grid input,
+.form-grid select{
+
+    width:100%;
+
+    height:36px;
+
+    margin:0;
+
+    padding:0 12px;
+
+    box-sizing:border-box;
+}
 </style>
 <h1 class="portal-header">Create New Project</h1>
 <form method="POST">
@@ -1286,6 +1427,12 @@ font-size:10px;
 <div class="main-container">
 
 <div id="toast" class="toast"></div>
+<div class="section-card">
+
+<div class="section-title">
+    Project Information
+</div>
+
 <div class="form-grid">
 <label class="required">Project Type</label>
 <select name="projecttype">
@@ -1359,7 +1506,16 @@ ${erpOptions}
 <label >End Date</label>
 <input type="date" name="enddate" id="enddate" required>
 
+</div>
+</div>
 
+<div class="section-card">
+
+<div class="section-title">
+    Consultant & Timeline Information
+</div>
+
+<div class="form-grid">
 ${isEdit ? `
 <label>Updated End Date</label>
 <input type="date"
@@ -1399,6 +1555,7 @@ ${statOptions1}
 </select>
 
 
+</div>
 </div>
 <button type="button" onclick="addRow()" class="addBtn" style="margin-top:10px;">
 ➕ 
@@ -3014,6 +3171,26 @@ function showDialog(){
 function redirectPage(){
     window.location.href = window.redirectUrl;
 }
+    if(window.opener){
+
+    window.opener.refreshNotifications();
+}
+
+if(window.parent){
+
+    window.parent.refreshNotifications();
+}
+    window.dispatchEvent(
+    new CustomEvent(
+        'notificationUpdated'
+    )
+);
+localStorage.setItem(
+
+    'rw_notification_update',
+
+    new Date().getTime()
+);
 </script>
 
 </body>

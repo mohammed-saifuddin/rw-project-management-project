@@ -57,7 +57,18 @@ var newStatus =
     newTicketRec.getText(
         'custrecord_rw_ticket_ticketstatus'
     ) || '';
+if(oldStatus !== newStatus){
 
+    createNotification(
+        empId,
+        'Ticket Status Changed : ' +
+        oldStatus +
+        ' → ' +
+        newStatus,
+        'TICKET_STATUS',
+        ticketId
+    );
+}
 var histRec = record.create({
     type:'customrecord_rw_ticket_history',
     isDynamic:true
@@ -505,6 +516,48 @@ if(
     currentUser === pmEmp
 ){
     hasAccess = true;
+}
+
+function createNotification(empId, message, type, refId){
+
+    if(!empId) return;
+
+    var notifRec = record.create({
+        type:'customrecord2517'
+    });
+
+    // REQUIRED NAME FIELD
+    notifRec.setValue({
+        fieldId:'name',
+        value: message
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_employee',
+        value:empId
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_message',
+        value:message
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_type',
+        value:type
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_refid',
+        value:refId || ''
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_read',
+        value:false
+    });
+
+    notifRec.save();
 }
 
 var statusButtonHtml = '';
@@ -1706,6 +1759,217 @@ margin-bottom:15px;
             border-radius:5px;
             cursor:pointer;
             }
+            .view-sections{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+    margin-top:14px;
+}
+
+.modern-section{
+
+    background:#ffffff;
+
+    border-radius:14px;
+
+    padding:16px 18px;
+
+    border:1px solid #E5E7EB;
+
+    box-shadow:
+        0 3px 10px rgba(0,0,0,0.04);
+}
+
+.modern-section-title{
+
+    font-size:14px;
+
+    font-weight:700;
+
+    margin-bottom:16px;
+
+    color:#5b2d8e;
+
+    padding-bottom:10px;
+
+    border-bottom:1px solid #ECECEC;
+
+    text-transform:uppercase;
+
+    letter-spacing:0.4px;
+}
+
+.modern-grid{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(2,minmax(420px,1fr));
+
+    gap:12px 28px;
+}
+
+.field-box{
+
+    display:grid;
+
+    grid-template-columns:
+        130px 240px;
+      padding-left:84px;
+      
+    align-items:center;
+
+    column-gap:12px;
+}
+
+/* LABEL */
+.field-box label{
+
+    font-size:11px;
+
+    font-weight:700;
+
+    color:#6B7280;
+
+    text-transform:uppercase;
+
+    letter-spacing:0.3px;
+
+    margin:0;
+}
+
+/* VALUE */
+.field-value{
+
+    min-height:34px;
+
+    width:300px;
+
+    display:flex;
+
+    align-items:center;
+
+    padding:0 10px;
+  
+
+    background:#F9FAFB;
+
+    border:1px solid #E5E7EB;
+
+    border-radius:8px;
+
+    font-size:12px;
+
+    color:#172B4D;
+     justify-content:space-between;
+
+    font-weight:500;
+
+    box-sizing:border-box;
+}
+.issue-box{
+
+    background:#F9FAFB;
+
+    border:1px solid #E5E7EB;
+
+    border-radius:12px;
+
+    padding:14px;
+
+    min-height:80px;
+
+    line-height:1.5;
+
+    font-size:12px;
+}
+
+.status-pill{
+
+    color:white;
+
+    font-weight:600;
+
+    justify-content:center;
+
+    border:none;
+}
+
+/* OPEN */
+.status-open{
+
+    background:#3498db;
+}
+
+/* IN PROGRESS */
+.status-progress{
+
+    background:#f39c12;
+}
+
+/* CODE REVIEW */
+.status-review{
+
+    background:#9b59b6;
+}
+
+/* UAT */
+.status-uat{
+
+    background:#16a085;
+}
+
+/* DONE */
+.status-done{
+
+    background:#27ae60;
+}
+
+/* REOPEN */
+.status-reopen{
+
+    background:#e74c3c;
+}
+
+/* HOLD */
+.status-hold{
+
+    background:#7f8c8d;
+}
+
+.title{
+
+    font-size:18px;
+
+    font-weight:700;
+}
+
+.topHeader{
+
+    margin-bottom:18px;
+}
+
+.statusBtn{
+
+    padding:8px 14px;
+
+    font-size:12px;
+
+    border-radius:6px;
+}
+
+.backBtn{
+
+    padding:8px 14px;
+
+    font-size:12px;
+
+    border-radius:6px;
+}
     </style>
 
     <div class="container">
@@ -1721,54 +1985,160 @@ margin-bottom:15px;
 
 </div>
 
-    <div class="form-grid">
-<div class="label">Ticket No</div>
-        <div class="value">${ticketNo}</div>
-        <div class="label">Requester</div>
-        <div class="value">${name}</div>
+    <div class="view-sections">
 
-        <div class="label">Date</div>
-        <div class="value">${date}</div>
+    <!-- SECTION 1 -->
+    <div class="modern-section">
 
-        
-       
-        
+        <div class="modern-section-title">
+            Ticket Information
+        </div>
 
-        <div class="label">Email</div>
-        <div class="value">${email}</div>
-        <div class="label">Request Type</div>
-        <div class="value">${requestType}</div>
-        <div class="label">Assigned To</div>
-        <div class="value">${assignedTo}</div>
-        <div class="label">Client Name</div>
-        <div class="value">${clientName}</div>
-        <div class="label">Environment</div>
-        <div class="value">${environment}</div>
-        <div class="label">RW Product</div>
-        <div class="value">${suiteApp}</div>
-        <div class="label">Priority</div>
-        <div class="value">${priority}</div>
-        <div class="label">Issue Details</div>
-        <div class="value">${issueDetails}</div>
-        <div class="label">Issue Occured on</div>
-        <div class="value">${formattedIssueDate}</div>
-        <div class="label">Role of the user</div>
-        <div class="value">${roleOfUser}</div>
-        <div class="label">Deadline</div>
-        <div class="value">${formattedDeadline}</div>
+        <div class="modern-grid">
 
-        <div class="label">Project Manager</div>
-        <div class="value">${coworker}</div>
- <div class="label">Attachment</div>
-        <div class="value">
-    ${fileUrl ? `<a href="${fileUrl}" target="_blank">${fileName}</a>` : 'No Attachment'}
-</div>
-        <div class="label">Reviewer</div>
-        <div class="value">${reviewer}</div>
-        <div class="label">Ticket Status</div>
-        <div class="value">${status}</div>
+            <div class="field-box">
+                <label>Ticket No</label>
+                <div class="field-value">${ticketNo}</div>
+            </div>
+
+            <div class="field-box">
+                <label>Requester</label>
+                <div class="field-value">${name}</div>
+            </div>
+
+            <div class="field-box">
+                <label>Email</label>
+                <div class="field-value">${email}</div>
+            </div>
+
+            <div class="field-box">
+                <label>Client Name</label>
+                <div class="field-value">${clientName}</div>
+            </div>
+
+            <div class="field-box">
+                <label>Request Type</label>
+                <div class="field-value">${requestType}</div>
+            </div>
+
+            <div class="field-box">
+                <label>Environment</label>
+                <div class="field-value">${environment}</div>
+            </div>
+
+            <div class="field-box">
+                <label>RW Product</label>
+                <div class="field-value">${suiteApp}</div>
+            </div>
+
+            <div class="field-box">
+                <label>Priority</label>
+                <div class="field-value">${priority}</div>
+            </div>
+
+        </div>
 
     </div>
+
+    <!-- SECTION 2 -->
+    <div class="modern-section">
+
+        <div class="modern-section-title">
+            Assignment & Timeline
+        </div>
+
+        <div class="modern-grid">
+
+            <div class="field-box">
+                <label>Assigned To</label>
+                <div class="field-value">${assignedTo}</div>
+            </div>
+
+            <div class="field-box">
+                <label>Reviewer</label>
+                <div class="field-value">${reviewer}</div>
+            </div>
+
+            <div class="field-box">
+                <label>Project Manager</label>
+                <div class="field-value">${coworker}</div>
+            </div>
+
+            <div class="field-box">
+                <label>Status</label>
+                <div class="
+    field-value
+    status-pill
+    ${
+        status === 'Open'
+        ? 'status-open'
+
+        : status === 'In Progress'
+        ? 'status-progress'
+
+        : status === 'Code Review'
+        ? 'status-review'
+
+        : status === 'UAT'
+        ? 'status-uat'
+
+        : status === 'Done'
+        ? 'status-done'
+
+        : status === 'Reopen'
+        ? 'status-reopen'
+
+        : 'status-hold'
+    }
+">
+    ${status}
+</div>
+            </div>
+
+            <div class="field-box">
+                <label>Date</label>
+                <div class="field-value">${date}</div>
+            </div>
+
+            <div class="field-box">
+                <label>Issue Occurred On</label>
+                <div class="field-value">
+                    ${formattedIssueDate}
+                </div>
+            </div>
+
+            <div class="field-box">
+                <label>Deadline</label>
+                <div class="field-value">
+                    ${formattedDeadline}
+                </div>
+            </div>
+
+            <div class="field-box">
+                <label>Role of User</label>
+                <div class="field-value">
+                    ${roleOfUser}
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- SECTION 3 -->
+    <div class="modern-section">
+
+        <div class="modern-section-title">
+            Issue Details
+        </div>
+
+        <div class="issue-box">
+            ${issueDetails}
+        </div>
+
+    </div>
+
+</div>
 ${historyHtml}
 ${commentsHtml}
 
@@ -2388,6 +2758,20 @@ location.reload();
     sessionStorage.setItem(
     'refreshDashboard',
     'true'
+);
+if(window.opener){
+
+    window.opener.refreshNotifications();
+}
+
+if(window.parent){
+
+    window.parent.refreshNotifications();
+}
+    window.dispatchEvent(
+    new CustomEvent(
+        'notificationUpdated'
+    )
 );
     </script>
     `;

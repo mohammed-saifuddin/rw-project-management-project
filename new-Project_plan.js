@@ -17,6 +17,13 @@ define([
     request.parameters.templateid ||
     request.parameters.id ||
     '';
+    var empId =
+    request.parameters.empid || '';
+
+log.debug(
+    'EMPLOYEE ID',
+    empId
+);
         var templateName = request.parameters.templatename || '';
 
         var product = request.parameters.product || '';
@@ -276,6 +283,56 @@ if(action === 'createmilestone'){
 
     return;
 }
+log.debug(
+    'EMP ID BEFORE NOTIFICATION',
+    empId
+);
+function createNotification(empId, message, type, refId){
+
+    if(!empId) return;
+log.debug(
+    'EMP ID RECEIVED',
+    empId
+);
+    var notifRec = record.create({
+        type:'customrecord2517'
+    });
+
+    // REQUIRED NAME FIELD
+    notifRec.setValue({
+        fieldId:'name',
+        value: message
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_employee',
+        value:empId
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_message',
+        value:message
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_type',
+        value:type
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_refid',
+        value:refId || ''
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_read',
+        value:false
+    });
+
+    notifRec.save();
+}
+
+
 if(action === 'create'){
 
     try{
@@ -286,6 +343,7 @@ if(action === 'create'){
 
         var milestoneId =
             request.parameters.milestone;
+     
 
        
 if(
@@ -345,7 +403,23 @@ log.debug({
     }
 });
         var recId = rec.save();
+    var milestoneNameText =
+    search.lookupFields({
 
+        type:
+        'customrecord_rw_project_mile_stone_types',
+
+        id: milestoneId,
+
+        columns:['name']
+    }).name || '';
+
+createNotification(
+    empId,
+    'Milestone Created : ' + milestoneNameText,
+    'MILESTONE_CREATED',
+    milestoneId
+);
         context.response.write(
             'success'
         );
@@ -372,6 +446,25 @@ if(action === 'delete'){
     var recId =
         request.parameters.recid;
 
+    var childRec =
+        record.load({
+
+            type:
+            'customrecord_rw_project_plan_temp_child',
+
+            id: recId
+        });
+
+    var milestoneId =
+        childRec.getValue(
+            'custrecord_rw_project_temp_child_miles'
+        );
+
+    var milestoneNameText =
+        childRec.getText(
+            'custrecord_rw_project_temp_child_miles'
+        ) || '';
+
     record.delete({
 
         type:
@@ -380,7 +473,21 @@ if(action === 'delete'){
         id: recId
     });
 
-    context.response.write('deleted');
+    createNotification(
+
+        empId,
+
+        'Milestone Deleted : ' +
+        milestoneNameText,
+
+        'MILESTONE_DELETED',
+
+        milestoneId
+    );
+
+    context.response.write(
+        'deleted'
+    );
 
     return;
 }
@@ -417,7 +524,23 @@ if(action === 'update'){
     });
 
     childRec.save();
+var milestoneNameText =
+    search.lookupFields({
 
+        type:
+        'customrecord_rw_project_mile_stone_types',
+
+        id: milestoneId,
+
+        columns:['name']
+    }).name || '';
+
+createNotification(
+    empId,
+    'Milestone Created : ' + milestoneNameText,
+    'MILESTONE_CREATED',
+    milestoneId
+);
     context.response.write(
         'success'
     );
@@ -698,6 +821,9 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 <input type="hidden"
        id="templateId"
        value="${templateId}">
+       <input type="hidden"
+       id="empId"
+       value="${empId}">
        <input type="hidden"
        id="templateName"
        value="${templateName}">
@@ -1154,7 +1280,12 @@ milestone =
         'milestone',
         milestone
     );
-
+url.searchParams.set(
+    'empid',
+    document.getElementById(
+        'empId'
+    ).value
+);
     var response =
     await fetch(
         url.toString()
@@ -1534,7 +1665,12 @@ async function updateMilestone(recId){
         'milestone',
         milestone
     );
-
+url.searchParams.set(
+    'empid',
+    document.getElementById(
+        'empId'
+    ).value
+);
     return fetch(
         url.toString()
     );
@@ -1615,6 +1751,20 @@ if(sel){
         );
 }
 }
+if(window.opener){
+
+    window.opener.refreshNotifications();
+}
+
+if(window.parent){
+
+    window.parent.refreshNotifications();
+}
+    window.dispatchEvent(
+    new CustomEvent(
+        'notificationUpdated'
+    )
+);
 </script>
         `;
 

@@ -1118,7 +1118,26 @@ technical1 =
     projectRec.getText(
         'custrecord_rw_portal_technical'
     ) || '';
+    functional1 =
+    projectRec.getValue(
+        'custrecord_rw_portal_functional_consulta'
+    ) || '';
+
+technical1 =
+    projectRec.getValue(
+        'custrecord_rw_portal_technical'
+    ) || '';
+
 var functionalText =
+    projectRec.getText(
+        'custrecord_rw_portal_functional_consulta'
+    ) || '';
+
+var technicalText =
+    projectRec.getText(
+        'custrecord_rw_portal_technical'
+    ) || '';
+    var functionalText =
     projectRec.getText(
         'custrecord_rw_portal_functional_consulta'
     ) || '';
@@ -1263,23 +1282,46 @@ function toInputDate(date){
 
     try{
 
-        // already display format
-        obj.display = date;
+        var d;
 
-        // HANDLE DD/MM/YYYY
-        var parts = date.split('/');
+        // HANDLE DD/MM/YYYY STRING
+        if(
+            typeof date === 'string' &&
+            date.indexOf('/') > -1
+        ){
 
-        if(parts.length !== 3){
+            var p = date.split('/');
+
+            d = new Date(
+                p[2],
+                p[1]-1,
+                p[0]
+            );
+
+        }else{
+
+            // HANDLE NETSUITE / JS DATE
+            d = new Date(date);
+        }
+
+        if(isNaN(d.getTime())){
             return obj;
         }
 
-        var day = parts[0];
-        var month = parts[1];
-        var year = parts[2];
+        // DISPLAY
+        obj.display = format.format({
+            value: d,
+            type: format.Type.DATE
+        });
 
-        // FOR INPUT TYPE="DATE"
+        // INPUT
+        d.setMinutes(
+            d.getMinutes() -
+            d.getTimezoneOffset()
+        );
+
         obj.input =
-            year + '-' + month + '-' + day;
+            d.toISOString().split('T')[0];
 
     }catch(e){
 
@@ -1400,9 +1442,32 @@ if(productId){
             .value;
     }
 }
-var startdate=result.getValue('custrecord_rw_portal_startdateline') || '';
-var enddate=result.getValue('custrecord_rw_portal_enddateline') || '';
-var updateddeadline=result.getValue('custrecord_rw_portal_updateddeadline') || '';
+var startdate =
+    result.getValue(
+        'custrecord_rw_portal_startdateline'
+    ) ||
+
+    stdate ||
+
+    '';
+
+var enddate =
+    result.getValue(
+        'custrecord_rw_portal_enddateline'
+    ) ||
+
+    eddate ||
+
+    '';
+
+var updateddeadline =
+    result.getValue(
+        'custrecord_rw_portal_updateddeadline'
+    ) ||
+
+    updatedenddate ||
+
+    '';
 var startDate = '';
 var milestoneenddate = '';
 var estDuration = '';
@@ -1928,11 +1993,23 @@ milestoneRows += `
 </td>
 
 <td style="border:1px solid #ddd;padding:8px;">
-    ${getDateValues(startDate).display || ''}
+
+    ${
+        getDateValues(
+            startDate || startdate
+        ).display
+    }
+
 </td>
 
 <td style="border:1px solid #ddd;padding:8px;">
-   ${getDateValues(milestoneenddate).display || ''}
+
+    ${
+        getDateValues(
+            milestoneenddate || enddate
+        ).display
+    }
+
 </td>
 
 <td style="border:1px solid #ddd;padding:8px;">
@@ -2118,45 +2195,48 @@ pmDropdown +=
         emp.name +
         '</option>';
 });
-var uat = '';
-var golive = '';
-var start = '';
-var end = '';
-var updated = '';
+// var uat = '';
+// var golive = '';
+// var start = '';
+// var end = '';
+// var updated = '';
 
-if(uatRaw){
-    uat = format.format({
-        value: uatRaw,
-        type: format.Type.DATE
-    });
-}
-if(startdate){
-    start = format.format({
-        value: startdate,
-        type: format.Type.DATE
-    });
-}
-if(enddate){
-    end = format.format({
-        value: enddate,
-        type: format.Type.DATE
-    });
-}
-if(updateddeadline){
-    updated = format.format({
-        value: updateddeadline,
-        type: format.Type.DATE
-    });
-}
-if(goliveRaw){
-    golive = format.format({
-        value: goliveRaw,
-        type: format.Type.DATE
-    });
-}
+// if(uatRaw){
+//     uat = format.format({
+//         value: uatRaw,
+//         type: format.Type.DATE
+//     });
+// }
+// if(startdate){
+//     start = format.format({
+//         value: startdate,
+//         type: format.Type.DATE
+//     });
+// }
+// if(enddate){
+//     end = format.format({
+//         value: enddate,
+//         type: format.Type.DATE
+//     });
+// }
+// if(updateddeadline){
+//     updated = format.format({
+//         value: updateddeadline,
+//         type: format.Type.DATE
+//     });
+// }
+// if(goliveRaw){
+//     golive = format.format({
+//         value: goliveRaw,
+//         type: format.Type.DATE
+//     });
+// }
 
 var lineId = result.id;   // 🔥 BEST WAY
  
+var uatLineObj =
+    getDateValues(uatRaw);
+
 var goliveLineObj =
     getDateValues(goliveRaw);
 
@@ -2165,13 +2245,9 @@ var startLineObj =
 
 var endLineObj =
     getDateValues(enddate);
-var uatLineObj =
-    getDateValues(uat);
 
-var goliveLineObj =
-    getDateValues(golive);
 var updatedLineObj =
-    getDateValues(updateddeadline); 
+    getDateValues(updateddeadline);
 var empRoleMap = {};
 
  if(roleType === 'PMO'){
@@ -2458,40 +2534,51 @@ historyHtml += `</div>`;
             ${statOptions}
         </select>
     </td>
-    <td style="border:1px solid #ccc;padding:8px;">
-    <span class="view-mode">${start}</span>
-   
+  <td style="border:1px solid #ccc;padding:8px;">
 
-<input
-    class="edit-mode startdate"
-    type="date"
-    value="${startLineObj.input}"
-    style="display:none;"
-/>
-</td>
-   <td style="border:1px solid #ccc;padding:8px;">
     <span class="view-mode">
-    ${endLineObj.display}
-</span>
+        ${startLineObj.display}
+    </span>
 
-<input
-    class="edit-mode enddate"
-    type="date"
-    value="${endLineObj.input}"
-    style="display:none;"
-/>
+    <input
+        class="edit-mode startdate"
+        type="date"
+        value="${startLineObj.input}"
+        style="display:none;"
+    />
+
 </td>
-   <td style="border:1px solid #ccc;padding:8px;">
-    <span class="view-mode">
-    ${updatedLineObj.display}
-</span>
 
-<input
-    class="edit-mode updateddeadline"
-    type="date"
-    value="${updatedLineObj.input}"
-    style="display:none;"
-/>
+<!-- END DATE -->
+<td style="border:1px solid #ccc;padding:8px;">
+
+    <span class="view-mode">
+        ${endLineObj.display}
+    </span>
+
+    <input
+        class="edit-mode enddate"
+        type="date"
+        value="${endLineObj.input}"
+        style="display:none;"
+    />
+
+</td>
+
+<!-- UPDATED DEADLINE -->
+<td style="border:1px solid #ccc;padding:8px;">
+
+    <span class="view-mode">
+        ${updatedLineObj.display}
+    </span>
+
+    <input
+        class="edit-mode updateddeadline"
+        type="date"
+        value="${updatedLineObj.input}"
+        style="display:none;"
+    />
+
 </td>
     
 <td style="border:1px solid #ccc;padding:8px;">
@@ -3422,7 +3509,53 @@ else {
         type: serverWidget.FieldType.INLINEHTML,
         label: 'HTML'
     });
+    function createNotification(empId, message, type, refId){
 
+    if(!empId) return;
+
+    var notifRec = record.create({
+        type:'customrecord2517'
+    });
+
+    // REQUIRED NAME FIELD
+    notifRec.setValue({
+        fieldId:'name',
+        value: message
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_employee',
+        value:empId
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_message',
+        value:message
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_type',
+        value:type
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_refid',
+        value:refId || ''
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_read',
+        value:false
+    });
+
+    notifRec.save();
+}
+createNotification(
+    empId,
+    'Project Updated : ' + customer,
+    'PROJECT_UPDATED',
+    projectId
+);
     htmlField.defaultValue = `
     <style>
         body{
@@ -3551,7 +3684,7 @@ else {
         }
 
         .value{
-            width:100%;
+            width:300px;
             background:#f9f9f9;
             border:1px solid #f1f1;
             padding:8px;
@@ -3690,10 +3823,116 @@ linear-gradient(
             border-radius:5px;
             cursor:pointer;
             }
+
+            .section-card{
+
+    background:#fff;
+
+    border:1px solid #E5E7EB;
+
+    border-radius:16px;
+
+    padding:20px;
+
+    margin-bottom:25px;
+
+    box-shadow:
+        0 4px 14px rgba(0,0,0,0.05);
+}
+
+.section-title{
+
+    font-size:16px;
+
+    font-weight:700;
+
+    color:#5b2d8e;
+
+    margin-bottom:18px;
+
+    padding-bottom:10px;
+
+    border-bottom:1px solid #E5E7EB;
+
+    text-transform:uppercase;
+
+    letter-spacing:0.5px;
+}
+
+.milestone-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:15px;
+}
+
+.milestone-product{
+
+    font-size:16px;
+
+    font-weight:700;
+
+    color:#002855;
+}
+
+.milestone-table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    overflow:hidden;
+
+    border-radius:12px;
+}
+
+.milestone-table th{
+
+    background:linear-gradient(
+        135deg,
+        #002855 0%,
+        #5b2d8e 50%,
+        #8f50df 100%
+    );
+
+    color:white;
+
+    padding:12px;
+
+    font-size:11px;
+
+    text-transform:uppercase;
+
+    letter-spacing:0.5px;
+}
+
+.milestone-table td{
+
+    padding:10px;
+
+    border:1px solid #E5E7EB;
+
+    font-size:13px;
+}
+
+.milestone-table tr:hover{
+
+    background:#f8f9fc;
+}
     </style>
 
     <div class="container">
     <div class="title">Project Details</div>
+
+    <div class="section-card">
+
+    <div class="section-title">
+        Project Information
+    </div>
 
     <div class="form-grid">
 
@@ -3733,7 +3972,16 @@ linear-gradient(
         <div class="value">${accountManager}</div>
         <div class="label">Product/Services</div>
         <div class="value">${erp}</div>
-       
+       </div>
+</div>
+
+<div class="section-card">
+
+    <div class="section-title">
+        Consultant & Timeline Information
+    </div>
+
+    <div class="form-grid">
         <div class="label">Go-Live Date</div>
         <div class="value">${golive}</div>
  <div class="label">Start Date</div>
@@ -3775,9 +4023,9 @@ linear-gradient(
 </div>
 
          <div class="label">Functional consulatant</div>
-        <div class="value">${functional1}</div>
+        <div class="value">${functionalText}</div>
    <div class="label">Technical consulatant</div>
-        <div class="value">${technical1}</div>
+        <div class="value">${technicalText}</div>
         <div class="label">Duration</div>
         <div class="value">${duration} days</div>
 
@@ -3792,7 +4040,8 @@ linear-gradient(
 
 </div>
     </div>
-    
+    </div>
+</div>
 <!-- ====================================== -->
 <!-- PRODUCT PLAN TABS -->
 <!-- ====================================== -->
@@ -4800,6 +5049,20 @@ document
  sessionStorage.setItem(
     'refreshDashboard',
     'true'
+);
+if(window.opener){
+
+    window.opener.refreshNotifications();
+}
+
+if(window.parent){
+
+    window.parent.refreshNotifications();
+}
+    window.dispatchEvent(
+    new CustomEvent(
+        'notificationUpdated'
+    )
 );
     </script>
     `;

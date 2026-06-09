@@ -1166,7 +1166,7 @@ sessionStorage.setItem(
         var req = context.request;
         var fileId = req.parameters.fileId;
         
-
+var empId = req.parameters.empid || '';
 log.debug("Received File ID", fileId);
 function convertToNetSuiteDate(dateStr) {
     if (!dateStr || dateStr.trim() === '') return null;
@@ -1348,6 +1348,54 @@ if (formattedIssueDate) {
         
         
         var id = rec.save();
+        function createNotification(empId, message, type, refId){
+
+    if(!empId) return;
+
+    var notifRec = record.create({
+        type:'customrecord2517'
+    });
+
+    // REQUIRED NAME FIELD
+    notifRec.setValue({
+        fieldId:'name',
+        value: message
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_employee',
+        value:empId
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_message',
+        value:message
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_type',
+        value:type
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_refid',
+        value:refId || ''
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_read',
+        value:false
+    });
+
+    notifRec.save();
+}
+
+createNotification(
+    empId,
+    'New Ticket Assigned : ' + ticketNo,
+    'TICKET_CREATED',
+    id
+);
 
           var homeUrl = url.resolveScript({
                     scriptId:'customscript2874',
@@ -1576,6 +1624,20 @@ function redirectPage(){
     }, 300);
 
 });
+if(window.opener){
+
+    window.opener.refreshNotifications();
+}
+
+if(window.parent){
+
+    window.parent.refreshNotifications();
+}
+    window.dispatchEvent(
+    new CustomEvent(
+        'notificationUpdated'
+    )
+);
 </script>
 
 </body>
