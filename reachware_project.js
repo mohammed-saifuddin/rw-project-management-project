@@ -26,7 +26,66 @@ var filterType = context.request.parameters.filter;
 log.debug("Filter Type", filterType);
 if (isNaN(page) || page < 0) page = 0;
 var pageSize = 10;
+var customerOptions = '<option value="">All Customers</option>';
 
+var customerData = [];
+
+var customerSearch = search.create({
+
+    type: search.Type.CUSTOMER,
+
+    filters: [
+        ['isinactive','is','F'],
+        'AND',
+        ['custentity_is_rw_customer','is','T']
+    ],
+
+    columns: [
+        'internalid',
+        'altname'
+    ]
+});
+
+customerSearch.run().each(function(result){
+
+    customerData.push({
+
+        id:
+            result.getValue('internalid'),
+
+        name:
+            result.getValue('altname') || ''
+    });
+
+    return true;
+});
+
+// SORT ALPHABETICALLY
+customerData.sort(function(a,b){
+
+    return a.name.localeCompare(b.name);
+});
+
+// BUILD DROPDOWN
+customerData.forEach(function(customer){
+
+    customerOptions += `
+
+        <option value="${customer.id}"
+
+            ${
+                request.parameters.clientName ==
+                customer.id
+
+                ? 'selected'
+                : ''
+            }>
+
+            ${customer.name}
+
+        </option>
+    `;
+});
 
  var loginUrl = url.resolveScript({
 scriptId: 'customscript2872',
@@ -178,6 +237,40 @@ else if(filterType === 'myprojects' && empId){
     ]);
 }
 // total → no filter
+// ---------------- FILTER VALUES ----------------
+
+var customerFilter = request.parameters.customer || '';
+var statusFilter   = request.parameters.projectstatus || '';
+
+// ---------------- APPLY FILTERS ----------------
+
+// CUSTOMER FILTER
+if(customerFilter){
+    
+    if(filters.length > 0){
+        filters.push('AND');
+    }
+
+    filters.push([
+        'custrecord1513.custrecord_rw_portal_customername',
+        'anyof',
+        customerFilter
+    ]);
+}
+
+// PROJECT STATUS FILTER
+if(statusFilter){
+
+    if(filters.length > 0){
+        filters.push('AND');
+    }
+
+    filters.push([
+        'custrecord1513.custrecord_rw_portal_status',
+        'anyof',
+        statusFilter
+    ]);
+}
 var projectSearch = search.create({
     type: 'customrecord_rw_portal_access2',
      filters:filters,
@@ -708,6 +801,7 @@ if(!projectId || !productId){
 }
 log.debug("DMS ROLE", dmsRole);
 log.debug("ROLE TYPE", roleType);
+
 if(roleType === 'PM'){   
     ticketCols = `
         <td style="border:1px solid black;">${ticketData.total}</td>
@@ -920,7 +1014,75 @@ if(roleType === 'PMO' || roleType === 'PM'){
     addButton = `<div style="height:55px;width:35px;"></div>`;
 }
 
+function getCustomerOptions(selectedValue){
 
+    var options = '<option value="">All Customers</option>';
+
+    var customerSearch = search.create({
+
+        type: search.Type.CUSTOMER,
+
+        filters: [
+            ['isinactive','is','F'],
+            'AND',
+            ['custentity_is_rw_customer','is','T']
+        ],
+
+        columns: [
+            'internalid',
+            'altname'
+        ]
+    });
+
+    customerSearch.run().each(function(res){
+
+        var id = res.getValue('internalid');
+
+        var name = res.getValue('altname');
+
+        options += `
+            <option value="${id}"
+                ${selectedValue == id ? 'selected' : ''}>
+                ${name}
+            </option>
+        `;
+
+        return true;
+    });
+
+    return options;
+}
+
+function getStatusOptions(selectedValue){
+
+    var options = '';
+
+    var statuses = [
+
+        {id:'1',  name:'Kick Off'},
+        {id:'2',  name:'In Progress'},
+        {id:'3',  name:'On Hold'},
+        {id:'4',  name:'UAT'},
+        {id:'5',  name:'Go Live'},
+        {id:'6',  name:'COC'},
+        {id:'7',  name:'Business Requirement'},
+        {id:'8',  name:'Training'},
+        {id:'11', name:'Support'}
+
+    ];
+
+    statuses.forEach(function(status){
+
+        options += `
+            <option value="${status.id}"
+                ${selectedValue == status.id ? 'selected' : ''}>
+                ${status.name}
+            </option>
+        `;
+    });
+
+    return options;
+}
 htmlField.defaultValue = `
 
 <style>
@@ -1254,6 +1416,174 @@ text-decoration: none;
 .status.support{
     background:#34495e;
 }
+    /* ================= FILTER CARD ================= */
+
+.filter-card{
+
+    display:flex;
+    align-items:flex-end;
+    gap:18px;
+
+    padding:14px 18px;
+    margin:12px 5px 18px 5px;
+
+    background:linear-gradient(
+        135deg,
+        #ffffff,
+        #f8f5ff
+    );
+
+    border-radius:14px;
+
+    border:1px solid #ece6ff;
+
+    box-shadow:
+        0 4px 15px rgba(111,45,168,0.08);
+
+    flex-wrap:wrap;
+}
+
+/* ================= GROUP ================= */
+
+.filter-group{
+
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}
+
+/* ================= LABEL ================= */
+
+.filter-group label{
+
+    font-size:12px;
+    font-weight:600;
+
+    color:#5b2d8e;
+
+    padding-left:2px;
+}
+
+/* ================= SELECT ================= */
+
+.filter-group select{
+
+    min-width:220px;
+
+    height:40px;
+
+    padding:0 12px;
+
+    border-radius:10px;
+
+    border:1px solid #d7c8f5;
+
+    background:white;
+
+    font-size:13px;
+
+    color:#333;
+
+    outline:none;
+
+    transition:all 0.25s ease;
+
+    box-shadow:
+        inset 0 1px 2px rgba(0,0,0,0.03);
+}
+
+/* ================= FOCUS ================= */
+
+.filter-group select:focus{
+
+    border-color:#8f50df;
+
+    box-shadow:
+        0 0 0 3px rgba(143,80,223,0.15);
+}
+
+/* ================= BUTTON AREA ================= */
+
+.filter-actions{
+
+    display:flex;
+    align-items:flex-end;
+}
+
+/* ================= APPLY BUTTON ================= */
+
+.btn-primary{
+
+    height:40px;
+
+    padding:0 22px;
+
+    border:none;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    color:white;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    letter-spacing:0.3px;
+
+    background:linear-gradient(
+        135deg,
+        #5b2d8e 0%,
+        #8f50df 100%
+    );
+
+    transition:all 0.25s ease;
+
+    box-shadow:
+        0 4px 10px rgba(111,45,168,0.25);
+}
+
+/* ================= BUTTON HOVER ================= */
+
+.btn-primary:hover{
+
+    transform:translateY(-1px);
+
+    box-shadow:
+        0 6px 16px rgba(111,45,168,0.35);
+}
+
+/* ================= MOBILE ================= */
+
+@media(max-width:768px){
+
+    .filter-card{
+
+        align-items:stretch;
+    }
+
+    .filter-group{
+
+        width:100%;
+    }
+
+    .filter-group select{
+
+        width:100%;
+        min-width:100%;
+    }
+
+    .filter-actions{
+
+        width:100%;
+    }
+
+    .btn-primary{
+
+        width:100%;
+    }
+}
 </style>
 <form method="GET">
 <input type="hidden" id="pageInput" name="page" value="${page}">
@@ -1262,6 +1592,7 @@ text-decoration: none;
 <input type="hidden" name="email" value="${email}">
 <input type="hidden" name="from" value="${from}">
 <input type="hidden" name="filter" value="${filterType || ''}">
+
 <input type="hidden" name="title" value="${dynamicTitle}">
 <div class="content">
 
@@ -1281,6 +1612,68 @@ text-decoration: none;
         onload="hideLoader()">
 </iframe>
 <div id="homeContent">
+
+<div class="filter-card">
+
+    <!-- CUSTOMER -->
+    <div class="filter-group">
+
+        <label>Customer</label>
+
+        <select
+            name="customer"
+            id="customerFilter"
+            style="
+                padding:8px 10px;
+                border:1px solid #ccc;
+                border-radius:8px;
+                min-width:220px;
+            "
+        >
+
+        ${customerOptions}
+
+        </select>
+
+    </div>
+
+    <!-- STATUS -->
+    <div class="filter-group">
+
+        <label>Project Status</label>
+
+        <select
+            name="projectstatus"
+            id="statusFilter"
+            style="
+                padding:8px 10px;
+                border:1px solid #ccc;
+                border-radius:8px;
+                min-width:220px;
+            "
+        >
+
+            <option value="">All Status</option>
+
+            ${getStatusOptions(statusFilter)}
+
+        </select>
+
+    </div>
+
+    <!-- BUTTON -->
+    <div class="filter-actions">
+
+        <button
+            type="submit"
+            class="btn-primary"
+        >
+            Apply
+        </button>
+
+    </div>
+
+</div>
 
 
 <div class="table-header">
@@ -1464,6 +1857,7 @@ ticketUrl += "&fromproject=T";
     
     frame.src = ticketUrl;
 }
+    
 </script>
 `;
 

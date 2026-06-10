@@ -786,7 +786,7 @@ var avatarLetter = (empRole && empRole.length > 0)
 var ticketMenu = '';
 
 if (roleType !== 'PMO') {
-    ticketMenu = `<div class="menu" onclick="openTickets(); closeMenu()"><i class="fa-solid fa-ticket"></i>  Tickets</div>`;
+    ticketMenu = `<div class="menu" onclick="openTickets(); closeMenu()"><i class="fa-solid fa-ticket"></i> <span> Tickets</span></div>`;
 }
 var projectPlan ='';
 if(roleType === 'PM'){
@@ -1433,10 +1433,11 @@ function buildSingleCard(title, list){
 }
 var specialCards = `
 <div class="card-container">
+${buildSingleCard('Kick off - Current Month', kickoffCurrent)}
 
     ${buildSingleCard('UAT - Current Month', uatCurrent)}
 
-    ${buildSingleCard('Kick off - Current Month', kickoffCurrent)}
+    
 
     ${buildSingleCard('Go Live - Current Month', goliveCurrent)}
 
@@ -2379,6 +2380,9 @@ var timelineProgressCard = `
                     View More
                 </button>
 
+
+
+
             </div>
             `
             :
@@ -2625,7 +2629,7 @@ notifications.map((n,index) => `
     :
 
     `
-    <div class="notif-item no-notif">
+    <div class="notif-item no-notif" style="color:black;">
         No Notifications
     </div>
     `
@@ -3045,6 +3049,7 @@ padding:12px;
 border-bottom:1px solid #0c4f82;
 cursor:pointer;
 font-family:sans-serif;
+font-size:14px;
 text-transform:capitalize;
 }
 
@@ -3171,10 +3176,11 @@ linear-gradient(
     height: 35px;
     border-radius: 50%;
 
-    background: linear-gradient(
+    background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
 );;
     color: white;
 
@@ -3265,11 +3271,12 @@ linear-gradient(
     height:22px;
     border-radius:50%;
 
-    background:linear-gradient(
+   background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
    color:white;
 
     display:flex;
@@ -3880,12 +3887,12 @@ button:hover{
 
     cursor:pointer;
 
-    background:
-        linear-gradient(
-            135deg,
-            #5b2d8e,
-            #8f50df
-        );
+    background:linear-gradient(
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 
     color:white;
 
@@ -4136,10 +4143,11 @@ button:hover{
     border-radius:50%;
 
     background:linear-gradient(
-        135deg,
-        #8E2DE2,
-        #C471ED
-    );
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 
     color:white;
 
@@ -4352,11 +4360,12 @@ button:hover{
 
     border-radius:50%;
 
-    background:linear-gradient(
-        135deg,
-        #8E2DE2,
-        #C471ED
-    );
+   background:linear-gradient(
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 
     color:white;
 
@@ -4424,7 +4433,7 @@ button:hover{
     display:flex;
 
     align-items:center;
-    justify-content:space-between;
+    
 
     gap:12px;
 
@@ -4681,10 +4690,11 @@ button:hover{
     font-weight:bold;
 
     background:linear-gradient(
-        135deg,
-        #8E2DE2,
-        #C471ED
-    );
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 
     color:white;
 }
@@ -4758,7 +4768,9 @@ button:hover{
 
     margin-bottom:22px;
 }
-
+.notif-remove{
+color:black;
+}
 .progress-top{
 
     display:flex;
@@ -4801,11 +4813,12 @@ button:hover{
 
     border-radius:20px;
 
-    background:linear-gradient(
-        90deg,
-        #8E2DE2,
-        #C471ED
-    );
+   background:linear-gradient(
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 
     transition:width 0.5s ease;
 }
@@ -4863,10 +4876,11 @@ button:hover{
 .timeline-count{
 
     background:linear-gradient(
-        135deg,
-        #8E2DE2,
-        #C471ED
-    );
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 
     color:white;
 
@@ -4957,11 +4971,12 @@ button:hover{
 
     border-radius:30px;
 
-    background:linear-gradient(
-        90deg,
-        #8E2DE2,
-        #C471ED
-    );
+   background:linear-gradient(
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 
     transition:width 0.5s ease;
 }
@@ -4994,10 +5009,11 @@ button:hover{
     color:white;
 
     background:linear-gradient(
-        135deg,
-        #8E2DE2,
-        #C471ED
-    );
+    135deg,
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
 
     transition:0.3s ease;
 
@@ -5245,9 +5261,7 @@ ${roleType === 'PM' ? `
 ${roleType === 'PMO' ? `
     ${specialCards}
 ${timelineProgressCard}
-    <div style="margin:10px;">
-        ${chartHtml}
-    </div>
+    
 
     <div style="margin:10px;">
         ${pieChartCard}
@@ -5315,46 +5329,66 @@ function removeNotification(notifId){
 
     fetch(
         window.location.href +
-        '&action=removeNotification' +
-        '&notifId=' + notifId
+        '&action=removeNotification&notifId=' +
+        notifId
     )
+    .then(res => res.text())
+
     .then(() => {
 
-        // remove only clicked notification
-        var notifEl =
+        // REMOVE CURRENT NOTIFICATION
+        var notifDiv =
             document.getElementById(
                 'notif_' + notifId
             );
 
-        if(notifEl){
-            notifEl.remove();
+        if(notifDiv){
+            notifDiv.remove();
         }
 
-        // update count
-        var countEl =
-            document.querySelector('.notif-count');
+        // REMAINING NOTIFICATIONS
+        var remaining =
+            document.querySelectorAll(
+                '.notif-item.unread'
+            );
 
-        var current =
-            parseInt(countEl.innerText || '0');
+        // UPDATE COUNT
+        var countBadge =
+            document.querySelector(
+                '.notif-count'
+            );
 
-        current--;
+        if(countBadge){
 
-        if(current <= 0){
+            countBadge.innerText =
+                remaining.length;
 
-            countEl.style.display = 'none';
+            if(remaining.length === 0){
+                countBadge.style.display = 'none';
+            }
+        }
 
-            current = 0;
-
+        // DROPDOWN
+        var dropdown =
             document.getElementById(
                 'notifDropdown'
-            ).innerHTML +=
-                '<div class="notif-item no-notif">' +
-                'No Notifications' +
-                '</div>';
+            );
+
+        // SHOW ONLY WHEN EMPTY
+        if(remaining.length === 0){
+
+           dropdown.innerHTML =
+    '<div class="notif-header">' +
+        'Notifications' +
+    '</div>' +
+
+    '<div class="notif-item no-notif" style="color:black;">' +
+        'No Notifications' +
+    '</div>';
         }
 
-        countEl.innerText = current;
     });
+
 }
 /* ===== BLOCK BACK BUTTON AFTER LOGOUT ===== */
 
@@ -5739,7 +5773,7 @@ url += "&statusFilter=" + encodeURIComponent(currentType);
     toggleChartVisibility();
 }
 function openMenu(){
-    document.getElementById("sidebar").style.width="180px";
+    document.getElementById("sidebar").style.width="200px";
     
 }
 
@@ -6524,7 +6558,7 @@ function refreshNotifications(){
         if(data.length === 0){
 
             html =
-                '<div class="notif-item no-notif">No Notifications</div>';
+                '<div class="notif-item no-notif" style="color:black;">No Notifications</div>';
 
         } else {
 

@@ -107,10 +107,10 @@ statSearch.run().each(function(result){
     var id = result.getValue('internalid');
     var name = result.getValue('name');
 
-    var isSelected = (name === 'Kick off') ? 'selected' : '';
+    var isSelected = (name === 'Not Started') ? 'selected' : '';
 
 
-var isDisabled = (name !== 'Kick off') ? 'disabled' : '';
+var isDisabled = (name !== 'Not Started') ? 'disabled' : '';
 
 statOptions += '<option value="'+id+'" '+isSelected+' '+isDisabled+'>'+name+'</option>';
 
@@ -132,8 +132,8 @@ statSearch1.run().each(function(result){
     var id = result.getValue('internalid');
     var name = result.getValue('name');
 
-     var isSelected = (name === 'Kick Off') ? 'selected' : '';
-var isDisabled = (name !== 'Kick Off') ? 'disabled' : '';
+     var isSelected = (name === 'Not Started') ? 'selected' : '';
+var isDisabled = (name !== 'Not Started') ? 'disabled' : '';
 
 statOptions1 += '<option value="'+id+'" '+isSelected+' '+isDisabled+'>'+name+'</option>';
 
@@ -588,8 +588,8 @@ else {
 function createNotification(empId, message, type, refId){
 
     if(!empId) return;
-
-    var notifRec = record.create({
+     if(projectId && isSave === true){
+var notifRec = record.create({
         type:'customrecord2517'
     });
 
@@ -625,6 +625,8 @@ function createNotification(empId, message, type, refId){
     });
 
     notifRec.save();
+     }
+    
 }
 createNotification(
     empId,
@@ -1678,6 +1680,9 @@ document.addEventListener("DOMContentLoaded", function(){
 
         // allow previous dates for Performa Invoice Date
         if(field.id === 'invoicedate'){
+            field.removeAttribute('min');
+        }
+           else if(field.id === 'startdate'){
             field.removeAttribute('min');
         }
         else{

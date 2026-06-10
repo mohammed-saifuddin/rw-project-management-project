@@ -52,15 +52,35 @@ function getEmployeeDMSRole(empId){
 }
 function getRoleTypeFromDMS(roleName){
 
-    if(!roleName) return 'OTHER';
+    try{
 
-    roleName = roleName.toLowerCase();
+        roleName = String(
+            roleName || ''
+        ).toLowerCase();
 
-    if(roleName.includes('pmo')) return 'PMO';
-    if(roleName.includes('developer')) return 'DEV';
-    if(roleName.includes('pm')) return 'PM';
+        if(roleName.includes('pmo')){
+            return 'PMO';
+        }
 
-    return 'OTHER';
+        if(roleName.includes('developer')){
+            return 'DEV';
+        }
+
+        if(roleName.includes('pm')){
+            return 'PM';
+        }
+
+        return 'OTHER';
+
+    }catch(e){
+
+        log.error(
+            'ROLE TYPE ERROR',
+            e
+        );
+
+        return 'OTHER';
+    }
 }
 function safeDate(dateStr){
 
@@ -98,7 +118,8 @@ log.debug(
 
 var roleType =
     getRoleTypeFromDMS(dmsRole);
-
+var isEditMode = false;
+var hasChanges = false;
 log.debug(
     'POST ROLE TYPE',
     roleType
@@ -178,11 +199,216 @@ if(projectStatus){
             projRes[0].getValue('name') || '';
     }
 }
-    body.forEach(function(line){
+   body.forEach(function(line){
 
-        if(!line.id) return; // safety
+    // =====================================
+    // CREATE NEW PRODUCT
+    // =====================================
+log.debug(
+    'NEW LINE RECEIVED',
+    JSON.stringify(line)
+);
+    if(!line.id){
 
-        var values = {};
+    try{
+
+        log.debug(
+            'NEW LINE DATA',
+            JSON.stringify(line)
+        );
+
+        log.debug(
+            'PROJECT ID',
+            projectId
+        );
+
+        var newLine = record.create({
+
+            type:
+            'customrecord_rw_portal_access2',
+
+            isDynamic:true
+        });
+
+        // PARENT LINK
+        newLine.setValue({
+
+            fieldId:
+            'custrecord1513',
+
+            value:
+            Number(projectId)
+        });
+
+        // PRODUCT
+        if(line.productid){
+
+            newLine.setValue({
+
+                fieldId:
+                'custrecord_rw_portal_rwproduct',
+
+                value:
+                Number(line.productid)
+            });
+        }
+
+        // COMMENTS
+        if(line.comments){
+
+            newLine.setValue({
+
+                fieldId:
+                'custrecord_rw_portal_additionalcomments',
+
+                value:
+                line.comments
+            });
+        }
+
+        // PM
+        if(line.rwpm){
+
+            newLine.setValue({
+
+                fieldId:
+                'custrecord_rw_rwprojectmanager',
+
+                value:
+                Number(line.rwpm)
+            });
+        }
+
+        // FUNCTIONAL
+        if(line.functional){
+
+            newLine.setValue({
+
+                fieldId:
+                'custrecord_rw_portal_funcconsultant',
+
+                value:
+                Number(line.functional)
+            });
+        }
+
+        // TECHNICAL
+        if(line.technical){
+
+            newLine.setValue({
+
+                fieldId:
+                'custrecord_rw_portal_techconsultant',
+
+                value:
+                Number(line.technical)
+            });
+        }
+
+        // STATUS
+        if(line.status){
+
+            newLine.setValue({
+
+                fieldId:
+                'custrecord_rw_portal_projstat',
+
+                value:
+                Number(line.status)
+            });
+        }
+
+        // START DATE
+        if(line.startdate){
+
+            newLine.setValue({
+
+                fieldId:
+                'custrecord_rw_portal_startdateline',
+
+                value:
+                parseInputDate(
+                    line.startdate
+                )
+            });
+        }
+
+        // END DATE
+        if(line.enddate){
+
+            newLine.setValue({
+
+                fieldId:
+                'custrecord_rw_portal_enddateline',
+
+                value:
+                parseInputDate(
+                    line.enddate
+                )
+            });
+        }
+
+        // UPDATED DEADLINE
+        if(line.updateddeadline){
+
+            newLine.setValue({
+
+                fieldId:
+                'custrecord_rw_portal_updateddeadline',
+
+                value:
+                parseInputDate(
+                    line.updateddeadline
+                )
+            });
+        }
+
+        // DURATION
+        if(line.duration){
+
+            newLine.setValue({
+
+                fieldId:
+                'custrecord_rw_portal_durationline',
+
+                value:
+                line.duration
+            });
+        }
+
+        var newId = newLine.save({
+
+            enableSourcing:true,
+
+            ignoreMandatoryFields:false
+        });
+        return;
+        log.debug(
+            'NEW RECORD CREATED',
+            newId
+        );
+
+    }catch(e){
+
+        log.error(
+            'NEW RECORD ERROR',
+            e
+        );
+        return;
+    }
+
+    
+}
+
+       
+
+    // =====================================
+    // UPDATE EXISTING PRODUCT
+    // =====================================
+
+    var values = {};
+
+    
 
 if(line.functional){
     values['custrecord_rw_portal_funcconsultant'] = line.functional;
@@ -456,11 +682,47 @@ var customerId =
         'custrecord_rw_portal_customername'
     ) || '';
 
+var directProject =
+    oldProjectRec.getValue(
+        'custrecord_rw_portal_directproject'
+    ) || '';
+
 log.debug(
     'CUSTOMER link',
     customerId
 );
 
+
+function getDefaultMilestoneStatus(){
+
+    var statusId = '';
+
+    search.create({
+
+        type:
+        'customlist_rw_portal_milestone_status',
+
+        filters: [
+            ['name','is','Not Started']
+        ],
+
+        columns: ['internalid']
+
+    })
+    .run()
+    .each(function(r){
+
+        statusId =
+            r.getValue('internalid');
+
+        return false;
+    });
+
+    return statusId;
+}
+
+var defaultMilestoneStatus =
+    getDefaultMilestoneStatus();
 if(roleType === 'PM'){
 
      milestoneData.forEach(function(ms){
@@ -500,7 +762,7 @@ if(roleType === 'PM'){
                 value: ms.productid
             });
         }
-      if(directProject){
+      if(directProject && directProject !== 'null'){
 
     newRec.setValue({
         fieldId:
@@ -561,9 +823,13 @@ newRec.setValue({
             value: ms.timespent || ''
         });
 newRec.setValue({
+
     fieldId:
     'custrecord_rw_portal_milestone_status',
-    value: ms.status || ''
+
+    value:
+        ms.status ||
+        defaultMilestoneStatus
 });
 
 newRec.setValue({
@@ -614,7 +880,7 @@ custrecord_rw_cust_proj_plan_sno:
     ms.timespent || '',
 
 custrecord_rw_portal_milestone_status:
-    ms.status || '',
+    ms.status || defaultMilestoneStatus,
 
 	custrecord_re_portal_milestone_comments:
     ms.comments || ''
@@ -629,7 +895,91 @@ custrecord_rw_portal_milestone_status:
         id: projectId,
         values: updateValues
     });
-}// ============================================
+}
+function getMilestoneStatusId(name){
+
+    var statusId = '';
+
+    search.create({
+
+        type:
+        'customlist_rw_portal_milestone_status',
+
+        filters: [
+            ['name','is', name]
+        ],
+
+        columns: ['internalid']
+
+    })
+    .run()
+    .each(function(r){
+
+        statusId =
+            r.getValue('internalid');
+
+        return false;
+    });
+
+    return statusId;
+}
+
+function getProductStatusId(name){
+
+    var statusId = '';
+
+    search.create({
+
+        type:
+        'customlist_rw_portal_statuslist_line',
+
+        filters: [
+            ['name','is', name]
+        ],
+
+        columns: ['internalid']
+
+    })
+    .run()
+    .each(function(r){
+
+        statusId =
+            r.getValue('internalid');
+
+        return false;
+    });
+
+    return statusId;
+}
+
+function getProjectStatusId(name){
+
+    var statusId = '';
+
+    search.create({
+
+        type:
+        'customlist_rw_portal_statuslist_header',
+
+        filters: [
+            ['name','is', name]
+        ],
+
+        columns: ['internalid']
+
+    })
+    .run()
+    .each(function(r){
+
+        statusId =
+            r.getValue('internalid');
+
+        return false;
+    });
+
+    return statusId;
+}
+// ============================================
 // AUTO SYNC PRODUCT STATUS FROM MILESTONES
 // ============================================
 
@@ -705,7 +1055,20 @@ var completedProductStatusId =
 var completedProjectStatusId =
     getCompletedProjectStatusId();
 
+var notStartedMilestoneStatusId =
+    getMilestoneStatusId('Not Started');
 
+var todoMilestoneStatusId =
+    getMilestoneStatusId('To do');
+
+var inProgressMilestoneStatusId =
+    getMilestoneStatusId('In Progress');
+
+var kickoffProductStatusId =
+    getProductStatusId('Kick Off');
+
+var kickoffProjectStatusId =
+    getProjectStatusId('Kick Off');
 // ============================================
 // CHECK EACH PRODUCT
 // ============================================
@@ -725,7 +1088,6 @@ var lineSearchSync = search.create({
 });
 
 var allProductsCompleted = true;
-
 lineSearchSync.run().each(function(lineRes){
 
     var lineId =
@@ -737,7 +1099,10 @@ lineSearchSync.run().each(function(lineRes){
         );
 
     var totalMilestones = 0;
+
     var completedMilestones = 0;
+
+    var hasStartedMilestone = false;
 
     var milestoneSearchSync = search.create({
 
@@ -775,6 +1140,7 @@ lineSearchSync.run().each(function(lineRes){
                 'custrecord_rw_portal_milestone_status'
             );
 
+        // COMPLETED
         if(
             String(msStatus) ===
             String(completedMilestoneStatusId)
@@ -782,16 +1148,82 @@ lineSearchSync.run().each(function(lineRes){
             completedMilestones++;
         }
 
+        // STARTED
+        if(
+            String(msStatus) ===
+            String(todoMilestoneStatusId)
+            ||
+            String(msStatus) ===
+            String(inProgressMilestoneStatusId)
+        ){
+
+            hasStartedMilestone = true;
+        }
+
         return true;
     });
 
-    // ============================================
-    // PRODUCT STATUS UPDATE
-    // ============================================
+    // =====================================
+    // PRODUCT COMPLETED
+    // =====================================
+
+  // =====================================
+// PRODUCT STATUS AUTO SYNC
+// =====================================
+
+if(
+    totalMilestones > 0 &&
+    totalMilestones === completedMilestones
+){
+
+    // AUTO COMPLETE
+    record.submitFields({
+
+        type:
+        'customrecord_rw_portal_access2',
+
+        id: lineId,
+
+        values: {
+
+            custrecord_rw_portal_projstat:
+                completedProductStatusId
+        }
+    });
+
+}
+else if(hasStartedMilestone){
+
+    // LOAD CURRENT PRODUCT STATUS
+    var currentLineRec = record.load({
+
+        type:
+        'customrecord_rw_portal_access2',
+
+        id: lineId,
+
+        isDynamic:false
+    });
+
+    var currentProductStatus =
+        currentLineRec.getValue(
+            'custrecord_rw_portal_projstat'
+        );
+
+    // ONLY SET KICK OFF
+    // IF STATUS IS EMPTY OR NOT STARTED
 
     if(
-        totalMilestones > 0 &&
-        totalMilestones === completedMilestones
+
+        !currentProductStatus
+
+        ||
+
+        String(currentProductStatus) ===
+        String(
+            getProductStatusId('Not Started')
+        )
+
     ){
 
         record.submitFields({
@@ -804,14 +1236,17 @@ lineSearchSync.run().each(function(lineRes){
             values: {
 
                 custrecord_rw_portal_projstat:
-                    completedProductStatusId
+                    kickoffProductStatusId
             }
         });
-
-    }else{
-
-        allProductsCompleted = false;
     }
+
+    allProductsCompleted = false;
+}
+else{
+
+    allProductsCompleted = false;
+}
 
     return true;
 });
@@ -836,6 +1271,116 @@ if(allProductsCompleted){
                 completedProjectStatusId
         }
     });
+
+}
+else{
+
+    var currentProjectRec = record.load({
+
+        type:
+        'customrecord_rw_portal_access',
+
+        id: projectId,
+
+        isDynamic:false
+    });
+
+    var currentProjectStatus =
+        currentProjectRec.getValue(
+            'custrecord_rw_portal_status'
+        );
+
+    if(
+
+        !currentProjectStatus
+
+        ||
+
+        String(currentProjectStatus) ===
+        String(
+            getProjectStatusId('Not Started')
+        )
+
+    ){
+
+        var hasAnyStartedMilestone = false;
+
+        lineSearchSync.run().each(function(lineRes){
+
+            var productId =
+                lineRes.getValue(
+                    'custrecord_rw_portal_rwproduct'
+                );
+
+            var msSearch = search.create({
+
+                type:
+                'customrecord_rw_customer_project_plan',
+
+                filters:[
+
+                    [
+                        'custrecord_rw_cust_proj_plan_prod_serv',
+                        'anyof',
+                        productId
+                    ],
+
+                    'AND',
+
+                    [
+                        'custrecord_rw_cust_proj_plan_link',
+                        'anyof',
+                        customerId
+                    ],
+
+                    'AND',
+
+                    [
+                        'custrecord_rw_portal_milestone_status',
+                        'anyof',
+                        [
+                            todoMilestoneStatusId,
+                            inProgressMilestoneStatusId
+                        ]
+                    ]
+                ],
+
+                columns:['internalid']
+            });
+
+            var c =
+                msSearch.run().getRange({
+                    start:0,
+                    end:1
+                });
+
+            if(c.length > 0){
+
+                hasAnyStartedMilestone = true;
+
+                return false;
+            }
+
+            return true;
+        });
+
+        if(hasAnyStartedMilestone){
+
+            record.submitFields({
+
+                type:
+                'customrecord_rw_portal_access',
+
+                id: projectId,
+
+                values: {
+
+                    custrecord_rw_portal_status:
+                        kickoffProjectStatusId
+                }
+            });
+        }
+    }
 }
     context.response.write('success');
     return;
@@ -844,7 +1389,15 @@ if(allProductsCompleted){
 var statOptions ='<option value="">--Select--</option>';
 
 
-
+var rwOptions ='<option value="">--Select--</option>';
+var rwSearch=search.create({
+    type:'customrecord_rw_extend_products',
+    columns:['internalid','name']
+})
+rwSearch.run().each(function(result){
+    rwOptions +='<option value="'+result.getValue('internalid')+'">'+result.getValue('name')+'</option>';
+    return true;
+})
 // statSearch1.run().each(function(result){
 
 //     var id = result.getValue('internalid');
@@ -908,16 +1461,40 @@ function getEmployeeRole(empInternalId){
 var empRole = getEmployeeRole(empInternalId);
 log.debug("Employee Role", empRole);
 function getRoleType(roleName){
-    roleName = roleName.toLowerCase();
 
-    if(roleName.includes('pmo')) return 'PMO';
-    if(roleName.includes('pm')) return 'PM';
-    if(roleName.includes('developer')) return 'DEV';
+    try{
 
-    return 'OTHER';
+        roleName = String(
+            roleName || ''
+        ).toLowerCase();
+
+        if(roleName.includes('pmo')){
+            return 'PMO';
+        }
+
+        if(roleName.includes('pm')){
+            return 'PM';
+        }
+
+        if(roleName.includes('developer')){
+            return 'DEV';
+        }
+
+        return 'OTHER';
+
+    }catch(e){
+
+        log.error(
+            'GET ROLE TYPE ERROR',
+            e
+        );
+
+        return 'OTHER';
+    }
 }
-log.debug("role type",roleType);
+
 var roleType = getRoleType(empRole);
+log.debug("role type",roleType);
 var tableHeader = '';
 function getEmployeeInternalId(email){
 
@@ -1085,6 +1662,28 @@ var userId = currentUser.id;
         'custrecord_rw_portal_customername'
     ) || '';
         status = projectRec.getText('custrecord_rw_portal_status') || '';
+var canAddProduct = false;
+
+var safeStatus =
+    String(status || '')
+    .toLowerCase()
+    .trim();
+
+if(
+
+    (
+        roleType === 'PM'
+        ||
+        roleType === 'PMO'
+    )
+
+    &&
+
+    safeStatus === 'not started'
+
+){
+    canAddProduct = true;
+}
         projectType = projectRec.getText('custrecord_rw_portal_projecttype') || '';
         directProject = projectRec.getText('custrecord_rw_portal_directproject') || '';
         projectManager = projectRec.getText('custrecord_rw_portal_projectmanager') || '';
@@ -1106,7 +1705,7 @@ projectClass =
   projectManagerId = projectRec.getValue('custrecord_rw_portal_projectmanager');
 stdate=projectRec.getValue('custrecord_rw_portal_start_date');
 eddate=projectRec.getValue('custrecord_rw_portal_end_date');
-updatedenddate=projectRec.getValue('custrecord_rw_portal_updatedenddate') || 'NIL'
+updatedenddate=projectRec.getValue('custrecord_rw_portal_updatedenddate') || ''
 pmoComments=projectRec.getValue('custrecord_rw_portal_pmocommnts');
 duration=projectRec.getValue('custrecord_rw_portal_duration')
 functional1 =
@@ -1146,7 +1745,7 @@ var technicalText =
     projectRec.getText(
         'custrecord_rw_portal_technical'
     ) || '';
-performaDate=projectRec.getValue('custrecord_rw_portal_invoice_date') || 'NIL'
+performaDate=projectRec.getValue('custrecord_rw_portal_invoice_date') || '';
   
         // var isProjectManager = (empId === projectManagerId);
         var canEdit = (
@@ -1218,41 +1817,115 @@ projectStatusSearch.run().each(function(res){
          var st = '';
 var ed = '';
 var upd = '';
-        if(scheduledUatDate){
-    scheduled = format.format({
-        value: scheduledUatDate,
-        type: format.Type.DATE
-    });
+      try{
+
+    if(scheduledUatDate){
+
+        scheduled = format.format({
+            value: scheduledUatDate,
+            type: format.Type.DATE
+        });
+    }
+
+}catch(e){
+
+    scheduled = '';
+
+    log.error(
+        'SCHEDULED DATE ERROR',
+        e
+    );
 }
-   if(performaDate){
-    invoice = format.format({
-        value: performaDate,
-        type: format.Type.DATE
-    });
+   try{
+
+    if(performaDate){
+
+        invoice = format.format({
+            value: performaDate,
+            type: format.Type.DATE
+        });
+    }
+
+}catch(e){
+
+    invoice = '';
+
+    log.error(
+        'INVOICE DATE ERROR',
+        e
+    );
 }
-if(goliveDate){
-    golive = format.format({
-        value: goliveDate,
-        type: format.Type.DATE
-    });
+try{
+
+    if(goliveDate){
+
+        golive = format.format({
+            value: goliveDate,
+            type: format.Type.DATE
+        });
+    }
+
+}catch(e){
+
+    golive = '';
 }
-if(stdate){
-    st = format.format({
-        value: stdate,
-        type: format.Type.DATE
-    });
+try{
+
+    if(stdate){
+
+        st = format.format({
+            value: stdate,
+            type: format.Type.DATE
+        });
+    }
+
+}catch(e){
+
+    st = '';
+
+    log.error(
+        'START DATE ERROR',
+        e
+    );
 }
-if(eddate){
-    ed = format.format({
-        value: eddate,
-        type: format.Type.DATE
-    });
+try{
+
+    if(eddate){
+
+        ed = format.format({
+            value: eddate,
+            type: format.Type.DATE
+        });
+    }
+
+}catch(e){
+
+    ed = '';
+
+    log.error(
+        'END DATE ERROR',
+        e
+    );
 }
-if(updatedenddate){
-    upd = format.format({
-        value: updatedenddate,
-        type: format.Type.DATE
-    });
+
+try{
+
+    if(updatedenddate){
+
+        upd = format.format({
+            value: updatedenddate,
+            type: format.Type.DATE
+        });
+    }
+
+}catch(e){
+
+    upd = '';
+
+    log.error(
+        'UPDATED END DATE ERROR',
+        e
+    );
 }
 function toInputDate(date){
     if(!date) return '';
@@ -1335,8 +2008,7 @@ function toInputDate(date){
 }
 
 
-var milestoneStatusOptions =
-    '<option value="">--Select--</option>';
+var milestoneStatusOptions = '';
 
 var milestoneStatusSearch = search.create({
 
@@ -1411,36 +2083,60 @@ lineSearch.run().each(function(result){
 
 var templateId = '';
 
-if(productId){
+try{
 
-    var productLookup =
-        search.lookupFields({
+    if(productId){
 
-            type:
-            'customrecord_rw_extend_products',
+        var productLookup =
+            search.lookupFields({
 
-            id:
-            productId,
+                type:
+                'customrecord_rw_extend_products',
 
-            columns: [
-                'custrecord_rw_ext_proj_plan_template'
-            ]
-        });
+                id:
+                productId,
 
-    if(
-        productLookup
-        .custrecord_rw_ext_proj_plan_template &&
+                columns: [
+                    'custrecord_rw_ext_proj_plan_template'
+                ]
+            });
 
-        productLookup
-        .custrecord_rw_ext_proj_plan_template
-        .length
-    ){
+        log.debug(
+            'PRODUCT LOOKUP',
+            JSON.stringify(productLookup)
+        );
 
-        templateId =
+        if(
+            productLookup &&
+
             productLookup
-            .custrecord_rw_ext_proj_plan_template[0]
-            .value;
+            .custrecord_rw_ext_proj_plan_template &&
+
+            Array.isArray(
+                productLookup
+                .custrecord_rw_ext_proj_plan_template
+            ) &&
+
+            productLookup
+            .custrecord_rw_ext_proj_plan_template
+            .length > 0
+        ){
+
+            templateId =
+                productLookup
+                .custrecord_rw_ext_proj_plan_template[0]
+                .value || '';
+        }
     }
+
+}catch(e){
+
+    log.error(
+        'PRODUCT TEMPLATE ERROR',
+        e
+    );
+
+    templateId = '';
 }
 var startdate =
     result.getValue(
@@ -1649,39 +2345,39 @@ var milestoneStatusText =
 
 milestoneRowColor = '#ffffff';
 
+var safeMilestoneStatus =
+    String(
+        milestoneStatusText || ''
+    ).toLowerCase();
+
 if(
-    milestoneStatusText.toLowerCase()
-    === 'to do'
+    safeMilestoneStatus === 'to do'
 ){
 
     milestoneRowColor = '#ffffff';
 
 }
 else if(
-    milestoneStatusText.toLowerCase()
-    === 'in progress'
+    safeMilestoneStatus === 'in progress'
 ){
 
     milestoneRowColor = '#dbeafe';
 
 }
 else if(
-    milestoneStatusText.toLowerCase()
-    === 'completed'
+    safeMilestoneStatus === 'completed'
 ){
 
     milestoneRowColor = '#d4edda';
 
 }
 else if(
-    milestoneStatusText.toLowerCase()
-    === 'pending from customer'
+    safeMilestoneStatus === 'pending from customer'
 ){
 
     milestoneRowColor = '#f8d7da';
 
-}
-            milestoneComments =
+}        milestoneComments =
             cp.getValue(
                 'custrecord_re_portal_milestone_comments'
             ) || '';
@@ -3694,12 +4390,12 @@ createNotification(
         .backBtn{
             margin-top:20px;
             padding:10px 15px;
-            background:
-linear-gradient(
+ background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
             color:white;
             border:none;
             border-radius:5px;
@@ -3795,12 +4491,12 @@ linear-gradient(
     #editBtn{
     margin-top:20px;
             padding:10px 15px;
-            background:
-linear-gradient(
+      background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
             color:white;
             border:none;
             border-radius:5px;
@@ -3812,12 +4508,12 @@ linear-gradient(
             #saveBtn{
              margin-top:20px;
             padding:10px 15px;
-            background:
-linear-gradient(
+     background:linear-gradient(
     135deg,
-    #8E2DE2,
-    #C471ED
-);
+    #002855 0%,
+    #5b2d8e 50%,
+    #8f50df 100%
+);;
             color:white;
             border:none;
             border-radius:5px;
@@ -4046,12 +4742,45 @@ linear-gradient(
 <!-- PRODUCT PLAN TABS -->
 <!-- ====================================== -->
 
+<div
+    id="addProductBtn"
+    style="
+        display:none;
+        justify-content:flex-start;
+        align-items:center;
+        margin-bottom:12px;
+    "
+>
+
+<button
+    type="button"
+    onclick="addNewProductRow()"
+    style="
+        background:linear-gradient(135deg,#5b2d8e,#8f50df);
+        border:none;
+        color:white;
+        width:38px;
+        height:38px;
+        border-radius:10px;
+        cursor:pointer;
+        font-size:22px;
+        font-weight:bold;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        box-shadow:0 4px 10px rgba(0,0,0,0.15);
+    "
+>
+    +
+</button>
+
+</div>
 
 <table style="width:100%; border-collapse:collapse; margin-top:14px;">
   <thead>
     ${tableHeader}
 </thead>
-    <tbody>
+    <tbody id="projectTableBody">
         ${lineItemsHtml || '<tr><td colspan="7">No data found</td></tr>'}
     </tbody>
 </table>
@@ -4062,6 +4791,7 @@ ${canEdit ? `
 <button id="editBtn" type="button">✏ Edit</button>
 <button id="saveBtn" onclick="saveData()" style="display:none;" type="button">💾 Save</button>
 ` : ''}
+
 </div>
 <div id="loader">
     <div class="spinner"></div>
@@ -4074,6 +4804,138 @@ ${canEdit ? `
     ✔ Saved
 </span>
     <script>
+    var roleType = "${roleType}";
+    var pmDropdown = ` + JSON.stringify(pmDropdown) + `;
+    var rwOptions = ` + JSON.stringify(rwOptions) + `;
+var funcDropdown = ` + JSON.stringify(funcDropdown) + `;
+var techDropdown = ` + JSON.stringify(techDropdown) + `;
+var statOptions =` +JSON.stringify(statOptions)+`;
+    function addNewProductRow(){
+
+    var tbody =
+        document.querySelector(
+            '#projectTableBody'
+        );
+
+    if(!tbody){
+        return;
+    }
+
+    var rowHtml = '';
+
+    // ====================================
+    // PMO
+    // ====================================
+
+    if(roleType === 'PMO'){
+
+        rowHtml += '<tr class="newRow">';
+
+        rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<select class="rwProduct">';
+        rowHtml += rwOptions;
+        rowHtml += '</select>';
+        rowHtml += '</td>';
+
+        rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<textarea class="new-comments" style="width:100%;min-height:60px;"></textarea>';
+        rowHtml += '</td>';
+
+        rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<select class="status">';
+        rowHtml += statOptions;
+        rowHtml += '</select>';
+        rowHtml += '</td>';
+
+        rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<input type="date" class="startdate" />';
+        rowHtml += '</td>';
+
+        rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<input type="date" class="enddate" />';
+        rowHtml += '</td>';
+
+        rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<input type="date" class="updateddeadline" />';
+        rowHtml += '</td>';
+
+        rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<input type="text" class="duration" readonly style="width:80px;background:#f5f5f5;" />';
+        rowHtml += '</td>';
+
+        rowHtml += '</tr>';
+    }
+
+    // ====================================
+    // PM
+    // ====================================
+
+    else if(roleType === 'PM'){
+
+        rowHtml += '<tr class="newRow">';
+
+          rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<select class="rwProduct">';
+        rowHtml += rwOptions;
+        rowHtml += '</select>';
+        rowHtml += '</td>';
+
+        rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<textarea class="new-comments" style="width:100%;min-height:60px;"></textarea>';
+        rowHtml += '</td>';
+
+        rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<select class="rwpm">';
+        rowHtml += pmDropdown;
+        rowHtml += '</select>';
+        rowHtml += '</td>';
+
+        rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<select class="functional">';
+        rowHtml += funcDropdown;
+        rowHtml += '</select>';
+        rowHtml += '</td>';
+
+        rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<select class="technical">';
+        rowHtml += techDropdown;
+        rowHtml += '</select>';
+        rowHtml += '</td>';
+
+        rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<input type="date" class="uat" />';
+        rowHtml += '</td>';
+
+        rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<input type="date" class="golive" />';
+        rowHtml += '</td>';
+
+        rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<select class="status">';
+        rowHtml += statOptions;
+        rowHtml += '</select>';
+        rowHtml += '</td>';
+
+        rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<input type="date" class="startdate" />';
+        rowHtml += '</td>';
+
+        rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<input type="date" class="enddate" />';
+        rowHtml += '</td>';
+
+        rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
+        rowHtml += '<input type="date" class="updateddeadline" />';
+        rowHtml += '</td>';
+
+        rowHtml += '</tr>';
+    }
+
+    tbody.insertAdjacentHTML(
+        'beforeend',
+        rowHtml
+    );
+}
     function calculateDays(start, end){
 
     if(!start || !end){
@@ -4491,10 +5353,10 @@ function syncTechnical(currentSelect){
 }
   function saveData(){
 
-    var rows =
-    document.querySelectorAll(
-        "tbody tr[data-id]"
-    );
+  var rows =
+document.querySelectorAll(
+    "#projectTableBody tr[data-id], #projectTableBody tr.newRow"
+);
     var projectStatus = document.getElementById("projectStatus")?.value || '';
     var updatedEndDate =
     document.getElementById("updatedEndDate")?.value || '';
@@ -4557,13 +5419,16 @@ console.log(
 var hasError = false;
     rows.forEach(function(row){
 
-        var id = row.getAttribute("data-id");
+        var id = row.getAttribute("data-id") || '';
 
         
-        if(!id){
-            console.log("Skipping row without ID");
-            return;
-        }
+        // if(!id){
+        //     console.log("Skipping row without ID");
+        //     return;
+        // }
+        //     else{
+        //         console.log("new proudct is not added");
+        //         }
 if(hasError){
     return;
 }
@@ -4657,7 +5522,9 @@ if(startdate && projectStartDate){
         return;
     }
 }
-
+document.getElementById(
+    'addProductBtn'
+).style.display = 'none';
 // PRODUCT END DATE VALIDATION
 if(enddate && projectEndDate){
 
@@ -4690,20 +5557,40 @@ if(updateddeadline && projectUpdatedEndDate){
         return;
     }
 }
-       data.push({
+     data.push({
+
     id: id,
+
+    // NEW PRODUCT
+    productid:
+        row.querySelector('.rwProduct')?.value || '',
+
+    comments:
+        row.querySelector('.new-comments')?.value || '',
+
     functional: functional || '',
+
     technical: technical || '',
+
     rwpm: rwpm,
+
     uat: uat || '',
+
     golive: golive || '',
+
     status: status || '',
-    startdate:startdate || '',
-    enddate:enddate || '',
-    updateddeadline:updateddeadline || '',
+
+    startdate: startdate || '',
+
+    enddate: enddate || '',
+
+    updateddeadline:
+        updateddeadline || '',
+
     duration: duration,
-    statusText: statusText,
-    milestoneData: milestoneData
+
+    statusText: statusText
+
 });
     });
 
@@ -4746,6 +5633,8 @@ empid: "${empId}"
 
     if(res === "success"){
 showToast("Project Saved Successfully ");
+alert("Project Saved Succesfully");
+  
         // ✅ Update UI with new values
         document.querySelectorAll("tbody tr").forEach(function(row){
 
@@ -4990,7 +5879,7 @@ function enableEdit(){
 
         el.style.display = "none";
     });
-
+isEditMode = true;
     document.querySelectorAll(".edit-mode")
     .forEach(function(el){
 
@@ -5023,6 +5912,10 @@ function enableEdit(){
 
     document.getElementById("saveBtn")
     .style.display = "inline-block";
+    // SHOW ADD BUTTON
+    document.getElementById(
+        'addProductBtn'
+    ).style.display = 'flex';
     autopopulateConsultants();
 }
   document.addEventListener("DOMContentLoaded", function () {
@@ -5050,6 +5943,13 @@ document
     'refreshDashboard',
     'true'
 );
+document.addEventListener('change', function(){
+
+    if(isEditMode){
+        hasChanges = true;
+    }
+
+});
 if(window.opener){
 
     window.opener.refreshNotifications();
@@ -5064,6 +5964,13 @@ if(window.parent){
         'notificationUpdated'
     )
 );
+document.addEventListener('change', function(){
+
+    if(isEditMode){
+        hasChanges = true;
+    }
+
+});
     </script>
     `;
 
