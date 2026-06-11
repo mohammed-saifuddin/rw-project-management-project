@@ -32,6 +32,7 @@ var projectId =
 
 var empId =
     reqBody.empid || '';
+    
 function getEmployeeDMSRole(empId){
 
     if(!empId) return '';
@@ -161,7 +162,10 @@ var oldProjectStatus =
         'custrecord_rw_portal_status'
     ) || '';
 
-
+var customer =
+    oldProjectRec.getText(
+        'custrecord_rw_portal_customername'
+    ) || '';
    
 var newProjectStatusText = '';
 function parseInputDate(dateStr){
@@ -1382,6 +1386,53 @@ else{
         }
     }
 }
+function createNotification(empId, message, type, refId){
+
+    if(!empId) return;
+
+    var notifRec = record.create({
+        type:'customrecord2517'
+    });
+
+    // REQUIRED NAME FIELD
+    notifRec.setValue({
+        fieldId:'name',
+        value: message
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_employee',
+        value:empId
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_message',
+        value:message
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_type',
+        value:type
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_refid',
+        value:refId || ''
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_read',
+        value:false
+    });
+
+    notifRec.save();
+}
+createNotification(
+    empId,
+    'Project Updated : ' + customer,
+    'PROJECT_UPDATED',
+    projectId
+);
     context.response.write('success');
     return;
 }
@@ -2008,7 +2059,8 @@ function toInputDate(date){
 }
 
 
-var milestoneStatusOptions = '';
+var milestoneStatusOptions =
+'<option value="">--Select--</option>';
 
 var milestoneStatusSearch = search.create({
 
@@ -2033,10 +2085,15 @@ milestoneStatusSearch.run().each(function(res){
     var name =
         res.getValue('name');
 
+   
+
+    
+
     milestoneStatusOptions +=
-        '<option value="' + id + '">' +
-        name +
-        '</option>';
+    '<option value="' + id + '">' +
+    name +
+    '</option>';
+
 
     return true;
 });
@@ -2329,7 +2386,11 @@ var customerPlanId = '';
     cp.getValue(
         'custrecord_rw_portal_milestone_status'
     ) || '';
+if(!milestoneStatusId){
 
+    milestoneStatusId =
+        defaultMilestoneStatus;
+}
 milestoneStatus =
     cp.getText(
         'custrecord_rw_portal_milestone_status'
@@ -2661,10 +2722,8 @@ milestoneRows += `
     style="display:none;width:100%;"
 >
 ${milestoneStatusOptions.replace(
-
-    'value="' + milestoneStatusId + '"',
-
-    'value="' + milestoneStatusId + '" selected'
+    'value="' + String(milestoneStatusId).trim() + '"',
+    'value="' + String(milestoneStatusId).trim() + '" selected'
 )}
 </select>
 
@@ -3342,17 +3401,13 @@ historyHtml += `</div>`;
             <thead>
 
                 <tr style="
-                        background:linear-gradient(
-    135deg,
-    #002855 0%,
-    #5b2d8e 50%,
-    #8f50df 100%
-);;
+                        background:#E6E6E6;
 font-weight:bold;
 font-size:10px;
+color:darkblue;
 text-transform:uppercase;
 font-family:Arial, sans-serif;
-                    color:white;
+                    
                 ">
 
                     <th style="
@@ -3393,14 +3448,15 @@ font-family:Arial, sans-serif;
                         padding:10px;
                         border:1px solid #ddd;
                     ">Time Spent</th>
-                    <th style="
-                        padding:10px;
-                        border:1px solid #ddd;
-                    ">Status</th>
+                    
                     <th style="
                         padding:10px;
                         border:1px solid #ddd;
                     ">Comments</th>
+                    <th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Status</th>
                 </tr>
 
             </thead>
@@ -4205,53 +4261,7 @@ else {
         type: serverWidget.FieldType.INLINEHTML,
         label: 'HTML'
     });
-    function createNotification(empId, message, type, refId){
-
-    if(!empId) return;
-
-    var notifRec = record.create({
-        type:'customrecord2517'
-    });
-
-    // REQUIRED NAME FIELD
-    notifRec.setValue({
-        fieldId:'name',
-        value: message
-    });
-
-    notifRec.setValue({
-        fieldId:'custrecord_rw_notif_employee',
-        value:empId
-    });
-
-    notifRec.setValue({
-        fieldId:'custrecord_rw_notif_message',
-        value:message
-    });
-
-    notifRec.setValue({
-        fieldId:'custrecord_rw_notif_type',
-        value:type
-    });
-
-    notifRec.setValue({
-        fieldId:'custrecord_rw_notif_refid',
-        value:refId || ''
-    });
-
-    notifRec.setValue({
-        fieldId:'custrecord_rw_notif_read',
-        value:false
-    });
-
-    notifRec.save();
-}
-createNotification(
-    empId,
-    'Project Updated : ' + customer,
-    'PROJECT_UPDATED',
-    projectId
-);
+    
     htmlField.defaultValue = `
     <style>
         body{
@@ -4751,7 +4761,7 @@ createNotification(
         margin-bottom:12px;
     "
 >
-
+${canAddProduct ? `
 <button
     type="button"
     onclick="addNewProductRow()"
@@ -4773,7 +4783,7 @@ createNotification(
 >
     +
 </button>
-
+` : ''}
 </div>
 
 <table style="width:100%; border-collapse:collapse; margin-top:14px;">

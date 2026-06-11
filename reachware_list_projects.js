@@ -585,55 +585,7 @@ else {
     </tr>
     `;
 }
-function createNotification(empId, message, type, refId){
 
-    if(!empId) return;
-     if(projectId && isSave === true){
-var notifRec = record.create({
-        type:'customrecord2517'
-    });
-
-    // REQUIRED NAME FIELD
-    notifRec.setValue({
-        fieldId:'name',
-        value: message
-    });
-
-    notifRec.setValue({
-        fieldId:'custrecord_rw_notif_employee',
-        value:empId
-    });
-
-    notifRec.setValue({
-        fieldId:'custrecord_rw_notif_message',
-        value:message
-    });
-
-    notifRec.setValue({
-        fieldId:'custrecord_rw_notif_type',
-        value:type
-    });
-
-    notifRec.setValue({
-        fieldId:'custrecord_rw_notif_refid',
-        value:refId || ''
-    });
-
-    notifRec.setValue({
-        fieldId:'custrecord_rw_notif_read',
-        value:false
-    });
-
-    notifRec.save();
-     }
-    
-}
-createNotification(
-    empId,
-    'New Project Created : ' + customername,
-    'PROJECT_CREATED',
-    parentId
-);
 
 html.defaultValue = `
 
@@ -1426,6 +1378,7 @@ font-size:10px;
 <form method="POST">
 <input type="hidden" name="empid" value="${empId}">
 <input type="hidden" name="email" value="${email}">
+
 <div class="main-container">
 
 <div id="toast" class="toast"></div>
@@ -1574,7 +1527,9 @@ ${rowHtml}
 
 </table>
 <input type="hidden" name="lineitems" id="lineitems">
-
+<input type="hidden"
+       name="customertext"
+       id="customertext">
 <button type="submit" class="savebtn" >Save</button>
 
 <div id="loader">
@@ -2179,7 +2134,17 @@ if(endField){
     }, 300); // small delay for smooth UX
 }
 document.querySelector("form").addEventListener("submit", function () {
+var customerDropdown =
+    document.getElementById("customerDropdown");
 
+var customerText =
+    customerDropdown.options[
+        customerDropdown.selectedIndex
+    ].text;
+
+document.getElementById(
+    "customertext"
+).value = customerText;
     var rows = document.querySelectorAll("#lineItems tr");
     var data = [];
 
@@ -2537,6 +2502,20 @@ customerRec.setValue({
     return; // 🚨 MUST STOP HERE
 }
 var customername = req.parameters.customername;
+var customerText =
+    req.parameters.customertext || '';
+
+if(customername){
+
+    var customerLookup = search.lookupFields({
+        type: search.Type.CUSTOMER,
+        id: customername,
+        columns:['entityid']
+    });
+
+    customerText =
+        customerLookup.entityid || '';
+}
 var invoice = req.parameters.invoice;
 var accountmanager = req.parameters.accountmanager;
 var uatdate = req.parameters.uatdate;
@@ -2735,7 +2714,97 @@ value:projecttype
         value: fileId   
     });
 }
+
+// =========================
+// CREATE NOTIFICATION
+// =========================
+
+
 var parentId = rec.save();
+
+// =========================
+// CREATE NOTIFICATIONS
+// =========================
+function createNotification(empId, message, type, refId){
+
+    if(!empId) return;
+     
+var notifRec = record.create({
+        type:'customrecord2517'
+    });
+
+    // REQUIRED NAME FIELD
+    notifRec.setValue({
+        fieldId:'name',
+        value: message
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_employee',
+        value:empId
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_message',
+        value:message
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_type',
+        value:type
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_refid',
+        value:refId || ''
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_read',
+        value:false
+    });
+
+    notifRec.save();
+     
+    
+}
+createNotification(
+    empId,
+    'New Project Created : ',
+    'PROJECT_CREATED',
+    parentId
+);
+createNotification(
+    projectmanager,
+    'New Project Created',
+    'PROJECT_CREATED',
+    parentId
+);
+
+createNotification(
+    accountmanager,
+    'New Project Created',
+    'PROJECT_CREATED',
+    parentId
+);
+
+// if(functional1){
+//     createNotification(
+//         functional1,
+//         'You are assigned as Functional Consultant',
+//         'PROJECT_CREATED',
+//         parentId
+//     );
+// }
+
+// if(technical1){
+//     createNotification(
+//         technical1,
+//         'You are assigned as Technical Consultant',
+//         'PROJECT_CREATED',
+//         parentId
+//     );
+// }
 // Link customer to project (IMPORTANT)
 
 /* Product details */

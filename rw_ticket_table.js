@@ -1239,7 +1239,7 @@ linear-gradient(
 
 <input type="hidden" name="mode" value="${mode || ''}">
 
-<input type="hidden" name="empid" value="${empId || ''}">
+<input type="hidden" name="empid" value="${empId}">
 <input type="hidden" name="email" value="${email || ''}">
 <input type="hidden" id="pageInput" name="page" value="${pageIndex}">
 <input type="hidden" name="filter" value="${filterType || ''}">

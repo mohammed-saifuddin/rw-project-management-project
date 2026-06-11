@@ -612,34 +612,41 @@ var roleType = getRoleTypeFromDMS(dmsRole);
 log.debug("DMS ROLE", dmsRole);
 log.debug("ROLE TYPE", roleType);
 if(roleType === 'PMO'){
-    statsHeader = `
-        <div class="st-header">Total Projects</div>
-        <div class="st-header">Open Projects</div>
-        
-        
-        <div class="st-header">Kickoff</div>
-        
-        
-        <div class="st-header">UAT</div>
-        <div class="st-header">Go live</div>
-        <div class="st-header">COC</div>
-       
-        <div class="st-header">Closed Projects</div>
-    `;
+    statsValues = `
+<div class="pmo-stat-card">
+    <div class="st-header">Total Projects</div>
+    <div class="data-val" onclick="openProjects('total')">${projectCount}</div>
+</div>
 
-   statsValues = `
-    <div class="data-val" id="tit" onclick="openProjects('total')">${projectCount}</div>
-    <div class="data-val" id="tit" onclick="openProjects('open')">${openProjects}</div>
-    
-   
-    <div class="data-val" id="tit" onclick="openProjects('kickof')">${kickOffCount}</div>
-    
-    
-    <div class="data-val" id="tit" onclick="openProjects('uat')">${uatCount}</div>
-    <div class="data-val" id="tit" onclick="openProjects('golive')">${golive}</div>
-    <div class="data-val" id="tit" onclick="openProjects('coc')">${coc}</div>
-    
-     <div class="data-val" id="tit" onclick="openProjects('done')">${closedProjects}</div>
+<div class="pmo-stat-card">
+    <div class="st-header">Open Projects</div>
+    <div class="data-val" onclick="openProjects('open')">${openProjects}</div>
+</div>
+
+<div class="pmo-stat-card">
+    <div class="st-header">Kickoff</div>
+    <div class="data-val" onclick="openProjects('kickof')">${kickOffCount}</div>
+</div>
+
+<div class="pmo-stat-card">
+    <div class="st-header">UAT</div>
+    <div class="data-val" onclick="openProjects('uat')">${uatCount}</div>
+</div>
+
+<div class="pmo-stat-card">
+    <div class="st-header">Go Live</div>
+    <div class="data-val" onclick="openProjects('golive')">${golive}</div>
+</div>
+
+<div class="pmo-stat-card">
+    <div class="st-header">COC</div>
+    <div class="data-val" onclick="openProjects('coc')">${coc}</div>
+</div>
+
+<div class="pmo-stat-card">
+    <div class="st-header">Closed Projects</div>
+    <div class="data-val" onclick="openProjects('done')">${closedProjects}</div>
+</div>
 `;
 }
 else if(roleType === 'PM'){
@@ -799,7 +806,7 @@ if(roleType === 'PM'){
 }
 var newRevenueStream ='';
 if(roleType === 'PM'){
-    newRevenueStream = `<div class="menu" onclick="openRevenueStream(); closeMenu()"><i class="fa-solid fa-file-circle-plus"></i>   Revenue Stream</div>`;
+    newRevenueStream = `<div class="menu" onclick="openRevenueStream(); closeMenu()"><i class="fa-solid fa-chart-area"></i>   Revenue Stream</div>`;
 }
 var projectMenu = '';
 if(roleType !== 'OTHER'){
@@ -2468,21 +2475,11 @@ function getNotifications(empId){
         type:'customrecord2517',
 
         filters:[
-
-            [
-                'custrecord_rw_notif_employee',
-                'anyof',
-                empId
-            ],
-
-            'AND',
-
-            [
-                'isinactive',
-                'is',
-                'F'
-            ]
-        ],
+    ['custrecord_rw_notif_employee','anyof',empId],
+    'AND',
+    ['custrecord_rw_notif_read','is','F']
+],
+        
 
         columns:[
 
@@ -2535,11 +2532,7 @@ function getUnreadNotificationCount(empId){
 
             'AND',
 
-            [
-                'isinactive',
-                'is',
-                'F'
-            ]
+            ['custrecord_rw_notif_read','is','F']
         ],
 
         columns:['internalid']
@@ -2660,19 +2653,56 @@ if(
     if(notifId){
 
         record.submitFields({
-
-            type:'customrecord2517',
-
-            id:notifId,
-
-            values:{
-                isinactive:true
-            }
-        });
+    type:'customrecord2517',
+    id:notifId,
+    values:{
+        custrecord_rw_notif_read: true,
+        isinactive: true
+    }
+});
     }
 
     context.response.write('success');
 
+    return;
+}
+if(context.request.parameters.action === 'markRead'){
+
+    log.debug('MARK READ CALLED', empId);
+
+    var notifSearch = search.create({
+        type:'customrecord2517',
+       filters:[
+    ['custrecord_rw_notif_employee','anyof',empId],
+    'AND',
+    ['custrecord_rw_notif_read','is','F']
+],
+        columns:['internalid']
+    });
+
+    notifSearch.run().each(function(res){
+
+        log.debug(
+            'MARKING',
+            res.getValue('internalid')
+        );
+
+       record.submitFields({
+    type:'customrecord2517',
+    id:res.getValue('internalid'),
+    values:{
+        custrecord_rw_notif_read: true,
+        isinactive: true
+    }
+});
+log.debug(
+    'UPDATED',
+    res.getValue('internalid')
+);
+        return true;
+    });
+
+    context.response.write('success');
     return;
 }
 if(
@@ -2891,6 +2921,7 @@ html, body {
   color:white;
 }
 .data-val{
+border:1px solid #ddd;
 
 
 }
@@ -2928,6 +2959,8 @@ html, body {
                 font-family:calibri;
                 color:#0000CD;
                 white-space:nowrap;
+                border:1px solid #ddd;
+                
 
                 text-transform:uppercase;
                 }
@@ -2941,8 +2974,8 @@ html, body {
     
        background:linear-gradient(
     135deg,
-    #002855 0%,
-    #5b2d8e 50%,
+    #002855 20%,
+    #5b2d8e 40%,
     #8f50df 100%
 );;
     color:white;
@@ -3114,7 +3147,7 @@ padding-right:-20px;
 }
 .stats-values div{
 padding:20px;
-border:1px solid #ccc;
+
 font-size:20px;
 }
 
@@ -3145,7 +3178,7 @@ font-size:20px;
     #5b2d8e 50%,
     #8f50df 100%
 );;
-    border:1px solid white;
+    border:1px solid #ddd;
     border-radius:4px;
     padding:6px 15px;
     color:white;
@@ -3536,7 +3569,7 @@ button:hover{
     font-size:13px;
     font-weight:bold;
 
-    border:1px solid #ccc;
+    border:1px solid white;
 }
 
 /* VALUES */
@@ -3549,7 +3582,7 @@ button:hover{
 
     font-size:18px;
 
-    border:1px solid #ddd;
+    
 }
     .right-section{
 
@@ -5028,6 +5061,37 @@ color:black;
     box-shadow:
         0 8px 20px rgba(142,45,226,0.4);
 }
+        .pmo-stats-row{
+    display:flex;
+    gap:15px;          /* gap between columns */
+    flex-wrap:wrap;
+    
+}
+
+.pmo-stat-card{
+    min-width:140px;
+    border:1px solid white;
+    border-radius:14px;
+    overflow:hidden;
+    background:#fff;
+}
+
+.pmo-stat-card .st-header{
+    padding:10px;
+    text-align:center;
+    background:#E6E6FA;
+    font-weight:400;
+    font-size:14px;
+    
+    font-family:calibri;
+    color:#0000CD;
+}
+
+.pmo-stat-card .data-val{
+    padding:12px;
+    text-align:center;
+    font-weight:400;
+}
 </style>
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -5180,7 +5244,7 @@ ${newRevenueStream}
         height:100%;
         border:none;
         display:none;
-        margin-top:60px;
+        margin-top:40px;
         position:absolute;
         top:0;
         left:0;
@@ -5192,7 +5256,7 @@ ${newRevenueStream}
 </iframe>
 </div>
 
-<div id="homeContent" style="margin-top:40px;">
+<div id="homeContent" style="margin-top:30px;">
 
 ${roleType === 'PM' ? `
 
@@ -5893,9 +5957,22 @@ setPageTitle("New Project Plan template");
     var lastNotifCount =
     ${unreadCount};
 
+// async function toggleNotifications(){
+
+//     var dropdown =
+//         document.getElementById(
+//             'notifDropdown'
+//         );
+
+//     dropdown.style.display =
+//         dropdown.style.display === 'block'
+//         ? 'none'
+//         : 'block';
+// }
 async function toggleNotifications(){
 
-    var dropdown =
+    
+var dropdown =
         document.getElementById(
             'notifDropdown'
         );
@@ -5904,8 +5981,22 @@ async function toggleNotifications(){
         dropdown.style.display === 'block'
         ? 'none'
         : 'block';
-}
+    dropdown.classList.toggle('show');
 
+    if(dropdown.classList.contains('show')){
+
+        console.log('Bell clicked');
+
+fetch(window.location.href + '&action=markRead')
+.then(r => r.text())
+.then(data => {
+    console.log('markRead response', data);
+
+    loadNotifications();
+    loadNotificationCount();
+});
+    }
+}
 
 
 /* CLOSE WHEN CLICK OUTSIDE */
@@ -6637,6 +6728,57 @@ function toggleTimelineProjects(){
 
         btn.innerHTML = 'View More';
     }
+}
+    let lastUnreadCount = ${unreadCount};
+
+setInterval(function(){
+
+    fetch(
+        window.location.pathname +
+        window.location.search +
+        '&action=getUnreadCount'
+    )
+
+    .then(r => r.text())
+
+    .then(count => {
+
+        count = parseInt(count || 0);
+
+        if(count > lastUnreadCount){
+
+            const audio =
+                document.getElementById(
+                    'notifSound'
+                );
+
+            if(audio){
+
+                audio.currentTime = 0;
+
+                audio.play()
+                .catch(err => {
+                    console.log(
+                        'Notification Sound Error',
+                        err
+                    );
+                });
+            }
+        }
+
+        lastUnreadCount = count;
+    });
+
+},5000);
+function markAllNotificationsRead(){
+
+    fetch(
+        window.location.href +
+        '&action=markRead'
+    ).then(()=>{
+        loadNotifications();
+        loadNotificationCount();
+    });
 }
 </script>
 

@@ -13,7 +13,11 @@ const onRequest = (context) => {
     var ticketId = context.request.parameters.ticketId;
     var editingId =
     request.parameters.editingId;
-var empId = request.parameters.empid;
+var empId =
+    parseInt(
+        request.parameters.empid,
+        10
+    ) || 0;
 log.debug("Ticket ID Received", ticketId);
  var req = context.request;
         var attachment = '';
@@ -406,9 +410,71 @@ const ticketUrl = url.resolveScript({
 scriptId: 'customscript2894',
 deploymentId: 'customdeploy1',
 returnExternalUrl: true,
-
+ params:{
+        empid: empId,
+        email:email
+    },
 });
+function getEmployeeInternalId(email){
 
+    var empSearch = search.create({
+        type: search.Type.EMPLOYEE,
+       
+            filters: email ? [['email','is', email]] : []
+            
+        ,
+        columns: ['internalid']
+    });
+
+    var res = empSearch.run().getRange({ start: 0, end: 1 });
+
+    if(res.length > 0){
+        return res[0].getValue('internalid');
+    }
+
+    return null;
+}
+function getEmployeeDMSRole(empId){
+
+    if(
+        !empId ||
+        isNaN(empId)
+    ){
+        return '';
+    }
+
+    empId = parseInt(empId,10);
+
+    var emp = search.lookupFields({
+        type: search.Type.EMPLOYEE,
+        id: empId,
+        columns:['custentityrw_dms_role']
+    });
+
+    if(
+        emp.custentityrw_dms_role &&
+        emp.custentityrw_dms_role.length
+    ){
+        return emp.custentityrw_dms_role[0].text;
+    }
+
+    return '';
+}
+function getRoleTypeFromDMS(roleName){
+
+    if(!roleName) return 'OTHER';
+
+    roleName = roleName.toLowerCase();
+
+    if(roleName.includes('pmo')) return 'PMO';
+    if(roleName.includes('developer')) return 'DEV';
+    if(roleName.includes('pm')) return 'PM';
+
+    return 'OTHER';
+}
+var empInternalId = getEmployeeInternalId(email);
+var dmsRole = getEmployeeDMSRole(empId);
+var roleType = getRoleTypeFromDMS(dmsRole);
     
 
         var ticketRec = record.load({
@@ -513,7 +579,8 @@ var hasAccess = false;
 if(
     currentUser === assignedEmp ||
     currentUser === reviewerEmp ||
-    currentUser === pmEmp
+    currentUser === pmEmp ||
+    roleType === 'PM'
 ){
     hasAccess = true;
 }
@@ -755,21 +822,25 @@ existingFiles.push({
 
                 attachmentHtml +=
 
-                    '<div style="margin-top:10px;">' +
+'<div style="margin-top:10px;">' +
 
-                    '<a href="' +
-                    fileUrl +
-                    '" target="_blank">' +
+'<a href="' + fileUrl + '" target="_blank" style="' +
+'display:inline-block;' +
+'width:auto;' +
+'">' +
 
-                    '<img src="' +
-                    fileUrl +
-                    '" style="' +
-                    'max-width:250px;' +
-                    'border-radius:10px;' +
-                    'border:1px solid #dfe1e6;' +
-                    '">' +
+'<img src="' + fileUrl + '" style="' +
+'width:auto;' +
+'max-width:250px;' +
+'max-height:180px;' +
+'display:block;' +
+'border-radius:10px;' +
+'border:1px solid #dfe1e6;' +
+'">' +
 
-                    '</a></div>';
+'</a>' +
+
+'</div>';
 
             }else{
 
@@ -2585,6 +2656,7 @@ function renderSelectedFiles(){
         html +=
             '<div style="' +
             'display:flex;' +
+            'width:200px;'+
             'align-items:center;' +
             'justify-content:space-between;' +
             'margin-top:6px;' +

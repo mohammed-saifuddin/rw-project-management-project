@@ -1052,37 +1052,57 @@ function getCustomerOptions(selectedValue){
 
     return options;
 }
+var statOptions1 ='<option value="">All Status</option>';
+var statSearch1 = search.create({
+    type: 'customlist_rw_portal_statuslist_header',
+    filters:[
+        ['isinactive','is','F']
+    ],
+    columns: ['internalid','name']
+});
 
-function getStatusOptions(selectedValue){
+statSearch1.run().each(function(result){
 
-    var options = '';
+    var id = result.getValue('internalid');
+    var name = result.getValue('name');
 
-    var statuses = [
+     var isSelected = (name === 'Not Started') ? 'selected' : '';
+var isDisabled = (name !== 'Not Started') ? 'disabled' : '';
 
-        {id:'1',  name:'Kick Off'},
-        {id:'2',  name:'In Progress'},
-        {id:'3',  name:'On Hold'},
-        {id:'4',  name:'UAT'},
-        {id:'5',  name:'Go Live'},
-        {id:'6',  name:'COC'},
-        {id:'7',  name:'Business Requirement'},
-        {id:'8',  name:'Training'},
-        {id:'11', name:'Support'}
+statOptions1 += '<option value="'+id+'">'+name+'</option>';
 
-    ];
+    return true;
+});
+// function getStatusOptions(selectedValue){
 
-    statuses.forEach(function(status){
+//     var options = '';
 
-        options += `
-            <option value="${status.id}"
-                ${selectedValue == status.id ? 'selected' : ''}>
-                ${status.name}
-            </option>
-        `;
-    });
+//     var statuses = [
 
-    return options;
-}
+//         {id:'1',  name:'Kick Off'},
+//         {id:'2',  name:'In Progress'},
+//         {id:'3',  name:'On Hold'},
+//         {id:'4',  name:'UAT'},
+//         {id:'5',  name:'Go Live'},
+//         {id:'6',  name:'COC'},
+//         {id:'7',  name:'Business Requirement'},
+//         {id:'8',  name:'Training'},
+//         {id:'11', name:'Support'}
+
+//     ];
+
+//     statuses.forEach(function(status){
+
+//         options += `
+//             <option value="${status.id}"
+//                 ${selectedValue == status.id ? 'selected' : ''}>
+//                 ${status.name}
+//             </option>
+//         `;
+//     });
+
+//     return options;
+// }
 htmlField.defaultValue = `
 
 <style>
@@ -1653,9 +1673,9 @@ text-decoration: none;
             "
         >
 
-            <option value="">All Status</option>
+            
 
-            ${getStatusOptions(statusFilter)}
+            ${statOptions1}
 
         </select>
 
