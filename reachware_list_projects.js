@@ -2770,7 +2770,7 @@ var notifRec = record.create({
 }
 createNotification(
     empId,
-    'New Project Created : ',
+    'New Project Created  ',
     'PROJECT_CREATED',
     parentId
 );

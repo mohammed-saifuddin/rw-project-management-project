@@ -11,7 +11,38 @@ if (context.request.method === 'POST') {
 var reqBody = JSON.parse(
     context.request.body || '{}'
 );
+if(reqBody.action === 'deleteProduct'){
 
+    try{
+
+        record.submitFields({
+            type: 'customrecord_rw_portal_access2',
+            id: reqBody.lineId,
+            values:{
+                isinactive: true
+            }
+        });
+
+        context.response.write(
+            JSON.stringify({
+                success:true
+            })
+        );
+
+        return;
+
+    }catch(e){
+
+        context.response.write(
+            JSON.stringify({
+                success:false,
+                message:e.message
+            })
+        );
+
+        return;
+    }
+}
 var body =
     reqBody.data || [];
 
@@ -83,6 +114,7 @@ function getRoleTypeFromDMS(roleName){
         return 'OTHER';
     }
 }
+
 function safeDate(dateStr){
 
     if(!dateStr){
@@ -1617,6 +1649,10 @@ linear-gradient(
             <th style="border:1px solid #ccc;padding:8px;">End Date</th>
             <th style="border:1px solid #ccc;padding:8px;">Updated Deadline</th>
            <th style="border:1px solid #ccc;padding:8px;">Duration</th>
+           <th class="edit-action-col" style="display:none;border:1px solid #ccc;padding:8px;">
+    Action
+</th>
+       
         </tr>
     `;
 }  else if (roleType === 'PM') {
@@ -1638,6 +1674,10 @@ linear-gradient(
             <th style="border:1px solid #ccc;padding:8px;">Start Date</th>
             <th style="border:1px solid #ccc;padding:8px;">End Date</th>
             <th style="border:1px solid #ccc;padding:8px;">Updated Deadline</th>
+            <th class="edit-action-col" style="display:none;border:1px solid #ccc;padding:8px;">
+    Action
+</th>
+      
         </tr>
     `;
 }else {
@@ -1651,6 +1691,10 @@ linear-gradient(
             <th style="border:1px solid #ccc;padding:8px;">Expected UAT</th>
             <th style="border:1px solid #ccc;padding:8px;">Expected Go Live</th>
             <th style="border:1px solid #ccc;padding:8px;">Status</th>
+            <th class="edit-action-col" style="display:none;border:1px solid #ccc;padding:8px;">
+    Action
+</th>
+   
         </tr>
     `;
 }
@@ -2059,9 +2103,64 @@ function toInputDate(date){
 }
 
 
+// var milestoneStatusOptions =
+// '<option value="">--Select--</option>';
+
+// var milestoneStatusSearch = search.create({
+
+//     type:
+//     'customlist_rw_portal_milestone_status',
+
+//     filters: [
+//         ['isinactive','is','F']
+//     ],
+
+//     columns: [
+//         'internalid',
+//         'name'
+//     ]
+// });
+
+// milestoneStatusSearch.run().each(function(res){
+
+//     var id =
+//         res.getValue('internalid');
+
+//     var name =
+//         res.getValue('name');
+
+   
+
+    
+
+//     milestoneStatusOptions +=
+//     '<option value="' + id + '">' +
+//     name +
+//     '</option>';
+
+
+//     return true;
+// });
+var defaultMilestoneStatus = '';
+
+search.create({
+    type: 'customlist_rw_portal_milestone_status',
+    filters: [
+        ['name','is','Not Started']
+    ],
+    columns: ['internalid']
+})
+.run()
+.each(function(r){
+
+    defaultMilestoneStatusId =
+        r.getValue('internalid');
+
+    return false;
+});
+
 var milestoneStatusOptions =
 '<option value="">--Select--</option>';
-
 var milestoneStatusSearch = search.create({
 
     type:
@@ -2076,7 +2175,6 @@ var milestoneStatusSearch = search.create({
         'name'
     ]
 });
-
 milestoneStatusSearch.run().each(function(res){
 
     var id =
@@ -2085,15 +2183,15 @@ milestoneStatusSearch.run().each(function(res){
     var name =
         res.getValue('name');
 
-   
-
-    
+    var selected =
+        (id == defaultMilestoneStatus)
+        ? 'selected'
+        : '';
 
     milestoneStatusOptions +=
-    '<option value="' + id + '">' +
-    name +
-    '</option>';
-
+        '<option value="' + id + '" ' + selected + '>' +
+        name +
+        '</option>';
 
     return true;
 });
@@ -2102,7 +2200,9 @@ var lineItemsHtml = '';
 var lineSearch = search.create({
     type: 'customrecord_rw_portal_access2',
     filters: [
-        ['custrecord1513','anyof', projectId]
+        ['custrecord1513','anyof', projectId],
+        'AND',
+        ['isinactive','is','F']
     ],
     columns: [
          search.createColumn({ name: 'internalid' }),
@@ -2391,11 +2491,18 @@ if(!milestoneStatusId){
     milestoneStatusId =
         defaultMilestoneStatus;
 }
+
 milestoneStatus =
     cp.getText(
         'custrecord_rw_portal_milestone_status'
     ) || '';
+if(!milestoneStatusId){
 
+    milestoneStatusId =
+        defaultMilestoneStatus;
+
+    
+}
 var milestoneStatusText =
     milestoneStatus;
 
@@ -2988,7 +3095,26 @@ pmDropdown +=
 // }
 
 var lineId = result.id;   // 🔥 BEST WAY
- 
+//  var removeBtn = '';
+
+// if(canAddProduct){
+
+//     removeBtn = `
+//         <button
+//             type="button"
+//             onclick="removeProduct('${lineId}')"
+//             style="
+//                 background:#dc3545;
+//                 color:white;
+//                 border:none;
+//                 padding:6px 10px;
+//                 border-radius:6px;
+//                 cursor:pointer;
+//             ">
+//             Remove
+//         </button>
+//     `;
+// }
 var uatLineObj =
     getDateValues(uatRaw);
 
@@ -3356,6 +3482,36 @@ historyHtml += `</div>`;
     />
 
 </td>
+<td
+    class="action-col"
+    style="
+        display:none;
+        border:1px solid #ccc;
+        padding:8px;
+        text-align:center;
+    "
+>
+    ${
+        canAddProduct
+        ?
+        `<button
+            type="button"
+            onclick="removeProduct('${lineId}')"
+            style="
+                background:#dc3545;
+                color:#fff;
+                border:none;
+                padding:6px 10px;
+                border-radius:6px;
+                cursor:pointer;
+            "
+        >
+            Remove
+        </button>`
+        :
+        ''
+    }
+</td>
 </tr>
 
 <tr id="history_${lineId}"
@@ -3500,6 +3656,7 @@ log.debug(
     updatedLineObj.input
 );
 }
+
 else if (roleType === 'PM') {
     var historyHtml = `
 <div style="
@@ -3876,7 +4033,36 @@ historyHtml += `</div>`;
     style="display:none;"
 />
 </td>
-   
+ <td
+    class="action-col"
+    style="
+        display:none;
+        border:1px solid #ccc;
+        padding:8px;
+        text-align:center;
+    "
+>
+    ${
+        canAddProduct
+        ?
+        `<button
+            type="button"
+            onclick="removeProduct('${lineId}')"
+            style="
+                background:#dc3545;
+                color:#fff;
+                border:none;
+                padding:6px 10px;
+                border-radius:6px;
+                cursor:pointer;
+            "
+        >
+            Remove
+        </button>`
+        :
+        ''
+    }
+</td>
 </tr>
 
 <tr id="history_${lineId}"
@@ -4728,9 +4914,9 @@ else {
 
 </div>
 
-         <div class="label">Functional consulatant</div>
+         <div class="label">Functional consultant</div>
         <div class="value">${functionalText}</div>
-   <div class="label">Technical consulatant</div>
+   <div class="label">Technical consultant</div>
         <div class="value">${technicalText}</div>
         <div class="label">Duration</div>
         <div class="value">${duration} days</div>
@@ -4794,6 +4980,7 @@ ${canAddProduct ? `
         ${lineItemsHtml || '<tr><td colspan="7">No data found</td></tr>'}
     </tbody>
 </table>
+
     <button class="backBtn" type="button" onclick="goBack()">⬅ Back</button>
   
 
@@ -5926,6 +6113,17 @@ isEditMode = true;
     document.getElementById(
         'addProductBtn'
     ).style.display = 'flex';
+    document
+        .querySelectorAll('.action-col')
+        .forEach(function(td){
+            td.style.display = '';
+        });
+
+    document
+        .querySelectorAll('.edit-action-col')
+        .forEach(function(th){
+            th.style.display = '';
+        });
     autopopulateConsultants();
 }
   document.addEventListener("DOMContentLoaded", function () {
@@ -5981,6 +6179,43 @@ document.addEventListener('change', function(){
     }
 
 });
+function removeProduct(lineId){
+
+    if(!confirm('Remove this product?')){
+        return;
+    }
+
+    fetch(window.location.href,{
+        method:'POST',
+        headers:{
+            'Content-Type':'application/json'
+        },
+        body:JSON.stringify({
+            action:'deleteProduct',
+            lineId:lineId
+        })
+    })
+    .then(async r => {
+
+    const txt = await r.text();
+
+    console.log('SERVER RESPONSE:', txt);
+
+    return JSON.parse(txt);
+})
+    .then(function(res){
+
+        if(res.success){
+
+            document
+                .querySelector(
+                    'tr[data-id="' + lineId + '"]'
+                )
+                .remove();
+                alert("product removed");
+        }
+    });
+}
     </script>
     `;
 

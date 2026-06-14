@@ -962,8 +962,12 @@ var completedMilestones = 0;
 
             var progressValue = 0;
 
-            // KICKOFF
-            if(status == '1'){
+            
+            if(status == '8'){ // use your actual Not Started status ID
+    progressValue = 0;
+}
+// KICKOFF
+            else if(status == '1'){
                 progressValue = 10;
             }
 
@@ -978,15 +982,15 @@ var completedMilestones = 0;
             }
 
             // GOLIVE
-            else if(status == '5'){
+            else if(status == '4'){
                 progressValue = 90;
             }
 
             // COC / DONE / COMPLETED
             else if(
                 status == '6' ||
-                status == '7' ||
-                status == '8'
+                status == '5'
+            
             ){
                 progressValue = 100;
                 completedMilestones++;

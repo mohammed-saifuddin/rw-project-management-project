@@ -582,7 +582,7 @@ createNotification(
 
         var i = 1;
 
-       //var renderedMilestones = {};
+       var renderedMilestones = {};
 
 childSearch.run().each(function(res){
 
@@ -601,12 +601,12 @@ childSearch.run().each(function(res){
             'custrecord_rw_project_temp_child_miles'
         ) || '';
 
-    // if(renderedMilestones[milestoneId]){
+     if(renderedMilestones[milestoneId]){
 
-    //     return true;
-    // }
+        return true;
+    }
 
-    // renderedMilestones[milestoneId] = true;
+ renderedMilestones[milestoneId] = true;
 
     rows += `
 

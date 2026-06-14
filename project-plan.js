@@ -7,8 +7,9 @@ define([
     'N/ui/serverWidget',
     'N/search',
     'N/runtime',
+    'N/record',
     'N/url'
-], (serverWidget, search, runtime,url) => {
+], (serverWidget, search, runtime,record,url) => {
 
     const onRequest = (context) => {
 
@@ -17,6 +18,135 @@ define([
         var form = serverWidget.createForm({
             title: ' '
         });
+        if (context.request.method === 'POST') {
+
+    try {
+
+       var body = {};
+
+try{
+
+    body = JSON.parse(
+        context.request.body || '{}'
+    );
+
+}catch(e){
+
+    log.error(
+        'INVALID JSON',
+        context.request.body
+    );
+
+    body = context.request.parameters || {};
+}
+
+        if (body.action === 'createProjectPlan') {
+
+            var rec = record.create({
+                type: 'customrecord_rw_project_plan_template'
+            });
+
+            rec.setValue({
+                fieldId: 'name',
+                value: body.planName
+            });
+
+            if(body.product){
+
+    rec.setValue({
+        fieldId: 'custrecord_rw_product_service_mapping',
+        value: parseInt(body.product, 10)
+    });
+
+}
+
+            if(body.revenue){
+
+    rec.setValue({
+        fieldId: 'custrecord_rw_project_plan_rev_stream',
+        value: parseInt(body.revenue, 10)
+    });
+
+}
+log.debug('PLAN NAME', body.planName);
+log.debug('PRODUCT', body.product);
+log.debug('REVENUE', body.revenue);
+            var id = rec.save();
+var milestoneSearch = search.create({
+    type: 'customrecord_rw_project_mile_stone_types', // replace with your actual milestone master record
+    filters: [
+        ['isinactive','is','F']
+    ],
+    columns: [
+        'internalid'
+    ]
+});
+
+var sno = 1;
+var uniqueMilestones = {};
+
+milestoneSearch.run().each(function(result){
+
+    var milestoneId = result.getValue('internalid');
+
+    if(uniqueMilestones[milestoneId]){
+        return true;
+    }
+
+    uniqueMilestones[milestoneId] = true;
+
+    var childRec = record.create({
+        type:'customrecord_rw_project_plan_temp_child'
+    });
+
+    childRec.setValue({
+        fieldId:'custrecord_rw_proj_plan_temp_child_link',
+        value:id
+    });
+
+    childRec.setValue({
+        fieldId:'custrecord_rw_proj_plan_temp_child_sno',
+        value:sno
+    });
+
+    childRec.setValue({
+        fieldId:'custrecord_rw_project_temp_child_miles',
+        value:milestoneId
+    });
+
+    childRec.save();
+
+    sno++;
+
+    return true;
+});
+            context.response.write(
+                JSON.stringify({
+                    success: true,
+                    id: id
+                })
+            );
+
+            return;
+        }
+
+    } catch(e){
+
+        log.error(
+            'CREATE PROJECT PLAN ERROR',
+            e
+        );
+
+        context.response.write(
+            JSON.stringify({
+                success:false,
+                message:e.message
+            })
+        );
+
+        return;
+    }
+}
 var empId = context.request.parameters.empid 
          || context.request.parameters.empId 
          || context.request.parameters.employeeId 
@@ -42,9 +172,25 @@ var homeUrl = url.resolveScript({
             type: serverWidget.FieldType.INLINEHTML,
             label: 'HTML'
         });
+var rwOptions ='<option value="">--Select--</option>';
+    var rwSearch=search.create({
+    type:'customrecord_rw_extend_products',
+    columns:['internalid','name']
+})
+rwSearch.run().each(function(result){
+    rwOptions +='<option value="'+result.getValue('internalid')+'">'+result.getValue('name')+'</option>';
+    return true;
+})
+var dpOptions = '<option value="">--Select--</option>';
+var dpSearch = search.create({
+    type: 'customrecord_rw_proj_rev_stream',
+    columns: ['internalid','name']
+});
 
-    
-
+dpSearch.run().each(function(result){
+    dpOptions += '<option value="'+result.getValue('internalid')+'">'+result.getValue('name')+'</option>';
+    return true;
+});
         var data = [];
 
         var extendProductSearch = search.create({
@@ -405,6 +551,98 @@ data.push({
 
     overflow:visible !important;
 }
+    .new-plan-btn{
+    background:linear-gradient(
+        135deg,
+        #002855 0%,
+        #5b2d8e 50%,
+        #8f50df 100%
+    );
+    color:white;
+    border:none;
+    padding:10px 18px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.create-modal{
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.5);
+    z-index:99999;
+}
+
+.create-modal-content{
+    background:white;
+    width:600px;
+    margin:80px auto;
+    border-radius:12px;
+    overflow:hidden;
+}
+
+.create-modal-header{
+    background:linear-gradient(
+        135deg,
+        #002855 0%,
+        #5b2d8e 50%,
+        #8f50df 100%
+    );
+    color:white;
+    padding:15px;
+    font-size:18px;
+    font-weight:bold;
+}
+
+.create-modal-body{
+    padding:20px;
+}
+
+.form-group{
+    margin-bottom:15px;
+}
+
+.form-group label{
+    display:block;
+    font-weight:bold;
+    margin-bottom:5px;
+}
+
+.form-group input,
+.form-group select{
+    width:100%;
+    height:40px;
+    padding:8px;
+    border:1px solid #ccc;
+    border-radius:6px;
+}
+
+.modal-footer{
+    padding:15px;
+    text-align:right;
+}
+
+.save-btn{
+    background:#28a745;
+    color:white;
+    border:none;
+    padding:10px 20px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.cancel-btn{
+    background:#dc3545;
+    color:white;
+    border:none;
+    padding:10px 20px;
+    border-radius:6px;
+    cursor:pointer;
+}
         </style>
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -416,9 +654,19 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         Project Plan Template
     </div>
 
-    <div class="count-box">
-        <i class="fa-solid fa-database"></i>
-        Total Records : ${data.length}
+    <div style="display:flex;gap:10px;align-items:center;">
+
+       <button class="new-plan-btn" type="button"
+        onclick="openCreatePlanModal()">
+    <i class="fa fa-plus"></i>
+    New Project Plan
+</button>
+
+        <div class="count-box">
+            <i class="fa-solid fa-database"></i>
+            Total Records : ${data.length}
+        </div>
+
     </div>
 
 </div>
@@ -512,7 +760,58 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     </div>
 
 </div>
+<div id="createPlanModal"
+     class="create-modal">
+<input type="hidden" id="action" value="">
+    <div class="create-modal-content">
 
+        <div class="create-modal-header">
+
+            Create Project Plan
+
+            <span style="float:right;cursor:pointer;"
+                  onclick="closeCreatePlanModal()">
+                ×
+            </span>
+
+        </div>
+
+        <div class="create-modal-body">
+
+            <div class="form-group">
+                <label>Project Plan Name</label>
+                <input type="text"
+                       id="planName">
+            </div>
+
+            
+
+            <div class="form-group">
+                <label>Revenue Stream</label>
+                <select id="revenueStream">
+                    ${dpOptions}
+                </select>
+            </div>
+
+        </div>
+
+        <div class="modal-footer">
+
+            <button class="cancel-btn"
+                    onclick="closeCreatePlanModal()">
+                Cancel
+            </button>
+
+            <button class="save-btn"
+                    onclick="saveProjectPlan()">
+                Save
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
 <script>
 
 
@@ -589,6 +888,65 @@ function openProduct(data){
 
     document.getElementById('mileBody')
         .innerHTML = rows;
+}
+     function openCreatePlanModal(){
+
+    document.getElementById(
+        'createPlanModal'
+    ).style.display='block';
+}
+
+function closeCreatePlanModal(){
+
+    document.getElementById(
+        'createPlanModal'
+    ).style.display='none';
+}
+
+function saveProjectPlan(){
+
+    var planName = document.getElementById('planName').value;
+    var product  = document.getElementById('productService').value;
+    var revenue  = document.getElementById('revenueStream').value;
+
+    if(!planName){
+        alert('Please enter Project Plan Name');
+        return;
+    }
+
+    fetch(window.location.href, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            action: 'createProjectPlan',
+            planName: planName,
+            product: product,
+            revenue: revenue
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if(data.success){
+
+            alert('Project Plan Created Successfully');
+
+            closeCreatePlanModal();
+
+            location.reload();
+
+        }else{
+
+            alert(data.message || 'Error');
+        }
+
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Error saving Project Plan');
+    });
 }
 </script>
         `;
