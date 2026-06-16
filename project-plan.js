@@ -72,54 +72,102 @@ log.debug('PLAN NAME', body.planName);
 log.debug('PRODUCT', body.product);
 log.debug('REVENUE', body.revenue);
             var id = rec.save();
-var milestoneSearch = search.create({
-    type: 'customrecord_rw_project_mile_stone_types', // replace with your actual milestone master record
-    filters: [
-        ['isinactive','is','F']
-    ],
-    columns: [
-        'internalid'
-    ]
-});
+            log.debug('Parent Created', id);
 
-var sno = 1;
-var uniqueMilestones = {};
+log.debug(
+    'MILESTONES RECEIVED',
+    JSON.stringify(body.milestones)
+);
 
-milestoneSearch.run().each(function(result){
+(body.milestones || []).forEach(function(m){
 
-    var milestoneId = result.getValue('internalid');
+    try{
 
-    if(uniqueMilestones[milestoneId]){
-        return true;
+        log.debug('ROW', {
+            sno: m.sno,
+            milestone: m.milestone
+        });
+
+        var childRec = record.create({
+            type:'customrecord_rw_project_plan_temp_child'
+        });
+
+        childRec.setValue({
+            fieldId:'custrecord_rw_proj_plan_temp_child_link',
+            value:id
+        });
+
+        childRec.setValue({
+            fieldId:'custrecord_rw_proj_plan_temp_child_sno',
+            value: parseInt(m.sno,10)
+        });
+
+        childRec.setValue({
+            fieldId:'custrecord_rw_project_temp_child_miles',
+            value: parseInt(m.milestone,10)
+        });
+
+        var childId = childRec.save({
+            enableSourcing:true,
+            ignoreMandatoryFields:false
+        });
+
+        log.debug('CHILD CREATED', childId);
+
+    }catch(ex){
+
+        log.error('CHILD ERROR', ex);
+        throw ex;
     }
-
-    uniqueMilestones[milestoneId] = true;
-
-    var childRec = record.create({
-        type:'customrecord_rw_project_plan_temp_child'
-    });
-
-    childRec.setValue({
-        fieldId:'custrecord_rw_proj_plan_temp_child_link',
-        value:id
-    });
-
-    childRec.setValue({
-        fieldId:'custrecord_rw_proj_plan_temp_child_sno',
-        value:sno
-    });
-
-    childRec.setValue({
-        fieldId:'custrecord_rw_project_temp_child_miles',
-        value:milestoneId
-    });
-
-    childRec.save();
-
-    sno++;
-
-    return true;
 });
+// var milestoneSearch = search.create({
+//     type: 'customrecord_rw_project_mile_stone_types', // replace with your actual milestone master record
+//     filters: [
+//         ['isinactive','is','F']
+//     ],
+//     columns: [
+//         'internalid'
+//     ]
+// });
+
+// var sno = 1;
+// var uniqueMilestones = {};
+
+// milestoneSearch.run().each(function(result){
+
+//     var milestoneId = result.getValue('internalid');
+
+//     if(uniqueMilestones[milestoneId]){
+//         return true;
+//     }
+
+//     uniqueMilestones[milestoneId] = true;
+
+//     var childRec = record.create({
+//         type:'customrecord_rw_project_plan_temp_child'
+//     });
+
+//     childRec.setValue({
+//         fieldId:'custrecord_rw_proj_plan_temp_child_link',
+//         value:id
+//     });
+
+//     childRec.setValue({
+//         fieldId:'custrecord_rw_proj_plan_temp_child_sno',
+//         value:sno
+//     });
+
+//     childRec.setValue({
+//         fieldId:'custrecord_rw_project_temp_child_miles',
+//         value:milestoneId
+//     });
+
+//     childRec.save();
+
+//     sno++;
+
+//     return true;
+// });
             context.response.write(
                 JSON.stringify({
                     success: true,
@@ -189,6 +237,71 @@ var dpSearch = search.create({
 
 dpSearch.run().each(function(result){
     dpOptions += '<option value="'+result.getValue('internalid')+'">'+result.getValue('name')+'</option>';
+    return true;
+});
+   var milestoneOptions = '';
+
+var addedMilestones = {};
+
+var milestoneSearch = search.create({
+
+    type:'customrecord_rw_project_mile_stone_types',
+
+    filters:[
+        ['isinactive','is','F']
+    ],
+
+    columns:[
+        'internalid',
+        'name'
+    ]
+});
+
+milestoneSearch.run().each(function(r){
+
+    var id =
+        r.getValue('internalid');
+
+    var name =
+        r.getValue('name');
+
+    if(!addedMilestones[name]){
+
+        milestoneOptions +=
+
+            '<option value="' +
+            id +
+            '">' +
+            name +
+            '</option>';
+
+        addedMilestones[name] = true;
+    }
+
+    return true;
+});
+var snoOptions = '';
+
+var snoSearch = search.create({
+    type: 'customlist_rw_serial_no', // your S.NO custom record
+    filters: [
+        ['isinactive','is','F']
+    ],
+    columns: [
+        'internalid',
+        'name'
+    ]
+});
+
+snoSearch.run().each(function(r){
+
+    snoOptions +=
+        '<option value="' +
+        r.getValue('internalid') +
+        '">' +
+        r.getValue('name') +
+        '</option>';
+
     return true;
 });
         var data = [];
@@ -760,31 +873,28 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     </div>
 
 </div>
-<div id="createPlanModal"
-     class="create-modal">
-<input type="hidden" id="action" value="">
-    <div class="create-modal-content">
+<div id="createPlanModal" class="create-modal">
+
+    <div class="create-modal-content" style="width:850px;">
 
         <div class="create-modal-header">
-
             Create Project Plan
 
-            <span style="float:right;cursor:pointer;"
-                  onclick="closeCreatePlanModal()">
+            <span
+                style="float:right;cursor:pointer;"
+                onclick="closeCreatePlanModal()">
                 ×
             </span>
-
         </div>
 
         <div class="create-modal-body">
 
             <div class="form-group">
                 <label>Project Plan Name</label>
-                <input type="text"
-                       id="planName">
+                <input
+                    type="text"
+                    id="planName">
             </div>
-
-            
 
             <div class="form-group">
                 <label>Revenue Stream</label>
@@ -793,18 +903,59 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
                 </select>
             </div>
 
+            <hr>
+
+            <h3>Project Milestones</h3>
+
+            <button
+                type="button"
+                class="save-btn"
+                onclick="addMilestoneRow()"
+                style="margin-bottom:15px;">
+
+                + Add Milestone
+
+            </button>
+
+            <table
+                width="100%"
+                border="1"
+                style="border-collapse:collapse;">
+
+                <thead>
+
+                    <tr>
+                        <th width="20%">S.No</th>
+                        <th width="70%">Milestone</th>
+                        <th width="10%">Action</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="milestoneBody">
+
+                </tbody>
+
+            </table>
+
         </div>
 
         <div class="modal-footer">
 
-            <button class="cancel-btn"
-                    onclick="closeCreatePlanModal()">
+            <button
+                class="cancel-btn"
+                onclick="closeCreatePlanModal()">
+
                 Cancel
+
             </button>
 
-            <button class="save-btn"
-                    onclick="saveProjectPlan()">
+            <button
+                class="save-btn"
+                onclick="saveProjectPlan()">
+
                 Save
+
             </button>
 
         </div>
@@ -889,12 +1040,7 @@ function openProduct(data){
     document.getElementById('mileBody')
         .innerHTML = rows;
 }
-     function openCreatePlanModal(){
-
-    document.getElementById(
-        'createPlanModal'
-    ).style.display='block';
-}
+    
 
 function closeCreatePlanModal(){
 
@@ -905,48 +1051,144 @@ function closeCreatePlanModal(){
 
 function saveProjectPlan(){
 
-    var planName = document.getElementById('planName').value;
-    var product  = document.getElementById('productService').value;
-    var revenue  = document.getElementById('revenueStream').value;
+    var planName =
+        document.getElementById(
+            'planName'
+        ).value;
 
-    if(!planName){
-        alert('Please enter Project Plan Name');
-        return;
-    }
+    var revenue =
+        document.getElementById(
+            'revenueStream'
+        ).value;
 
-    fetch(window.location.href, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            action: 'createProjectPlan',
-            planName: planName,
-            product: product,
-            revenue: revenue
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
+    var milestones = [];
 
-        if(data.success){
+    document
+        .querySelectorAll(
+            '#milestoneBody tr'
+        )
+        .forEach(function(row){
 
-            alert('Project Plan Created Successfully');
+            milestones.push({
 
-            closeCreatePlanModal();
+                sno:
+                    row.querySelector(
+                        '.snoSelect'
+                    ).value,
 
-            location.reload();
+                milestone:
+                    row.querySelector(
+                        '.mileSelect'
+                    ).value
+            });
+        });
 
-        }else{
+    fetch(
+        window.location.href,
+        {
+            method:'POST',
 
-            alert(data.message || 'Error');
+            headers:{
+                'Content-Type':
+                    'application/json'
+            },
+
+            body: JSON.stringify({
+
+                action:
+                    'createProjectPlan',
+
+                planName:
+                    planName,
+
+                revenue:
+                    revenue,
+
+                milestones:
+                    milestones
+            })
         }
+    )
+    .then(r => r.text())
+.then(function(res){
 
-    })
-    .catch(err => {
-        console.error(err);
-        alert('Error saving Project Plan');
-    });
+    console.log('SERVER RESPONSE', res);
+
+    var data = JSON.parse(res);
+
+    if(data.success){
+
+        alert('Project Plan Created');
+
+        location.reload();
+    }else{
+
+        alert(data.message);
+    }
+});
+}
+    function addMilestoneRow(){
+
+    var row =
+
+        '<tr>' +
+
+            '<td>' +
+
+                '<select class="snoSelect">' +
+
+                    '${snoOptions}' +
+
+                '</select>' +
+
+            '</td>' +
+
+            '<td>' +
+
+                '<select class="mileSelect">' +
+
+                    '${milestoneOptions}' +
+
+                '</select>' +
+
+            '</td>' +
+
+            '<td style="text-align:center;">' +
+
+                '<button type="button" ' +
+                'onclick="removeMilestoneRow(this)" ' +
+                'style="background:red;color:white;border:none;padding:5px 10px;border-radius:4px;">' +
+
+                'X' +
+
+                '</button>' +
+
+            '</td>' +
+
+        '</tr>';
+
+    document
+        .getElementById('milestoneBody')
+        .insertAdjacentHTML(
+            'beforeend',
+            row
+        );
+}
+        function removeMilestoneRow(btn){
+
+    btn.parentNode.parentNode.remove();
+}
+    function openCreatePlanModal(){
+
+    document.getElementById(
+        'createPlanModal'
+    ).style.display = 'block';
+
+    document.getElementById(
+        'milestoneBody'
+    ).innerHTML = '';
+
+    addMilestoneRow();
 }
 </script>
         `;

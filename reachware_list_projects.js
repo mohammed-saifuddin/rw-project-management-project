@@ -301,6 +301,166 @@ employeeData.forEach(function(emp){
         '</option>';
 
 });
+var pmOptions = '<option value="">--Select--</option>';
+
+var pmSearch = search.create({
+    type: search.Type.EMPLOYEE,
+    filters: [
+        ['isinactive','is','F']
+    ],
+    columns: [
+        'internalid',
+        'firstname',
+        'lastname',
+        'custentity_rw_dms_designation'
+    ]
+});
+
+pmSearch.run().each(function(result){
+
+    var designationId = result.getValue({
+        name: 'custentity_rw_dms_designation'
+    });
+
+    if (parseInt(designationId) !== 2) {
+        return true;
+    }
+
+    var fullName =
+        (result.getValue('firstname') || '') +
+        ' ' +
+        (result.getValue('lastname') || '');
+
+    pmOptions +=
+        '<option value="' +
+        result.getValue('internalid') +
+        '">' +
+        fullName.trim() +
+        '</option>';
+
+    return true;
+});
+
+
+var amOptions = '<option value="">--Select--</option>';
+
+var amSearch = search.create({
+    type: search.Type.EMPLOYEE,
+    filters: [
+        ['isinactive','is','F']
+    ],
+    columns: [
+        'internalid',
+        'firstname',
+        'lastname',
+        'custentity_rw_dms_designation'
+    ]
+});
+
+amSearch.run().each(function(result){
+
+    var designationId = result.getValue({
+        name: 'custentity_rw_dms_designation'
+    });
+
+    if (parseInt(designationId) !== 1) {
+        return true;
+    }
+
+    var fullName =
+        (result.getValue('firstname') || '') +
+        ' ' +
+        (result.getValue('lastname') || '');
+
+    amOptions +=
+        '<option value="' +
+        result.getValue('internalid') +
+        '">' +
+        fullName.trim() +
+        '</option>';
+
+    return true;
+});
+
+var funcOptions = '<option value="">--Select--</option>';
+
+var funcSearch = search.create({
+    type: search.Type.EMPLOYEE,
+    filters: [
+        ['isinactive','is','F']
+    ],
+    columns: [
+        'internalid',
+        'firstname',
+        'lastname',
+        'custentity_rw_dms_designation'
+    ]
+});
+
+funcSearch.run().each(function(result){
+
+    var designationId = result.getValue({
+        name: 'custentity_rw_dms_designation'
+    });
+
+    if (parseInt(designationId) !== 4) {
+        return true;
+    }
+
+    var fullName =
+        (result.getValue('firstname') || '') +
+        ' ' +
+        (result.getValue('lastname') || '');
+
+    funcOptions +=
+        '<option value="' +
+        result.getValue('internalid') +
+        '">' +
+        fullName.trim() +
+        '</option>';
+
+    return true;
+});
+
+var techOptions = '<option value="">--Select--</option>';
+
+var techSearch = search.create({
+    type: search.Type.EMPLOYEE,
+    filters: [
+        ['isinactive','is','F']
+    ],
+    columns: [
+        'internalid',
+        'firstname',
+        'lastname',
+        'custentity_rw_dms_designation'
+    ]
+});
+
+techSearch.run().each(function(result){
+
+    var designationId = result.getValue({
+        name: 'custentity_rw_dms_designation'
+    });
+
+    if (parseInt(designationId) !== 5) {
+        return true;
+    }
+
+    var fullName =
+        (result.getValue('firstname') || '') +
+        ' ' +
+        (result.getValue('lastname') || '');
+
+    techOptions +=
+        '<option value="' +
+        result.getValue('internalid') +
+        '">' +
+        fullName.trim() +
+        '</option>';
+
+    return true;
+});
 var homeUrl = url.resolveScript({
                     scriptId:'customscript2874',
                     deploymentId:'customdeploy3',
@@ -549,9 +709,9 @@ else if(roleType === 'PM'){
     <tr class="row-hover">
        <td><select name="rwproduct[]">${rwOptions}</select></td>
         <td><input type="text" name="comments[]"></td>
-        <td><select name="rwpm[]" class="linePM">${empOptions}</select></td>
-        <td><select name="functional[]" class="lineFunctional">${empOptions}</select></td>
-        <td><select name="technical[]" class="lineTechnical">${empOptions}</select></td>
+        <td><select name="rwpm[]" class="linePM">${pmOptions}</select></td>
+        <td><select name="functional[]" class="lineFunctional">${funcOptions}</select></td>
+        <td><select name="technical[]" class="lineTechnical">${techOptions}</select></td>
         <td><input type="date" name="expuat[]"></td>
         <td><input type="date" name="expgolive[]"></td>
         <td><select name="linestatus[]">${statOptions}</select></td>
@@ -574,9 +734,9 @@ else {
     <tr class="row-hover">
         <td><select name="rwproduct[]">${rwOptions}</select></td>
         <td><input type="text" name="comments[]"></td>
-        <td><select name="rwpm[]" class="linePM">${empOptions}</select></td>
-        <td><select name="functional[]" class="lineFunctional">${empOptions}</select></td>
-        <td><select name="technical[]" class="lineTechnical">${empOptions}</select></td>
+        <td><select name="rwpm[]" class="linePM">${pmOptions}</select></td>
+        <td><select name="functional[]" class="lineFunctional">${funcOptions}</select></td>
+        <td><select name="technical[]" class="lineTechnical">${techOptions}</select></td>
         <td><input type="date" name="expuat[]"></td>
         <td><input type="date" name="expgolive[]"></td>
         <td><select name="linestatus[]">${statOptions}</select></td>
@@ -1438,7 +1598,7 @@ ${dpOptions}
 
 <label class="required">Project Manager</label>
 <select name="projectmanager" id="headerPM">
-${empOptions}
+${pmOptions}
 </select>
 
 <label>Performa Invoice Date</label>
@@ -1447,7 +1607,7 @@ ${empOptions}
 
 <label class="required">Account Manager</label>
 <select name="accountmanager" id="accountmanager" required>
-${empOptions}
+${amOptions}
 </select>
 
 <label>Start Date</label>
@@ -1492,7 +1652,7 @@ ${isEdit ? `
 
 <label>Technical Consultant</label>
 <select name="technical1" id="technical1" required>
-${empOptions}
+${techOptions}
 </select>
 
 <label>Project Duration</label>
@@ -1500,7 +1660,7 @@ ${empOptions}
 
 <label>Functional Consultant</label>
 <select name="functional1" id="functional1" required id="headerFunc">
-${empOptions}
+${funcOptions}
 </select>
 
 

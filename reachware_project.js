@@ -271,6 +271,15 @@ if(statusFilter){
         statusFilter
     ]);
 }
+if(filters.length > 0){
+    filters.push('AND');
+}
+
+filters.push([
+    'isinactive',
+    'is',
+    'F'
+]);
 var projectSearch = search.create({
     type: 'customrecord_rw_portal_access2',
      filters:filters,
@@ -382,7 +391,7 @@ var functionalConsultant = result.getText({ name: 'custrecord_rw_portal_funccons
 var technicalConsultant = result.getText({ name: 'custrecord_rw_portal_techconsultant' }) || '';
 log.debug(additionalComments)
     var status = result.getText('custrecord_rw_portal_projstat');
-    log.debug(status) // ✅ ADD THIS
+    log.debug(status) 
     if(!parentId) return;
 
  if (!projectMap[parentId]) {
@@ -426,7 +435,7 @@ projectMap[parentId].products[product].count++;
 });
 var projectIds = Object.keys(projectMap);
 
-// 🔥 IMPORTANT: sort before pagination
+//  IMPORTANT: sort before pagination
 projectIds.sort(function(a, b){
     return Number(b) - Number(a); // DESC order
 });
@@ -514,7 +523,7 @@ function getProductTicketCount(projectId, productId){
         filters: [
             ['custrecord_rw_ticket_projectname','anyof',[projectId]],
             'AND',
-            ['custrecord_rw_ticket_rwsuiteapp','anyof',[productId]] // ✅ FIX
+            ['custrecord_rw_ticket_rwsuiteapp','anyof',[productId]] 
         ],
         columns: ['internalid']
     });
@@ -1073,36 +1082,7 @@ statOptions1 += '<option value="'+id+'">'+name+'</option>';
 
     return true;
 });
-// function getStatusOptions(selectedValue){
 
-//     var options = '';
-
-//     var statuses = [
-
-//         {id:'1',  name:'Kick Off'},
-//         {id:'2',  name:'In Progress'},
-//         {id:'3',  name:'On Hold'},
-//         {id:'4',  name:'UAT'},
-//         {id:'5',  name:'Go Live'},
-//         {id:'6',  name:'COC'},
-//         {id:'7',  name:'Business Requirement'},
-//         {id:'8',  name:'Training'},
-//         {id:'11', name:'Support'}
-
-//     ];
-
-//     statuses.forEach(function(status){
-
-//         options += `
-//             <option value="${status.id}"
-//                 ${selectedValue == status.id ? 'selected' : ''}>
-//                 ${status.name}
-//             </option>
-//         `;
-//     });
-
-//     return options;
-// }
 htmlField.defaultValue = `
 
 <style>
@@ -1277,9 +1257,7 @@ table{
 width:100%;
 border-collapse:collapse;
 }
-.project-row:hover{
-background:blue;
-color:white;}
+
 th{
 background:#6f2da8;
 color:white;
@@ -1335,7 +1313,12 @@ td{
 }
 
 .project-row:hover{
-    background:MediumPurple;
+    background:linear-gradient(
+    #61348b,
+    #002855
+    
+    
+);
 color:white;
     font-weight:bold;
 }
@@ -1603,6 +1586,17 @@ text-decoration: none;
 
         width:100%;
     }
+}
+
+    .project-row:hover{
+    background:linear-gradient(
+    #61348b,
+    #002855
+    
+    
+);
+    color:white;
+    font-weight:bold;
 }
 </style>
 <form method="GET">

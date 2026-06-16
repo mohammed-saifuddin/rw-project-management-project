@@ -702,7 +702,7 @@ if(projectStatus){
         projectStatus;
 }
 
-if(roleType === 'PMO'){
+if(roleType === 'PMO' || roleType === 'PM'){
 
     if(updatedEndDate){
 
@@ -1469,6 +1469,34 @@ createNotification(
     return;
 }
     var form = serverWidget.createForm({ title: ' ' });
+    function getProjectStatusClass(status){
+
+    status = (status || '')
+        .toLowerCase()
+        .trim();
+
+    if(status.includes('not started')){
+        return 'notstarted';
+    }
+
+    if(status.includes('kick off')){
+        return 'kickoff';
+    }
+
+    if(status.includes('in progress')){
+        return 'inprogress';
+    }
+
+    if(status.includes('uat')){
+        return 'uat';
+    }
+
+    if(status.includes('done') || status.includes('completed')){
+        return 'done';
+    }
+
+    return 'notstarted';
+}
 var statOptions ='<option value="">--Select--</option>';
 
 
@@ -3132,255 +3160,255 @@ var updatedLineObj =
 var empRoleMap = {};
 
  if(roleType === 'PMO'){
-   var historyHtml = `
-<div style="
-    padding:18px;
-    background:#f8f9fc;
-    border-radius:14px;
-    border:1px solid #e3e8f0;
-    box-shadow:0 4px 12px rgba(0,0,0,0.06);
-    margin-top:10px;
-">
-`;
+//    var historyHtml = `
+// <div style="
+//     padding:18px;
+//     background:#f8f9fc;
+//     border-radius:14px;
+//     border:1px solid #e3e8f0;
+//     box-shadow:0 4px 12px rgba(0,0,0,0.06);
+//     margin-top:10px;
+// ">
+// `;
 
-var histSearch = search.create({
-    type: 'customrecord_rw_project_status_history',
+// var histSearch = search.create({
+//     type: 'customrecord_rw_project_status_history',
 
-    filters: [
-        [
-            ['custrecord_rw_hist_line','anyof', lineId],
-            // 'OR',
-            // [
-            //     'custrecord_rw_hist_project',
-            //     'anyof',
-            //     projectId
-            // ]
-        ]
-    ],
+//     filters: [
+//         [
+//             ['custrecord_rw_hist_line','anyof', lineId],
+//             // 'OR',
+//             // [
+//             //     'custrecord_rw_hist_project',
+//             //     'anyof',
+//             //     projectId
+//             // ]
+//         ]
+//     ],
 
-    columns: [
-    search.createColumn({
-    name:'created',
-    sort: search.Sort.DESC
-}),
-        'custrecord_rw_hist_oldprojstatus',
-        'custrecord_rw_hist_projectstatus',
-        'custrecord_rw_hist_oldstatus',
-        'custrecord_rw_hist_newstatus',
-        'custrecord_rw_hist_changedby',
-        'custrecord_rw_hist_duration'
-    ]
-});
+//     columns: [
+//     search.createColumn({
+//     name:'created',
+//     sort: search.Sort.DESC
+// }),
+//         'custrecord_rw_hist_oldprojstatus',
+//         'custrecord_rw_hist_projectstatus',
+//         'custrecord_rw_hist_oldstatus',
+//         'custrecord_rw_hist_newstatus',
+//         'custrecord_rw_hist_changedby',
+//         'custrecord_rw_hist_duration'
+//     ]
+// });
 
-histSearch.run().each(function(h){
+// histSearch.run().each(function(h){
 
-    historyHtml += `
+//     historyHtml += `
 
-<div style="
-    background:white;
-    border-left:5px solid #8f50df;
-    border-radius:12px;
-    padding:10px 14px;
-    margin-bottom:13px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.05);
-">
+// <div style="
+//     background:white;
+//     border-left:5px solid #8f50df;
+//     border-radius:12px;
+//     padding:10px 14px;
+//     margin-bottom:13px;
+//     box-shadow:0 2px 8px rgba(0,0,0,0.05);
+// ">
 
-    <div style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        margin-bottom:12px;
-    ">
+//     <div style="
+//         display:flex;
+//         justify-content:space-between;
+//         align-items:center;
+//         margin-bottom:12px;
+//     ">
 
-        <div style="
-            font-size:15px;
-            font-weight:700;
-            color:#2d3436;
-        ">
-            ${product}
-        </div>
+//         <div style="
+//             font-size:15px;
+//             font-weight:700;
+//             color:#2d3436;
+//         ">
+//             ${product}
+//         </div>
 
-        <div style="
-            background:#f3ecff;
-            color:#8f50df;
-            padding:5px 12px;
-            border-radius:20px;
-            font-size:12px;
-            font-weight:600;
-        ">
-            ${h.getValue(
-                'custrecord_rw_hist_duration'
-            ) || '-'}
-        </div>
+//         <div style="
+//             background:#f3ecff;
+//             color:#8f50df;
+//             padding:5px 12px;
+//             border-radius:20px;
+//             font-size:12px;
+//             font-weight:600;
+//         ">
+//             ${h.getValue(
+//                 'custrecord_rw_hist_duration'
+//             ) || '-'}
+//         </div>
 
-    </div>
+//     </div>
 
-    <div style="
-        display:flex;
-        gap:20px;
-        flex-wrap:wrap;
-        margin-bottom:10px;
-    ">
+//     <div style="
+//         display:flex;
+//         gap:20px;
+//         flex-wrap:wrap;
+//         margin-bottom:10px;
+//     ">
 
-        <div style="
-            flex:1;
-            min-width:240px;
-            background:#f8f9ff;
-            padding:12px;
-            border-radius:10px;
-        ">
+//         <div style="
+//             flex:1;
+//             min-width:240px;
+//             background:#f8f9ff;
+//             padding:12px;
+//             border-radius:10px;
+//         ">
 
-            <div style="
-                font-size:12px;
-                color:#7f8c8d;
-                margin-bottom:6px;
-                font-weight:600;
-                text-transform:uppercase;
-            ">
-                Project Status
-            </div>
+//             <div style="
+//                 font-size:12px;
+//                 color:#7f8c8d;
+//                 margin-bottom:6px;
+//                 font-weight:600;
+//                 text-transform:uppercase;
+//             ">
+//                 Project Status
+//             </div>
 
-            <div style="
-                display:flex;
-                align-items:center;
-                gap:10px;
-                font-size:14px;
-                font-weight:600;
-            ">
+//             <div style="
+//                 display:flex;
+//                 align-items:center;
+//                 gap:10px;
+//                 font-size:14px;
+//                 font-weight:600;
+//             ">
 
-                <span style="
-                    color:#e67e22;
-                    background:#fff4e8;
-                    padding:5px 10px;
-                    border-radius:8px;
-                ">
-                    ${h.getValue(
-                        'custrecord_rw_hist_oldprojstatus'
-                    ) || '-'}
+//                 <span style="
+//                     color:#e67e22;
+//                     background:#fff4e8;
+//                     padding:5px 10px;
+//                     border-radius:8px;
+//                 ">
+//                     ${h.getValue(
+//                         'custrecord_rw_hist_oldprojstatus'
+//                     ) || '-'}
 
-                </span>
+//                 </span>
 
-                <span style="
-                    color:#8f50df;
-                    font-size:18px;
-                ">
-                    →
-                </span>
+//                 <span style="
+//                     color:#8f50df;
+//                     font-size:18px;
+//                 ">
+//                     →
+//                 </span>
 
-                <span style="
-                    color:#27ae60;
-                    background:#eafaf1;
-                    padding:5px 10px;
-                    border-radius:8px;
-                ">
-                    ${h.getValue(
-                        'custrecord_rw_hist_projectstatus'
-                    ) || '-'}
+//                 <span style="
+//                     color:#27ae60;
+//                     background:#eafaf1;
+//                     padding:5px 10px;
+//                     border-radius:8px;
+//                 ">
+//                     ${h.getValue(
+//                         'custrecord_rw_hist_projectstatus'
+//                     ) || '-'}
 
-                </span>
+//                 </span>
 
-            </div>
+//             </div>
 
-        </div>
+//         </div>
 
-        <div style="
-            flex:1;
-            min-width:240px;
-            background:#f8f9ff;
-            padding:12px;
-            border-radius:10px;
-        ">
+//         <div style="
+//             flex:1;
+//             min-width:240px;
+//             background:#f8f9ff;
+//             padding:12px;
+//             border-radius:10px;
+//         ">
 
-            <div style="
-                font-size:12px;
-                color:#7f8c8d;
-                margin-bottom:6px;
-                font-weight:600;
-                text-transform:uppercase;
-            ">
-                Product Status
-            </div>
+//             <div style="
+//                 font-size:12px;
+//                 color:#7f8c8d;
+//                 margin-bottom:6px;
+//                 font-weight:600;
+//                 text-transform:uppercase;
+//             ">
+//                 Product Status
+//             </div>
 
-            <div style="
-                display:flex;
-                align-items:center;
-                gap:10px;
-                font-size:14px;
-                font-weight:600;
-            ">
+//             <div style="
+//                 display:flex;
+//                 align-items:center;
+//                 gap:10px;
+//                 font-size:14px;
+//                 font-weight:600;
+//             ">
 
-                <span style="
-                    color:#e67e22;
-                    background:#fff4e8;
-                    padding:5px 10px;
-                    border-radius:8px;
-                ">
-                    ${h.getValue(
-                        'custrecord_rw_hist_oldstatus'
-                    ) || '-'}
+//                 <span style="
+//                     color:#e67e22;
+//                     background:#fff4e8;
+//                     padding:5px 10px;
+//                     border-radius:8px;
+//                 ">
+//                     ${h.getValue(
+//                         'custrecord_rw_hist_oldstatus'
+//                     ) || '-'}
 
-                </span>
+//                 </span>
 
-                <span style="
-                    color:#8f50df;
-                    font-size:18px;
-                ">
-                    →
-                </span>
+//                 <span style="
+//                     color:#8f50df;
+//                     font-size:18px;
+//                 ">
+//                     →
+//                 </span>
 
-                <span style="
-                    color:#27ae60;
-                    background:#eafaf1;
-                    padding:5px 10px;
-                    border-radius:8px;
-                ">
-                    ${h.getValue(
-                        'custrecord_rw_hist_newstatus'
-                    ) || '-'}
+//                 <span style="
+//                     color:#27ae60;
+//                     background:#eafaf1;
+//                     padding:5px 10px;
+//                     border-radius:8px;
+//                 ">
+//                     ${h.getValue(
+//                         'custrecord_rw_hist_newstatus'
+//                     ) || '-'}
 
-                </span>
+//                 </span>
 
-            </div>
+//             </div>
 
-        </div>
+//         </div>
 
-    </div>
+//     </div>
 
-    <div style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        font-size:12px;
-        color:#7f8c8d;
-        margin-top:10px;
-        border-top:1px solid #f1f2f6;
-        padding-top:10px;
-    ">
+//     <div style="
+//         display:flex;
+//         justify-content:space-between;
+//         align-items:center;
+//         font-size:12px;
+//         color:#7f8c8d;
+//         margin-top:10px;
+//         border-top:1px solid #f1f2f6;
+//         padding-top:10px;
+//     ">
 
-        <div>
-            👤 ${h.getText(
-                'custrecord_rw_hist_changedby'
-            ) || ''}
-        </div>
+//         <div>
+//             👤 ${h.getText(
+//                 'custrecord_rw_hist_changedby'
+//             ) || ''}
+//         </div>
 
-        <div>
-          🕒 ${
-    format.format({
-        value: h.getValue('created'),
-        type: format.Type.DATETIMETZ
-    }) || ''
-}
-        </div>
+//         <div>
+//           🕒 ${
+//     format.format({
+//         value: h.getValue('created'),
+//         type: format.Type.DATETIMETZ
+//     }) || ''
+// }
+//         </div>
 
-    </div>
+//     </div>
 
-</div>
-`;
+// </div>
+// `;
 
-    return true;
-});
+//     return true;
+// });
 
-historyHtml += `</div>`;
+// historyHtml += `</div>`;
     lineItemsHtml += `
 <tr data-id="${lineId}">
     <td style="border:1px solid #ccc;padding:8px;">
@@ -3395,22 +3423,17 @@ historyHtml += `</div>`;
 >
     📋
 </span>
-    <span class="toggleHistory"
-          onclick="toggleHistory('${lineId}')"
-          style="
-            cursor:pointer;
-            color:#8f50df;
-            font-weight:bold;
-            margin-right:8px;
-          ">
-        ▶
-    </span>
+    
 
     ${product}
 </td>
     <td style="border:1px solid #ccc;padding:8px;">${comments}</td>
     <td style="border:1px solid #ccc;padding:8px;">
-        <span class="view-mode">${linestatus}</span>
+        <span class="view-mode">
+    <span class="status-badge ${getProjectStatusClass(linestatus)}">
+        ${linestatus}
+    </span>
+</span>
         <select class="edit-mode status" style="display:none;" data-currenttext="${linestatus}">
             ${statOptions}
         </select>
@@ -3520,7 +3543,7 @@ historyHtml += `</div>`;
 <td colspan="12"
     style="padding:15px;">
 
-    ${historyHtml}
+
 
 </td>
 </tr>
@@ -3658,255 +3681,255 @@ log.debug(
 }
 
 else if (roleType === 'PM') {
-    var historyHtml = `
-<div style="
-    padding:18px;
-    background:#f8f9fc;
-    border-radius:14px;
-    border:1px solid #e3e8f0;
-    box-shadow:0 4px 12px rgba(0,0,0,0.06);
-    margin-top:10px;
-">
-`;
+//     var historyHtml = `
+// <div style="
+//     padding:18px;
+//     background:#f8f9fc;
+//     border-radius:14px;
+//     border:1px solid #e3e8f0;
+//     box-shadow:0 4px 12px rgba(0,0,0,0.06);
+//     margin-top:10px;
+// ">
+// `;
 
-var histSearch = search.create({
-    type: 'customrecord_rw_project_status_history',
+// var histSearch = search.create({
+//     type: 'customrecord_rw_project_status_history',
 
-    filters: [
-        [
-            ['custrecord_rw_hist_line','anyof', lineId],
-            // 'OR',
-            // [
-            //     'custrecord_rw_hist_project',
-            //     'anyof',
-            //     projectId
-            // ]
-        ]
-    ],
+//     filters: [
+//         [
+//             ['custrecord_rw_hist_line','anyof', lineId],
+//             // 'OR',
+//             // [
+//             //     'custrecord_rw_hist_project',
+//             //     'anyof',
+//             //     projectId
+//             // ]
+//         ]
+//     ],
 
-    columns: [
-    search.createColumn({
-    name:'created',
-    sort: search.Sort.DESC
-}),
-        'custrecord_rw_hist_oldprojstatus',
-        'custrecord_rw_hist_projectstatus',
-        'custrecord_rw_hist_oldstatus',
-        'custrecord_rw_hist_newstatus',
-        'custrecord_rw_hist_changedby',
-        'custrecord_rw_hist_duration'
-    ]
-});
+//     columns: [
+//     search.createColumn({
+//     name:'created',
+//     sort: search.Sort.DESC
+// }),
+//         'custrecord_rw_hist_oldprojstatus',
+//         'custrecord_rw_hist_projectstatus',
+//         'custrecord_rw_hist_oldstatus',
+//         'custrecord_rw_hist_newstatus',
+//         'custrecord_rw_hist_changedby',
+//         'custrecord_rw_hist_duration'
+//     ]
+// });
 
-histSearch.run().each(function(h){
+// histSearch.run().each(function(h){
 
-    historyHtml += `
+//     historyHtml += `
 
-<div style="
-    background:white;
-    border-left:5px solid #8f50df;
-    border-radius:12px;
-    padding:10px 14px;
-    margin-bottom:13px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.05);
-">
+// <div style="
+//     background:white;
+//     border-left:5px solid #8f50df;
+//     border-radius:12px;
+//     padding:10px 14px;
+//     margin-bottom:13px;
+//     box-shadow:0 2px 8px rgba(0,0,0,0.05);
+// ">
 
-    <div style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        margin-bottom:12px;
-    ">
+//     <div style="
+//         display:flex;
+//         justify-content:space-between;
+//         align-items:center;
+//         margin-bottom:12px;
+//     ">
 
-        <div style="
-            font-size:15px;
-            font-weight:700;
-            color:#2d3436;
-        ">
-            ${product}
-        </div>
+//         <div style="
+//             font-size:15px;
+//             font-weight:700;
+//             color:#2d3436;
+//         ">
+//             ${product}
+//         </div>
 
-        <div style="
-            background:#f3ecff;
-            color:#8f50df;
-            padding:5px 12px;
-            border-radius:20px;
-            font-size:12px;
-            font-weight:600;
-        ">
-            ${h.getValue(
-                'custrecord_rw_hist_duration'
-            ) || '-'}
-        </div>
+//         <div style="
+//             background:#f3ecff;
+//             color:#8f50df;
+//             padding:5px 12px;
+//             border-radius:20px;
+//             font-size:12px;
+//             font-weight:600;
+//         ">
+//             ${h.getValue(
+//                 'custrecord_rw_hist_duration'
+//             ) || '-'}
+//         </div>
 
-    </div>
+//     </div>
 
-    <div style="
-        display:flex;
-        gap:20px;
-        flex-wrap:wrap;
-        margin-bottom:10px;
-    ">
+//     <div style="
+//         display:flex;
+//         gap:20px;
+//         flex-wrap:wrap;
+//         margin-bottom:10px;
+//     ">
 
-        <div style="
-            flex:1;
-            min-width:240px;
-            background:#f8f9ff;
-            padding:12px;
-            border-radius:10px;
-        ">
+//         <div style="
+//             flex:1;
+//             min-width:240px;
+//             background:#f8f9ff;
+//             padding:12px;
+//             border-radius:10px;
+//         ">
 
-            <div style="
-                font-size:12px;
-                color:#7f8c8d;
-                margin-bottom:6px;
-                font-weight:600;
-                text-transform:uppercase;
-            ">
-                Project Status
-            </div>
+//             <div style="
+//                 font-size:12px;
+//                 color:#7f8c8d;
+//                 margin-bottom:6px;
+//                 font-weight:600;
+//                 text-transform:uppercase;
+//             ">
+//                 Project Status
+//             </div>
 
-            <div style="
-                display:flex;
-                align-items:center;
-                gap:10px;
-                font-size:14px;
-                font-weight:600;
-            ">
+//             <div style="
+//                 display:flex;
+//                 align-items:center;
+//                 gap:10px;
+//                 font-size:14px;
+//                 font-weight:600;
+//             ">
 
-                <span style="
-                    color:#e67e22;
-                    background:#fff4e8;
-                    padding:5px 10px;
-                    border-radius:8px;
-                ">
-                    ${h.getValue(
-                        'custrecord_rw_hist_oldprojstatus'
-                    ) || '-'}
+//                 <span style="
+//                     color:#e67e22;
+//                     background:#fff4e8;
+//                     padding:5px 10px;
+//                     border-radius:8px;
+//                 ">
+//                     ${h.getValue(
+//                         'custrecord_rw_hist_oldprojstatus'
+//                     ) || '-'}
 
-                </span>
+//                 </span>
 
-                <span style="
-                    color:#8f50df;
-                    font-size:18px;
-                ">
-                    →
-                </span>
+//                 <span style="
+//                     color:#8f50df;
+//                     font-size:18px;
+//                 ">
+//                     →
+//                 </span>
 
-                <span style="
-                    color:#27ae60;
-                    background:#eafaf1;
-                    padding:5px 10px;
-                    border-radius:8px;
-                ">
-                    ${h.getValue(
-                        'custrecord_rw_hist_projectstatus'
-                    ) || '-'}
+//                 <span style="
+//                     color:#27ae60;
+//                     background:#eafaf1;
+//                     padding:5px 10px;
+//                     border-radius:8px;
+//                 ">
+//                     ${h.getValue(
+//                         'custrecord_rw_hist_projectstatus'
+//                     ) || '-'}
 
-                </span>
+//                 </span>
 
-            </div>
+//             </div>
 
-        </div>
+//         </div>
 
-        <div style="
-            flex:1;
-            min-width:240px;
-            background:#f8f9ff;
-            padding:12px;
-            border-radius:10px;
-        ">
+//         <div style="
+//             flex:1;
+//             min-width:240px;
+//             background:#f8f9ff;
+//             padding:12px;
+//             border-radius:10px;
+//         ">
 
-            <div style="
-                font-size:12px;
-                color:#7f8c8d;
-                margin-bottom:6px;
-                font-weight:600;
-                text-transform:uppercase;
-            ">
-                Product Status
-            </div>
+//             <div style="
+//                 font-size:12px;
+//                 color:#7f8c8d;
+//                 margin-bottom:6px;
+//                 font-weight:600;
+//                 text-transform:uppercase;
+//             ">
+//                 Product Status
+//             </div>
 
-            <div style="
-                display:flex;
-                align-items:center;
-                gap:10px;
-                font-size:14px;
-                font-weight:600;
-            ">
+//             <div style="
+//                 display:flex;
+//                 align-items:center;
+//                 gap:10px;
+//                 font-size:14px;
+//                 font-weight:600;
+//             ">
 
-                <span style="
-                    color:#e67e22;
-                    background:#fff4e8;
-                    padding:5px 10px;
-                    border-radius:8px;
-                ">
-                    ${h.getValue(
-                        'custrecord_rw_hist_oldstatus'
-                    ) || '-'}
+//                 <span style="
+//                     color:#e67e22;
+//                     background:#fff4e8;
+//                     padding:5px 10px;
+//                     border-radius:8px;
+//                 ">
+//                     ${h.getValue(
+//                         'custrecord_rw_hist_oldstatus'
+//                     ) || '-'}
 
-                </span>
+//                 </span>
 
-                <span style="
-                    color:#8f50df;
-                    font-size:18px;
-                ">
-                    →
-                </span>
+//                 <span style="
+//                     color:#8f50df;
+//                     font-size:18px;
+//                 ">
+//                     →
+//                 </span>
 
-                <span style="
-                    color:#27ae60;
-                    background:#eafaf1;
-                    padding:5px 10px;
-                    border-radius:8px;
-                ">
-                    ${h.getValue(
-                        'custrecord_rw_hist_newstatus'
-                    ) || '-'}
+//                 <span style="
+//                     color:#27ae60;
+//                     background:#eafaf1;
+//                     padding:5px 10px;
+//                     border-radius:8px;
+//                 ">
+//                     ${h.getValue(
+//                         'custrecord_rw_hist_newstatus'
+//                     ) || '-'}
 
-                </span>
+//                 </span>
 
-            </div>
+//             </div>
 
-        </div>
+//         </div>
 
-    </div>
+//     </div>
 
-    <div style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        font-size:12px;
-        color:#7f8c8d;
-        margin-top:10px;
-        border-top:1px solid #f1f2f6;
-        padding-top:10px;
-    ">
+//     <div style="
+//         display:flex;
+//         justify-content:space-between;
+//         align-items:center;
+//         font-size:12px;
+//         color:#7f8c8d;
+//         margin-top:10px;
+//         border-top:1px solid #f1f2f6;
+//         padding-top:10px;
+//     ">
 
-        <div>
-            👤 ${h.getText(
-                'custrecord_rw_hist_changedby'
-            ) || ''}
-        </div>
+//         <div>
+//             👤 ${h.getText(
+//                 'custrecord_rw_hist_changedby'
+//             ) || ''}
+//         </div>
 
-        <div>
-          🕒 ${
-    format.format({
-        value: h.getValue('created'),
-        type: format.Type.DATETIMETZ
-    }) || ''
-}
-        </div>
+//         <div>
+//           🕒 ${
+//     format.format({
+//         value: h.getValue('created'),
+//         type: format.Type.DATETIMETZ
+//     }) || ''
+// }
+//         </div>
 
-    </div>
+//     </div>
 
-</div>
-`;
+// </div>
+// `;
 
-    return true;
-});
+//     return true;
+// });
 
-historyHtml += `</div>`;
+// historyHtml += `</div>`;
     lineItemsHtml += `
 <tr data-id="${lineId}">
 <td style="border:1px solid #ccc;padding:8px;">
@@ -3921,16 +3944,7 @@ historyHtml += `</div>`;
 >
     📋
 </span>
-    <span class="toggleHistory"
-          onclick="toggleHistory('${lineId}')"
-          style="
-            cursor:pointer;
-            color:#8f50df;
-            font-weight:bold;
-            margin-right:8px;
-          ">
-        ▶
-    </span>
+    
 
     ${product}
 </td>
@@ -3993,7 +4007,11 @@ historyHtml += `</div>`;
 </td>
 
 <td style="border:1px solid #ccc;padding:8px;">
-    <span class="view-mode">${linestatus}</span>
+    <span class="view-mode">
+    <span class="status-badge ${getProjectStatusClass(linestatus)}">
+        ${linestatus}
+    </span>
+</span>
     <select class="edit-mode status" style="display:none;" data-currenttext="${linestatus}">
        ${statOptions}
     </select>
@@ -4071,7 +4089,7 @@ historyHtml += `</div>`;
 <td colspan="12"
     style="padding:15px;">
 
-    ${historyHtml}
+    
 
 </td>
 </tr>
@@ -4214,8 +4232,16 @@ else {
 </td>
 
 <td style="border:1px solid #ccc;padding:8px;">
-    <span class="view-mode">${uat}</span>
-    <input class="edit-mode uat" type="date" value="${toInputDate(uatRaw)}" style="display:none;" />
+    <span class="view-mode">
+        ${uatLineObj.display}
+    </span>
+
+    <input
+        class="edit-mode uat"
+        type="date"
+        value="${uatLineObj.input}"
+        style="display:none;"
+    />
 </td>
 
 <td style="border:1px solid #ccc;padding:8px;">
@@ -4815,6 +4841,36 @@ else {
 
     background:#f8f9fc;
 }
+    .status-badge{
+    padding:6px 12px;
+    border-radius:20px;
+    color:#fff;
+    font-size:12px;
+    font-weight:600;
+    display:inline-block;
+    min-width:90px;
+    text-align:center;
+}
+
+.status-badge.notstarted{
+    background:#6c757d;
+}
+
+.status-badge.kickoff{
+    background:#17a2b8;
+}
+
+.status-badge.inprogress{
+    background:#f39c12;
+}
+
+.status-badge.uat{
+    background:#3498db;
+}
+
+.status-badge.done{
+    background:#28a745;
+}
     </style>
 
     <div class="container">
@@ -4924,7 +4980,12 @@ else {
               <div class="label">Status</div>
 <div class="value">
 
-    <span class="view-mode">${status}</span>
+    <span
+    id="projectStatusText" class="view-mode"
+    
+>
+    ${status}
+</span>
 
     <select id="projectStatus" class="edit-mode" style="display:none;width:100%;" data-currenttext="${status}">
         ${projectStatusOptions}
@@ -5386,13 +5447,16 @@ document.addEventListener(
     }
 );
 var statusFlow = [
+'Not Started',
     'Kick Off',
     'To-Do',
 'Business requirement',
 'System configuration',
 'In Progress',
 'In-Progress',
+'On-hold',
 'On Hold',
+'Terminated',
 'UAT',
 
 
@@ -5405,9 +5469,10 @@ var statusFlow = [
     'Testing',
     
     'Done',
+    'Completed',
      
     'COC',
-    'Terminated'
+    
 
 ];
 

@@ -1339,10 +1339,13 @@ margin-bottom:15px;
 
     htmlField.defaultValue = `
     <style>
-        body{
+        html,body{
             font-family: Arial;
-            margin:0;
-            padding:20px;
+            margin:0px;
+            
+            
+            background:white;
+            overflow:hidden;
             height:100%;
             
         }
@@ -1587,14 +1590,7 @@ margin-bottom:15px;
     border-radius: 5px;
 }
         .container{
-            max-width:95%;
-            width:100%;
-            height:100%;
-            margin:auto;
-            background:white;
-            padding:0px;
-            margin-top:-30px;
-            margin-left:-20px;
+            
         
             
         }
@@ -1784,6 +1780,7 @@ margin-bottom:15px;
     justify-content:space-between;
     align-items:center;
     margin-bottom:25px;
+    overflow-y:hidden;
 }
 
 .statusBtn{
@@ -1875,26 +1872,15 @@ margin-bottom:15px;
 }
 
 .modern-grid{
-
     display:grid;
-
-    grid-template-columns:
-        repeat(2,minmax(420px,1fr));
-
-    gap:12px 28px;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px 20px;
 }
 
 .field-box{
-
     display:grid;
-
-    grid-template-columns:
-        130px 240px;
-      padding-left:84px;
-      
-    align-items:center;
-
-    column-gap:12px;
+    grid-template-columns:130px 1fr;
+    padding-left:0;
 }
 
 /* LABEL */
@@ -2041,6 +2027,19 @@ margin-bottom:15px;
 
     border-radius:6px;
 }
+    
+body{
+    overflow-x:hidden !important;
+    overflow-y:hidden !important;
+    
+    
+    
+}
+.container{
+overflow:hidden;
+
+}
+
     </style>
 
     <div class="container">

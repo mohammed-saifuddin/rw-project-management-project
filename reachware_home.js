@@ -18,7 +18,7 @@ log.debug("Employee Internal ID", empInternalId);
 function getTotalCount(){
     var projectSearch = search.create({
         type:'customrecord_rw_portal_access',
-        filters:[],
+        filters: ['isinactive','is','F'],
         columns:[],
         
     })
@@ -180,6 +180,7 @@ debugSearch.run().each(function(res){
 
     return true;
 });
+
 var empRoleMap = {};
 function getCOCCount(){
     var projectSearch = search.create({
@@ -2575,7 +2576,12 @@ var notifHtml = `
          id="notifDropdown">
 
         <div class="notif-header">
-            Notifications
+             <span>Notifications</span>
+
+        <span class="notif-close"
+              onclick="closeNotifications(event)">
+            ✖
+        </span>
         </div>
 
         ${
@@ -2635,6 +2641,62 @@ notifications.map((n,index) => `
 
 </div>
 `;
+function loadNotifications(){
+
+    fetch(
+        window.location.pathname +
+        '?action=getNotifications' +
+        '&empid=' + empId
+    )
+    .then(r => r.json())
+    .then(data => {
+
+        const dropdown =
+            document.getElementById(
+                'notifDropdown'
+            );
+
+        let html =
+            '<div class="notif-header">Notifications</div>';
+
+        data.forEach(n => {
+
+            html += `
+                <div class="notif-item unread">
+                    <div>${n.message}</div>
+                    <div>${n.created}</div>
+                </div>
+            `;
+        });
+
+        dropdown.innerHTML = html;
+    });
+}
+function refreshNotifications(){
+
+    fetch(
+        window.location.pathname +
+        '?action=getUnreadCount' +
+        '&empid=' + empId
+    )
+    .then(r => r.text())
+    .then(count => {
+
+        const badge =
+            document.querySelector('.notif-count');
+
+        if(!badge) return;
+
+        badge.innerText = count;
+
+        badge.style.display =
+            Number(count) > 0
+            ? 'flex'
+            : 'none';
+    });
+
+    loadNotifications();
+}
 if(
     context.request.parameters.action
     === 'getUnreadCount'
@@ -2921,7 +2983,12 @@ html, body {
 // }
     
 .data-val:hover{
-  background:MediumPurple;
+  background:linear-gradient(
+    #61348b,
+    #002855
+    
+    
+);
   color:white;
 }
 .data-val{
@@ -2968,11 +3035,6 @@ border:1px solid #ddd;
 
                 text-transform:uppercase;
                 }
-
-
-
-
-
 
 .header{
     
@@ -3053,11 +3115,12 @@ cursor:pointer;
     width: 0px;
     height: 1000px;  
 
-    background:
-linear-gradient(
-    180deg,
-    #1E3C72,
-    #2A5298
+
+ background:linear-gradient(
+    #61348b,
+    #002855
+    
+    
 );
     color: white;
 
@@ -3087,11 +3150,18 @@ border-bottom:1px solid #0c4f82;
 cursor:pointer;
 font-family:sans-serif;
 font-size:14px;
+font-weight:bold;
+font-family:calibri;
+display:flex;
+gap:20px;
 text-transform:capitalize;
 }
 
 .menu:hover{
-background:#0f4e80;
+background:white;
+text-decoration: underline;
+color:darkblue;
+
 }
 
 
@@ -5096,6 +5166,23 @@ color:black;
     text-align:center;
     font-weight:400;
 }
+    .notif-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 15px;
+    font-weight:bold;
+}
+
+.notif-close{
+    cursor:pointer;
+    font-size:16px;
+    color:white;
+}
+
+.notif-close:hover{
+    color:darkblue;
+}
 </style>
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -5447,7 +5534,13 @@ function removeNotification(notifId){
 
            dropdown.innerHTML =
     '<div class="notif-header">' +
-        'Notifications' +
+         '<span>Notifications</span>'+
+
+        '<span class="notif-close"'+
+             ' onclick="closeNotifications(event)">'+
+          '  ✖'+
+        '</span>'+
+
     '</div>' +
 
     '<div class="notif-item no-notif" style="color:black;">' +
@@ -5841,7 +5934,7 @@ url += "&statusFilter=" + encodeURIComponent(currentType);
     toggleChartVisibility();
 }
 function openMenu(){
-    document.getElementById("sidebar").style.width="200px";
+    document.getElementById("sidebar").style.width="240px";
     
 }
 
@@ -6784,6 +6877,40 @@ function markAllNotificationsRead(){
         loadNotificationCount();
     });
 }
+    function closeNotifications(event){
+
+    event.stopPropagation();
+
+    document
+        .getElementById('notifDropdown')
+        .style.display = 'none';
+}
+        function refreshNotifications(){
+
+    fetch(
+        window.location.pathname +
+        '?action=getUnreadCount' +
+        '&empid=' + empId
+    )
+    .then(r => r.text())
+    .then(count => {
+
+        const badge =
+            document.querySelector('.notif-count');
+
+        if(!badge) return;
+
+        badge.innerText = count;
+
+        badge.style.display =
+            Number(count) > 0
+            ? 'flex'
+            : 'none';
+    });
+
+    loadNotifications();
+}
+    
 </script>
 
 `;

@@ -807,7 +807,12 @@ html, body{
     display:none;
 }
 .ho:hover{
-background:MediumPurple;
+background:linear-gradient(
+    #61348b,
+    #002855
+    
+    
+);
 color:white;
 font-weight:bold;
 }
@@ -969,7 +974,12 @@ width:100%;
 border-collapse:collapse;
 }
 .project-row:hover{
-background:blue;
+background:linear-gradient(
+    #61348b,
+    #002855
+    
+    
+);
 color:white;}
 th{
 background:#6f2da8;
@@ -1021,7 +1031,12 @@ td{
 }
 
 .project-row:hover{
-    background:#8f50df;
+   background:linear-gradient(
+    #61348b,
+    #002855
+    
+    
+);
     cursor:pointer;
 }
 @keyframes slideDown{
@@ -1228,6 +1243,23 @@ linear-gradient(
     font-weight:bold;
     font-size:14px;
     color:#8f50df;
+}
+    table tr:nth-child(even) td {
+    background: #E6E6E6;
+}
+
+table tr:nth-child(odd) td {
+    background: #ffffff;
+}
+
+table tr.ho:hover td {
+    background:linear-gradient(
+    #61348b,
+    #002855
+    
+    
+);
+    color: #fff;
 }
 </style>
 <form method="GET">
