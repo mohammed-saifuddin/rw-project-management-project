@@ -925,8 +925,8 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
                 <thead>
 
                     <tr>
-                        <th width="20%">S.No</th>
-                        <th width="70%">Milestone</th>
+                        <th width="30%">S.No</th>
+                        <th width="60%">Milestone</th>
                         <th width="10%">Action</th>
                     </tr>
 
@@ -1135,7 +1135,7 @@ function saveProjectPlan(){
 
             '<td>' +
 
-                '<select class="snoSelect">' +
+                '<select class="snoSelect" style="width:100%;">' +
 
                     '${snoOptions}' +
 
@@ -1145,7 +1145,7 @@ function saveProjectPlan(){
 
             '<td>' +
 
-                '<select class="mileSelect">' +
+                '<select class="mileSelect" style="width:100%;">' +
 
                     '${milestoneOptions}' +
 

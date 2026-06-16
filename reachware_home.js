@@ -26,14 +26,32 @@ function getTotalCount(){
     log.debug("Total project",count);
     return count;
 }
-function getPMProjectCount(empId){
+function getMyProjectCount(empId){
 
     if(!empId) return 0;
 
     var projectSearch = search.create({
         type: 'customrecord_rw_portal_access',
         filters: [
-            ['custrecord_rw_portal_projectmanager','anyof', empId]
+            ['isinactive','is','F'],
+            'AND',
+            [
+                [
+                    'custrecord_rw_portal_projectmanager','anyof',empId
+                ],
+                'OR',
+                [
+                    'custrecord_rw_portal_technical','anyof',empId
+                ],
+                'OR',
+                [
+                    'custrecord_rw_portal_functional_consulta','anyof',empId
+                ],
+                'OR',
+                [
+                    'custrecord_rw_portal_accountmanager','anyof',empId
+                ]
+            ]
         ]
     });
 
@@ -520,7 +538,7 @@ var uatCount=getUATCount();
 var myClosedProjects = getMyClosedProjectCount(empId);
 var golive=getGoliveCount();
 var coc=getCOCCount();
-var pmProjectCount = getPMProjectCount(empId);
+var pmProjectCount = getMyProjectCount(empId);
 var support=getSupportCount();
 function getRoleType(roleName){
     if (!roleName) return 'OTHER';

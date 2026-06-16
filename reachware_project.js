@@ -231,9 +231,23 @@ else if(filterType === 'uat'){
 else if(filterType === 'myprojects' && empId){
 
     filters.push([
-        'custrecord1513.custrecord_rw_portal_projectmanager',
-        'anyof',
-        empId
+        [
+            'custrecord1513.custrecord_rw_portal_projectmanager',
+            'anyof',
+            empId
+        ],
+        'OR',
+        [
+            'custrecord_rw_portal_funcconsultant',
+            'anyof',
+            empId
+        ],
+        'OR',
+        [
+            'custrecord_rw_portal_techconsultant',
+            'anyof',
+            empId
+        ]
     ]);
 }
 // total → no filter
