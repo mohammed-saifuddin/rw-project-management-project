@@ -15,6 +15,35 @@ var empId = context.request.parameters.empid
 var email = context.request.parameters.email;
 var empInternalId = getEmployeeInternalId(email);
 log.debug("Employee Internal ID", empInternalId);
+if (
+    context.request.parameters.action ===
+    'updateTicketStatus'
+) {
+
+    var ticketId =
+        context.request.parameters.ticketid;
+
+    var statusId =
+        context.request.parameters.statusid;
+
+    log.debug(
+        'UPDATE',
+        ticketId + ' -> ' + statusId
+    );
+
+    record.submitFields({
+        type:'customrecord_rw_ticket',
+        id: ticketId,
+        values:{
+            custrecord_rw_ticket_ticketstatus:
+                statusId
+        }
+    });
+
+    context.response.write('success');
+    return;
+}
+
 function getTotalCount(){
     var projectSearch = search.create({
         type:'customrecord_rw_portal_access',
@@ -402,7 +431,64 @@ function getOpenTicketCount(){
     log.debug("Total open tickets",count);
     return count;
 }
+function getSprintBoardData(empId){
 
+    var data = {
+        todo: [],
+        progress: [],
+        testing: [],
+        codeReview:[],
+        done: []
+    };
+
+    var ticketSearch = search.create({
+        type:'customrecord_rw_ticket',
+        filters:[
+            ['custrecord_rw_ticket_assignedto','anyof',empId]
+        ],
+        columns:[
+            'internalid',
+            'custrecord_rw_ticket_ticketno',
+            'custrecord_rw_ticket_projectname',
+            'custrecord_rw_ticket_deadline',
+            'custrecord_rw_ticket_ticketstatus'
+        ]
+    });
+
+    ticketSearch.run().each(function(res){
+
+        var ticket = {
+            id: res.getValue('internalid'),
+            number: res.getValue('custrecord_rw_ticket_ticketno'),
+            project: res.getText('custrecord_rw_ticket_projectname'),
+            deadline: res.getValue('custrecord_rw_ticket_deadline')
+        };
+
+        var status = res.getValue(
+            'custrecord_rw_ticket_ticketstatus'
+        );
+
+        if(status == '1'){
+            data.todo.push(ticket);
+        }
+        else if(status == '2'){
+            data.progress.push(ticket);
+        }
+        else if(status == '4'){
+            data.testing.push(ticket);
+        }
+        else if(status == '3'){
+            data.codeReview.push(ticket);
+        }
+        else if(status == '5'){
+            data.done.push(ticket);
+        }
+
+        return true;
+    });
+
+    return data;
+}
 const form = serverWidget.createForm({ title: ' ' });
 
 const htmlField = form.addField({
@@ -540,6 +626,7 @@ var golive=getGoliveCount();
 var coc=getCOCCount();
 var pmProjectCount = getMyProjectCount(empId);
 var support=getSupportCount();
+var sprintData = getSprintBoardData(empId);
 function getRoleType(roleName){
     if (!roleName) return 'OTHER';
     roleName = roleName.toLowerCase();
@@ -1143,7 +1230,113 @@ function buildCard(title, customers){
         
     `;
 }
+var sprintBoardHtml = `
 
+<div class="sprint-board">
+      
+    <div class="sprint-column"
+     ondrop="drop(event,'1')"
+     ondragover="allowDrop(event)">
+
+        <div class="sprint-title todo">
+            To Do (${sprintData.todo.length})
+        </div>
+
+        ${sprintData.todo.map(t => `
+            <div class="ticket-card"
+     draggable="true"
+     data-ticketid="${t.id}"
+     ondragstart="drag(event)">
+                <div>${t.number}</div>
+                <div>${t.project || ''}</div>
+                <small>${t.deadline || ''}</small>
+            </div>
+        `).join('')}
+
+    </div>
+
+    <div class="sprint-column"
+     ondrop="drop(event,'2')"
+     ondragover="allowDrop(event)">
+        <div class="sprint-title progress">
+            In Progress (${sprintData.progress.length})
+        </div>
+
+        ${sprintData.progress.map(t => `
+            <div class="ticket-card"
+     draggable="true"
+     data-ticketid="${t.id}"
+     ondragstart="drag(event)">
+                <div>${t.number}</div>
+                <div>${t.project || ''}</div>
+                <small>${t.deadline || ''}</small>
+            </div>
+        `).join('')}
+
+    </div>
+
+    <div class="sprint-column"
+     ondrop="drop(event,'4')"
+     ondragover="allowDrop(event)">
+
+        <div class="sprint-title testing">
+            UAT (${sprintData.testing.length})
+        </div>
+
+        ${sprintData.testing.map(t => `
+            <div class="ticket-card"
+     draggable="true"
+     data-ticketid="${t.id}"
+     ondragstart="drag(event)">
+                <div>${t.number}</div>
+                <div>${t.project || ''}</div>
+                <small>${t.deadline || ''}</small>
+            </div>
+        `).join('')}
+
+    </div>
+<div class="sprint-column"
+     ondrop="drop(event,'3')"
+     ondragover="allowDrop(event)">
+
+    <div class="sprint-title review">
+        Code Review (${sprintData.codeReview.length})
+    </div>
+
+    ${sprintData.codeReview.map(t => `
+        <div class="ticket-card"
+     draggable="true"
+     data-ticketid="${t.id}"
+     ondragstart="drag(event)">
+            <div>${t.number}</div>
+            <div>${t.project || ''}</div>
+        </div>
+    `).join('')}
+
+</div>
+    <div class="sprint-column"
+     ondrop="drop(event,'5')"
+     ondragover="allowDrop(event)">
+
+        <div class="sprint-title done">
+            Done (${sprintData.done.length})
+        </div>
+
+        ${sprintData.done.map(t => `
+            <div class="ticket-card"
+     draggable="true"
+     data-ticketid="${t.id}"
+     ondragstart="drag(event)">
+                <div>${t.number}</div>
+                <div>${t.project || ''}</div>
+                <small>${t.deadline || ''}</small>
+            </div>
+        `).join('')}
+
+    </div>
+
+</div>
+`;
 var specialCards = `
 <div class="card-container">
     ${buildCard('UAT Customers', uatCustomers)}
@@ -2218,6 +2411,7 @@ var overdueProjectCardInneruser = `
 var donutCard = `
 <div style="
     margin:20px;
+    width:350px;
     padding:15px;
     background:#fff;
     border-radius:12px;
@@ -2225,7 +2419,7 @@ var donutCard = `
     font-family:Arial, sans-serif;
 ">
 
-    <div style="font-weight:bold; margin-bottom:10px; color:#6f3ba2;">
+    <div style="font-weight:bold; margin-bottom:10px; color:#6f3ba2;font-size:14px;">
          Overview
     </div>
 
@@ -2809,7 +3003,26 @@ context.response.write(
 return;
 
 }
+var todoCount = sprintData.todo.length;
+var progressCount = sprintData.progress.length;
+var testingCount = sprintData.testing.length;
+var codereviewCount =sprintData.codeReview.length;
+var doneCount = sprintData.done.length;
+var workloadChartHtml = `
 
+<div class="chart-card">
+
+    <div class="chart-header" style="font-size:14px;">
+        My Workload
+    </div>
+
+    <div style="height:300px;">
+        <canvas id="workloadChart"></canvas>
+    </div>
+
+</div>
+
+`;
 let html = `
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
@@ -3178,6 +3391,7 @@ text-transform:capitalize;
 .menu:hover{
 background:white;
 text-decoration: underline;
+border-radius:5px;
 color:darkblue;
 
 }
@@ -5201,6 +5415,67 @@ color:black;
 .notif-close:hover{
     color:darkblue;
 }
+    .sprint-board{
+    display:flex;
+    gap:15px;
+    margin:20px;
+}
+
+.sprint-column{
+    flex:1;
+    background:#fff;
+    border-radius:12px;
+    padding:10px;
+    min-height:350px;
+    box-shadow:0 4px 10px rgba(0,0,0,.08);
+}
+
+.sprint-title{
+    font-weight:700;
+    padding:10px;
+    border-radius:8px;
+    margin-bottom:10px;
+    text-align:center;
+}
+
+.todo{
+    background:#ffe5e5;
+}
+.review{
+    background:#e9d5ff;
+}
+.progress{
+    background:#dbeafe;
+}
+
+.testing{
+    background:#fef3c7;
+}
+
+.done{
+    background:#dcfce7;
+}
+
+.ticket-card{
+    background:#fafafa;
+    border-left:4px solid #6f3ba2;
+    border-radius:8px;
+    padding:8px;
+    margin-bottom:8px;
+    font-size:12px;
+}
+    .sprint-column.drag-over{
+    background:#f3f4f6;
+    border:2px dashed #6f3ba2;
+}
+
+.ticket-card{
+    cursor:grab;
+}
+
+.ticket-card:active{
+    cursor:grabbing;
+}
 </style>
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -5454,13 +5729,44 @@ ${roleType === 'PM' ? `
 </div>
 ` : ''}
 ${roleType === 'DEV' ? `
-<div style="display:flex; gap:100px; margin:10px;margin-left:40px;">
+
+<!-- TOP ROW -->
+<div style="display:flex; margin:10px; align-items:space-between;">
+
     ${highPriorityCardOfLoggedInUser}
+
     ${overdueCardInner}
+
     ${donutCard}
-   
+    ${workloadChartHtml}
+
 </div>
-  ${pieChartCard}
+<!-- SPRINT BOARD BELOW -->
+<div style="margin:20px 40px 0 40px;">
+<div style="
+    margin-top:20px;
+    margin-bottom:10px;
+    padding:12px 18px;
+    background:linear-gradient(135deg,#002855,#5b2d8e,#8f50df);
+    color:white;
+    font-size:18px;
+    font-weight:bold;
+    border-radius:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.15);
+">
+    Sprint Board
+</div>
+    ${sprintBoardHtml}
+</div>
+<!-- WORKLOAD CHART BELOW -->
+<div style="margin:20px 40px 0 40px;">
+    
+</div>
+
+
+
+${pieChartCard}
+
 ` : ''}
 ${roleType === 'OTHER' ? `
 <div style="display:flex; gap:100px; margin:10px;margin-left:40px;">
@@ -6325,6 +6631,56 @@ if(m){
     });
 }
 }
+document.addEventListener('DOMContentLoaded',function(){
+
+    var ctx =
+    document.getElementById('workloadChart');
+
+    if(!ctx) return;
+
+    new Chart(ctx,{
+
+        type:'doughnut',
+
+        data:{
+            labels:[
+                'To Do',
+                'In Progress',
+                'UAT',
+                'Code Review',
+                'Done'
+            ],
+
+            datasets:[{
+                data:[
+                    ${todoCount},
+                    ${progressCount},
+                    ${testingCount},
+                    ${codereviewCount},
+                    ${doneCount}
+                ],
+                backgroundColor:[
+                    '#ef4444',
+                    '#3b82f6',
+                    '#f59e0b',
+                    '#f50bca',
+                    '#10b981'
+                ]
+            }]
+        },
+
+        options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{
+                legend:{
+                    position:'bottom'
+                }
+            }
+        }
+    });
+
+});
     function renderDonutCharts(){
 
     var donutData = {
@@ -6928,6 +7284,158 @@ function markAllNotificationsRead(){
 
     loadNotifications();
 }
+    function allowDrop(ev){
+    ev.preventDefault();
+}
+
+function drag(ev){
+
+    var card = ev.currentTarget;
+
+    var ticketId =
+        card.getAttribute('data-ticketid');
+
+    console.log('Dragging Ticket:', ticketId);
+
+    ev.dataTransfer.setData(
+        'ticketid',
+        ticketId
+    );
+}
+ function updateTicketStatus(ticketId,statusId){
+
+  fetch(
+    window.location.href.split('&action=')[0] +
+    '&action=updateTicketStatus' +
+    '&ticketid=' + ticketId +
+    '&statusid=' + statusId
+)
+    .then(function(response){
+        return response.text();
+    })
+    .then(function(result){
+
+        console.log('Status Update Result:', result);
+
+        if(result === 'success'){
+
+            location.reload();
+
+        }else{
+
+            alert('Status update failed');
+        }
+    })
+    .catch(function(err){
+
+        console.error(err);
+
+        alert('Error updating ticket');
+    });
+}
+function allowDrop(ev){
+    ev.preventDefault();
+}
+
+function drop(ev,statusId){
+
+    ev.preventDefault();
+
+    var ticketId =
+        ev.dataTransfer.getData('ticketid');
+
+    console.log(
+        'Dropped Ticket:',
+        ticketId,
+        'Status:',
+        statusId
+    );
+
+    if(!ticketId){
+        alert('Ticket ID missing');
+        return;
+    }
+
+    fetch(
+        window.location.pathname +
+        '?action=updateTicketStatus' +
+        '&ticketid=' + ticketId +
+        '&statusid=' + statusId
+    )
+    .then(r => r.text())
+    .then(function(res){
+
+        console.log('Response:',res);
+
+        location.reload();
+
+    })
+    .catch(function(err){
+
+        console.log(err);
+
+    });
+}
+    function drag(ev){
+
+    const ticketCard =
+        ev.currentTarget;
+
+    const ticketId =
+        ticketCard.getAttribute(
+            'data-ticketid'
+        );
+
+    ev.dataTransfer.effectAllowed =
+        'move';
+
+    ev.dataTransfer.setData(
+        'text/plain',
+        ticketId
+    );
+
+    console.log(
+        'Dragging',
+        ticketId
+    );
+}
+
+function allowDrop(ev){
+
+    ev.preventDefault();
+
+    ev.dataTransfer.dropEffect =
+        'move';
+}
+
+function drop(ev,statusId){
+
+    ev.preventDefault();
+
+    const ticketId =
+        ev.dataTransfer.getData(
+            'text/plain'
+        );
+
+    console.log(
+        'Dropped',
+        ticketId,
+        statusId
+    );
+
+    if(!ticketId){
+        alert(
+            'Ticket ID not found'
+        );
+        return;
+    }
+
+    updateTicketStatus(
+        ticketId,
+        statusId
+    );
+}
+   
     
 </script>
 

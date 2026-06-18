@@ -38,6 +38,7 @@ try{
     );
 
     body = context.request.parameters || {};
+    var params = context.request.parameters || {};
 }
 
         if (body.action === 'createProjectPlan') {
@@ -177,6 +178,60 @@ log.debug(
 
             return;
         }
+   if(body.action === 'createProduct'){
+
+    try{
+
+        var productRec = record.create({
+            type:'customrecord_rw_extend_products'
+        });
+
+        productRec.setValue({
+            fieldId:'name',
+            value:body.productName
+        });
+
+        if(body.revenue){
+            productRec.setValue({
+                fieldId:'custrecord_rw_ext_prod_rev_stream',
+                value:Number(body.revenue)
+            });
+            
+        }
+
+      if(body.template){
+
+    productRec.setValue({
+    fieldId:'custrecord_rw_ext_proj_plan_template',
+    value: parseInt(body.template, 10)
+});
+
+
+ }
+        var productId = productRec.save();
+
+        context.response.write(
+            JSON.stringify({
+                success:true,
+                id:productId
+            })
+        );
+
+    }catch(e){
+
+        log.error('PRODUCT ERROR', e);
+
+        context.response.write(
+            JSON.stringify({
+                success:false,
+                message:e.message,
+                stack:e.stack
+            })
+        );
+    }
+
+    return;
+}
 
     } catch(e){
 
@@ -194,6 +249,43 @@ log.debug(
 
         return;
     }
+
+    if(body.action === 'getTemplates'){
+
+    var templates = [];
+
+    search.create({
+        type:'customrecord_rw_project_plan_template',
+        filters:[
+            ['isinactive','is','F'],
+            'and',
+            ['custrecord_rw_project_plan_rev_stream','anyof',body.revenue]
+        ],
+        columns:[
+            'internalid',
+            'name'
+        ]
+    })
+    .run()
+    .each(function(r){
+
+        templates.push({
+            id:r.getValue('internalid'),
+            name:r.getValue('name')
+        });
+
+        return true;
+    });
+
+    context.response.write(
+        JSON.stringify({
+            success:true,
+            templates:templates
+        })
+    );
+
+    return;
+}
 }
 var empId = context.request.parameters.empid 
          || context.request.parameters.empId 
@@ -205,6 +297,11 @@ var email = context.request.parameters.email;
     scriptId: 'customscript3142',
     deploymentId: 'customdeploy1',
     returnExternalUrl: true
+});
+var suiteletUrl = url.resolveScript({
+    scriptId: runtime.getCurrentScript().id,
+    deploymentId: runtime.getCurrentScript().deploymentId,
+    returnExternalUrl: false
 });
 var homeUrl = url.resolveScript({
                     scriptId:'customscript2874',
@@ -220,6 +317,62 @@ var homeUrl = url.resolveScript({
             type: serverWidget.FieldType.INLINEHTML,
             label: 'HTML'
         });
+        var revenueOptions =
+    '<option value="">--Select--</option>';
+
+search.create({
+    type:'customrecord_rw_proj_rev_stream',
+    filters:[
+        ['isinactive','is','F']
+    ],
+    columns:['internalid','name']
+})
+.run()
+.each(function(r){
+
+   revenueOptions +=
+'<option value="' +
+r.getValue({name:'internalid'}) +
+'">' +
+r.getValue({name:'name'}) +
+'</option>';
+
+    return true;
+});
+var templateOptions =
+    '<option value="">--Select--</option>';
+
+search.create({
+    type:'customrecord_rw_project_plan_template',
+    filters:[
+        ['isinactive','is','F']
+    ],
+    columns:[
+        search.createColumn({name:'internalid'}),
+        search.createColumn({name:'name'})
+    ]
+})
+.run()
+.each(function(r){
+
+    log.debug({
+        title:'TEMPLATE OPTION',
+        details:{
+            id:r.getValue('internalid'),
+            name:r.getValue('name')
+        }
+    });
+
+    templateOptions +=
+        '<option value="' +
+        r.getValue('internalid') +
+        '">' +
+        r.getValue('name') +
+        '</option>';
+
+    return true;
+});
+
 var rwOptions ='<option value="">--Select--</option>';
     var rwSearch=search.create({
     type:'customrecord_rw_extend_products',
@@ -685,17 +838,24 @@ data.push({
     top:0;
     left:0;
     width:100%;
-    height:100%;
+    height:100vh;
     background:rgba(0,0,0,0.5);
     z-index:99999;
+
+    overflow-y:auto;
+    padding:20px 0;
 }
 
 .create-modal-content{
     background:white;
-    width:600px;
-    margin:80px auto;
+    width:850px;
+    max-width:95%;
+    margin:20px auto;
     border-radius:12px;
-    overflow:hidden;
+
+    max-height:90vh;
+    overflow-y:auto;
+    overflow-x:hidden;
 }
 
 .create-modal-header{
@@ -714,7 +874,11 @@ data.push({
 .create-modal-body{
     padding:20px;
 }
-
+.create-modal-body{
+    padding:20px;
+    max-height:70vh;
+    overflow-y:auto;
+}
 .form-group{
     margin-bottom:15px;
 }
@@ -774,7 +938,14 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     <i class="fa fa-plus"></i>
     New Project Plan
 </button>
+<button class="new-plan-btn"
+        type="button"
+        onclick="openCreateProductModal()">
 
+    <i class="fa fa-plus"></i>
+    New Product
+
+</button>
         <div class="count-box">
             <i class="fa-solid fa-database"></i>
             Total Records : ${data.length}
@@ -963,9 +1134,89 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     </div>
 
 </div>
+<div id="createProductModal" class="create-modal">
+
+    <div class="create-modal-content" style="width:700px;">
+
+        <div class="create-modal-header">
+
+            Create Product
+
+            <span
+                style="float:right;cursor:pointer;"
+                onclick="closeCreateProductModal()">
+                ×
+            </span>
+
+        </div>
+
+        <div class="create-modal-body">
+
+            <div class="form-group">
+
+                <label>Product Name</label>
+
+                <input
+                    type="text"
+                    id="productName">
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Revenue Stream</label>
+
+                <select id="productRevenue"
+        onchange="loadTemplatesByRevenue()">
+
+                    ${dpOptions}
+
+                </select>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Project Plan Template</label>
+
+                <select id="productTemplate">
+
+    <option value="">
+        --Select Revenue Stream First--
+    </option>
+
+</select>
+
+            </div>
+
+        </div>
+
+        <div class="modal-footer">
+
+            <button
+                class="cancel-btn"
+                onclick="closeCreateProductModal()">
+
+                Cancel
+
+            </button>
+
+            <button
+                class="save-btn"
+                onclick="saveProduct()">
+
+                Save
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
 <script>
 
-
+var suiteletUrl = '${suiteletUrl}';
 
 
 function openDetail(
@@ -1189,6 +1440,120 @@ function saveProjectPlan(){
     ).innerHTML = '';
 
     addMilestoneRow();
+}
+   function saveProduct(){
+
+    var productName =
+        document.getElementById('productName').value;
+
+    var revenue =
+        document.getElementById('productRevenue').value;
+
+    var template =
+        document.getElementById('productTemplate').value;
+
+    fetch(window.location.href,{
+        method:'POST',
+        headers:{
+            'Content-Type':'application/json'
+        },
+        body:JSON.stringify({
+            action:'createProduct',
+            productName:productName,
+            revenue:revenue,
+            template:template
+        })
+    })
+    .then(function(response){
+
+        return response.text();
+
+    })
+    .then(function(text){
+
+        console.log('SERVER RESPONSE', text);
+
+        try{
+
+            var data = JSON.parse(text);
+
+            if(data.success){
+
+                alert('Product Created Successfully');
+
+                location.reload();
+
+            }else{
+
+                alert(data.message);
+            }
+
+        }catch(e){
+
+            console.log('NON JSON RESPONSE');
+            console.log(text);
+
+            alert('Server returned HTML instead of JSON. Check Suitelet logs.');
+        }
+
+    })
+    .catch(function(err){
+
+        console.log(err);
+        alert(err);
+
+    });
+}
+    function openCreateProductModal(){
+
+    document.getElementById(
+        'createProductModal'
+    ).style.display = 'block';
+}
+
+function closeCreateProductModal(){
+
+    document.getElementById(
+        'createProductModal'
+    ).style.display = 'none';
+}
+    function loadTemplatesByRevenue(){
+
+    var revenue =
+        document.getElementById(
+            'productRevenue'
+        ).value;
+
+    fetch(window.location.href,{
+        method:'POST',
+        headers:{
+            'Content-Type':'application/json'
+        },
+        body:JSON.stringify({
+            action:'getTemplates',
+            revenue:revenue
+        })
+    })
+    .then(r => r.json())
+    .then(function(data){
+
+        var html =
+            '<option value="">--Select--</option>';
+
+        data.templates.forEach(function(t){
+
+            html +=
+                '<option value="' +
+                t.id +
+                '">' +
+                t.name +
+                '</option>';
+        });
+
+        document.getElementById(
+            'productTemplate'
+        ).innerHTML = html;
+    });
 }
 </script>
         `;

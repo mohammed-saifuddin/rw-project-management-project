@@ -4213,7 +4213,19 @@ else if (roleType === 'PM') {
 else {
     lineItemsHtml += `
 <tr data-id="${lineId}">
-<td style="border:1px solid #ccc;padding:8px;">${product}</td>
+<td style="border:1px solid #ccc;padding:8px;">
+ <span
+    onclick="togglePlan('${lineId}')"
+    style="
+        cursor:pointer;
+        color:#27ae60;
+        font-weight:bold;
+        margin-right:8px;
+    "
+>
+    📋
+</span>
+${product}</td>
 <td style="border:1px solid #ccc;padding:8px;">${comments}</td>
 <td style="border:1px solid #ccc;padding:8px;">${pm}</td>
 
@@ -4255,7 +4267,124 @@ else {
        ${statOptions}
     </select>
 </td>
-</tr>`;
+</tr>
+<tr id="plan_${lineId}"
+    style="
+        display:none;
+        background:#f8f9fc;
+    ">
+
+<td colspan="12"
+    style="padding:15px;">
+
+    <div style="
+        background:white;
+        border-radius:12px;
+        padding:15px;
+        border:1px solid #ddd;
+    ">
+
+        <div style="
+            font-size:16px;
+            font-weight:bold;
+            color:#8f50df;
+            margin-bottom:12px;
+        ">
+            ${product}
+        </div>
+
+        <table style="
+            width:100%;
+            border-collapse:collapse;
+        ">
+
+            <thead>
+
+                <tr style="
+                        background:linear-gradient(
+    135deg,
+    #E6E6FA,
+    #E6E6FA
+);;
+                    font-weight:bold;
+                    font-size:10px;
+                    text-transform:uppercase;
+                    font-family:Arial, sans-serif;
+
+                    color:darkblue;
+                ">
+
+                    <th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">
+                        S.NO
+                    </th>
+
+                    <th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">
+                        Milestone
+                    </th>
+
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Start Date</th>
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">End Date</th>
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Duration</th>
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Actual Completed</th>
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Aging</th>
+<th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Time Spent</th>
+                    
+                    <th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Comments</th>
+                    <th style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">Status</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                ${
+                    milestoneRows ||
+
+                    '<tr><td colspan="2">No Milestones Found</td></tr>'
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</td>
+
+</tr>`
+
+;
+
 }
     return true;
 });

@@ -238,16 +238,16 @@ else if(filterType === 'myprojects' && empId){
         ],
         'OR',
         [
-            'custrecord_rw_portal_funcconsultant',
-            'anyof',
-            empId
-        ],
+                    'custrecord1513.custrecord_rw_portal_technical','anyof',empId
+                ],
+                'OR',
+                [
+                    'custrecord1513.custrecord_rw_portal_functional_consulta','anyof',empId
+                ],
         'OR',
-        [
-            'custrecord_rw_portal_techconsultant',
-            'anyof',
-            empId
-        ]
+                [
+                    'custrecord1513.custrecord_rw_portal_accountmanager','anyof',empId
+                ]
     ]);
 }
 // total → no filter

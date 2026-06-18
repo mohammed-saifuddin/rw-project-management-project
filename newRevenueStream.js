@@ -1072,7 +1072,7 @@ milestone =
     // showToast(
     //     'Adding milestone...'
     // );
-    alert('Adding milestone...');
+    alert('Adding revenue stream...');
 
     var url =
         new URL(window.location.href);
@@ -1151,7 +1151,7 @@ if(result == 'duplicate'){
 }
     else{
         alert(
-            'Error adding Revenue stream'
+            'Revenue Stream created'
         );}
     setTimeout(function(){
 

@@ -363,19 +363,7 @@ childSearch.run().each(function(res){
 
    </td>
 
-<td style="border:1px solid #ddd;
-text-align:center;">
 
-<button
-type="button"
-class="delete-btn"
-onclick="deleteMilestone('${recId}')">
-
-<i class="fa-solid fa-xmark"></i>
-
-</button>
-
-</td>
 
 </tr>
 
@@ -696,10 +684,7 @@ background:#E6E6FA">
     Milestone
 </th>
 
-<th style="border:1px solid #ddd;font-family:Arial, sans-serif;font-size:12px;text-transform:uppercase;font-weight:bold;
-background:#E6E6FA; width:120px;">
-    Action
-</th>
+
 
     
 
