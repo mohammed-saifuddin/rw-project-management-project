@@ -1839,112 +1839,88 @@ margin-bottom:15px;
 }
 
 .modern-section{
-
-    background:#ffffff;
-
-    border-radius:14px;
-
-    padding:16px 18px;
-
-    border:1px solid #E5E7EB;
-
-    box-shadow:
-        0 3px 10px rgba(0,0,0,0.04);
+    background:#fff;
+    border:1px solid #cfd8e3;
+    border-radius:2px;
+    padding:20px;
+    margin-bottom:20px;
+    box-shadow:none;
 }
 
 .modern-section-title{
+    background:#e8eef5;
+    border:1px solid #cfd8e3;
 
-    font-size:14px;
+    padding:10px 14px;
+    margin:-20px -20px 20px -20px;
 
+    color:#1d3f72;
+
+    font-size:11px;
     font-weight:700;
-
-    margin-bottom:16px;
-
-    color:#5b2d8e;
-
-    padding-bottom:10px;
-
-    border-bottom:1px solid #ECECEC;
-
+    letter-spacing:1px;
     text-transform:uppercase;
-
-    letter-spacing:0.4px;
 }
 
 .modern-grid{
     display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:12px 20px;
+    grid-template-columns:180px 1fr 180px 1fr;
+    gap:18px 22px;
 }
 
 .field-box{
-    display:grid;
-    grid-template-columns:130px 1fr;
-    padding-left:0;
+    display:block;
 }
 
 /* LABEL */
 .field-box label{
+    display:block;
 
-    font-size:11px;
-
+    font-size:10px;
     font-weight:700;
 
-    color:#6B7280;
+    color:#66788a;
 
+    letter-spacing:1px;
     text-transform:uppercase;
 
-    letter-spacing:0.3px;
-
-    margin:0;
+    margin-bottom:4px;
 }
 
 /* VALUE */
 .field-value{
+    background:transparent;
+    border:none;
+    border-bottom:1px solid #cfd8e3;
 
-    min-height:34px;
+    border-radius:0;
 
-    width:300px;
+    padding:6px 0;
 
-    display:flex;
+    min-height:24px;
 
-    align-items:center;
+    font-size:14px;
+    font-weight:600;
 
-    padding:0 10px;
-  
+    color:#0d2f5f;
 
-    background:#F9FAFB;
-
-    border:1px solid #E5E7EB;
-
-    border-radius:8px;
-
-    font-size:12px;
-
-    color:#172B4D;
-     justify-content:space-between;
-
-    font-weight:500;
-
-    box-sizing:border-box;
+    width:100%;
 }
 .issue-box{
+    background:#fff;
 
-    background:#F9FAFB;
+    border:1px solid #cfd8e3;
 
-    border:1px solid #E5E7EB;
+    padding:15px;
 
-    border-radius:12px;
+    border-radius:2px;
 
-    padding:14px;
+    font-size:14px;
 
-    min-height:80px;
+    line-height:1.6;
 
-    line-height:1.5;
-
-    font-size:12px;
+    color:#333;
 }
-
 .status-pill{
 
     color:white;
@@ -1956,47 +1932,7 @@ margin-bottom:15px;
     border:none;
 }
 
-/* OPEN */
-.status-open{
 
-    background:#3498db;
-}
-
-/* IN PROGRESS */
-.status-progress{
-
-    background:#f39c12;
-}
-
-/* CODE REVIEW */
-.status-review{
-
-    background:#9b59b6;
-}
-
-/* UAT */
-.status-uat{
-
-    background:#16a085;
-}
-
-/* DONE */
-.status-done{
-
-    background:#27ae60;
-}
-
-/* REOPEN */
-.status-reopen{
-
-    background:#e74c3c;
-}
-
-/* HOLD */
-.status-hold{
-
-    background:#7f8c8d;
-}
 
 .title{
 
@@ -2039,10 +1975,57 @@ body{
 overflow:hidden;
 
 }
+.summary-strip{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
 
+    border:1px solid #cfd8e3;
+
+    margin-bottom:20px;
+}
+
+.summary-box{
+    background:#f7f9fc;
+    padding:12px 15px;
+    border-right:1px solid #cfd8e3;
+}
+
+.summary-title{
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:#66788a;
+}
+
+.summary-value{
+    margin-top:5px;
+    font-size:16px;
+    font-weight:700;
+    color:#0d2f5f;
+}
+    .statusBtn,
+.backBtn{
+    background:#e8eef5;
+    border:1px solid #cfd8e3;
+
+    color:#1d3f72;
+
+    padding:8px 14px;
+
+    border-radius:2px;
+
+    font-weight:600;
+}
+
+.statusBtn:hover,
+.backBtn:hover{
+    background:#dde6f0;
+}
     </style>
 
     <div class="container">
+    
     <div class="topHeader">
 
     <div class="title">
@@ -2054,7 +2037,29 @@ overflow:hidden;
     </div>
 
 </div>
+<div class="summary-strip">
 
+    <div class="summary-box">
+        <div class="summary-title">Ticket No</div>
+        <div class="summary-value">${ticketNo}</div>
+    </div>
+
+    <div class="summary-box">
+        <div class="summary-title">Priority</div>
+        <div class="summary-value">${priority}</div>
+    </div>
+
+    <div class="summary-box">
+        <div class="summary-title">Status</div>
+        <div class="summary-value">${status}</div>
+    </div>
+
+    <div class="summary-box">
+        <div class="summary-title">Assigned To</div>
+        <div class="summary-value">${assignedTo}</div>
+    </div>
+
+</div>
     <div class="view-sections">
 
     <!-- SECTION 1 -->
@@ -2136,33 +2141,10 @@ overflow:hidden;
 
             <div class="field-box">
                 <label>Status</label>
-                <div class="
-    field-value
-    status-pill
-    ${
-        status === 'Open'
-        ? 'status-open'
-
-        : status === 'In Progress'
-        ? 'status-progress'
-
-        : status === 'Code Review'
-        ? 'status-review'
-
-        : status === 'UAT'
-        ? 'status-uat'
-
-        : status === 'Done'
-        ? 'status-done'
-
-        : status === 'Reopen'
-        ? 'status-reopen'
-
-        : 'status-hold'
-    }
-">
+      <div class="field-value">
     ${status}
-</div>
+
+            </div>
             </div>
 
             <div class="field-box">

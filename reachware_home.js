@@ -388,7 +388,7 @@ function getEmployeeRole(empInternalId){
         return empSearch.role[0].id || '';
     }
 
-    return '';   // fallback
+    return '';   
 }
 function getEmployeeDMSRole(empId){
 
@@ -397,7 +397,7 @@ function getEmployeeDMSRole(empId){
     var emp = search.lookupFields({
         type: search.Type.EMPLOYEE,
         id: empId,
-        columns: ['custentityrw_dms_role']   // ✅ correct field
+        columns: ['custentityrw_dms_role']   //  correct field
     });
 
     log.debug("DMS ROLE RAW", emp);
@@ -586,7 +586,7 @@ function getHighPriorityTicketList(){
     var ticketSearch = search.create({
         type: 'customrecord_rw_ticket',
         filters: [
-            ['custrecord_rw_ticket_priority','anyof','1'] // ⚠️ adjust if needed
+            ['custrecord_rw_ticket_priority','anyof','1'] 
         ],
         columns: [
             'custrecord_rw_ticket_ticketno', // Ticket Number
@@ -679,7 +679,7 @@ function getCurrentGoLiveProducts(){
              search.createColumn({
                 name: 'custrecord_rw_portal_customername',
                 join: 'custrecord1513'
-            }) // 🔥 Project reference field (confirm ID)
+            }) //  Project reference field (confirm ID)
         ]
     });
 
@@ -689,7 +689,7 @@ function getCurrentGoLiveProducts(){
         var project = result.getText({
             name: 'custrecord_rw_portal_customername',
             join: 'custrecord1513'
-        }); // 🔥 project name
+        }); // project name
 
         data.push({
             product: product || '-',
@@ -1275,26 +1275,7 @@ var sprintBoardHtml = `
 
     </div>
 
-    <div class="sprint-column"
-     ondrop="drop(event,'4')"
-     ondragover="allowDrop(event)">
-
-        <div class="sprint-title testing">
-            UAT (${sprintData.testing.length})
-        </div>
-
-        ${sprintData.testing.map(t => `
-            <div class="ticket-card"
-     draggable="true"
-     data-ticketid="${t.id}"
-     ondragstart="drag(event)">
-                <div>${t.number}</div>
-                <div>${t.project || ''}</div>
-                <small>${t.deadline || ''}</small>
-            </div>
-        `).join('')}
-
-    </div>
+    
 <div class="sprint-column"
      ondrop="drop(event,'3')"
      ondragover="allowDrop(event)">
@@ -1314,6 +1295,27 @@ var sprintBoardHtml = `
     `).join('')}
 
 </div>
+
+<div class="sprint-column"
+     ondrop="drop(event,'4')"
+     ondragover="allowDrop(event)">
+
+        <div class="sprint-title testing">
+            UAT (${sprintData.testing.length})
+        </div>
+
+        ${sprintData.testing.map(t => `
+            <div class="ticket-card"
+     draggable="true"
+     data-ticketid="${t.id}"
+     ondragstart="drag(event)">
+                <div>${t.number}</div>
+                <div>${t.project || ''}</div>
+                <small>${t.deadline || ''}</small>
+            </div>
+        `).join('')}
+
+    </div>
     <div class="sprint-column"
      ondrop="drop(event,'5')"
      ondragover="allowDrop(event)">
@@ -1378,7 +1380,7 @@ function getCustomersByDate(fieldId, type, statusId){
        var filters = [
     ['isinactive','is','F'],
     'AND',
-    ['custrecord_rw_portal_status','anyof', statusId],   // ✅ ADD THIS
+    ['custrecord_rw_portal_status','anyof', statusId],   //  ADD THIS
     'AND',
     ['custrecord_rw_portal_customername.custentity_rw_emp_port_access','is','T'],
     'AND',
@@ -1450,7 +1452,7 @@ function getCustomersByDate(fieldId, type, statusId){
 
     return customers;
 }
-// 🔹 Start Date Cards
+//  Start Date Cards
 // UAT
 // UAT
 var uatCurrent = getCustomersByDate(
@@ -3018,6 +3020,7 @@ var workloadChartHtml = `
 
     <div style="height:300px;">
         <canvas id="workloadChart"></canvas>
+        
     </div>
 
 </div>
@@ -6626,7 +6629,7 @@ if(m){
 
         options:{
             responsive:true,
-            cutout:'60%'
+            cutout:'90%'
         }
     });
 }
@@ -6671,7 +6674,9 @@ document.addEventListener('DOMContentLoaded',function(){
 
         options:{
             responsive:true,
+        
             maintainAspectRatio:false,
+            cutoff:'90%',
             plugins:{
                 legend:{
                     position:'bottom'

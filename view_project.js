@@ -4612,11 +4612,11 @@ ${product}</td>
             height:100%;
             
         }
-.form-grid {
-    display: grid;
-    grid-template-columns: 180px 1fr 180px 1fr;
-    gap: 12px 20px;
-    align-items: center;
+.form-grid{
+    display:grid;
+    grid-template-columns:180px 1fr 180px 1fr;
+    gap:18px 22px;
+    align-items:end;
 }
 .subscriptionWrapper{
 
@@ -4871,39 +4871,32 @@ ${product}</td>
             cursor:pointer;
             }
 
-            .section-card{
-
+          .section-card{
     background:#fff;
 
-    border:1px solid #E5E7EB;
+    border:1px solid #cfd8e3;
 
-    border-radius:16px;
+    border-radius:2px;
 
     padding:20px;
 
-    margin-bottom:25px;
+    margin-bottom:20px;
 
-    box-shadow:
-        0 4px 14px rgba(0,0,0,0.05);
+    box-shadow:none;
 }
-
 .section-title{
+    background:#e8eef5;
+    border:1px solid #cfd8e3;
+    padding:10px 14px;
 
-    font-size:16px;
-
+    font-size:11px;
     font-weight:700;
-
-    color:#5b2d8e;
-
-    margin-bottom:18px;
-
-    padding-bottom:10px;
-
-    border-bottom:1px solid #E5E7EB;
-
+    letter-spacing:1px;
     text-transform:uppercase;
 
-    letter-spacing:0.5px;
+    color:#1d3f72;
+
+    margin:-20px -20px 20px -20px;
 }
 
 .milestone-header{
@@ -4999,6 +4992,148 @@ ${product}</td>
 
 .status-badge.done{
     background:#28a745;
+}
+input,
+select,
+textarea{
+    width:100%;
+    box-sizing:border-box;
+
+    border:none;
+    border-bottom:1px solid #cfd8e3;
+
+    background:transparent;
+
+    padding:6px 0;
+
+    font-size:14px;
+    color:#0d2f5f;
+
+    border-radius:0;
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+    outline:none;
+    border-bottom:2px solid #1d3f72;
+}
+    .project-table tbody td{
+    border:1px solid #e1e7ef;
+    padding:10px;
+    background:#fff;
+    font-size:13px;
+}
+    .project-table thead th,
+table thead th{
+    background:#e8eef5;
+
+    color:#1d3f72;
+
+    font-size:10px;
+
+    font-weight:700;
+
+    letter-spacing:1px;
+
+    text-transform:uppercase;
+
+    border:1px solid #cfd8e3;
+
+    padding:10px;
+}
+    .stat-box{
+    background:#f3f6fa;
+    border-right:1px solid #d6dde6;
+    padding:12px 15px;
+}
+
+.stat-title{
+    font-size:10px;
+    text-transform:uppercase;
+    font-weight:700;
+    color:#66788a;
+    letter-spacing:1px;
+}
+
+.stat-value{
+    font-size:24px;
+    font-weight:700;
+    color:#0d2f5f;
+}
+    .info-value{
+    font-size:15px;
+    font-weight:600;
+    color:#0d2f5f;
+}
+    .info-card{
+    background:#fff;
+    border:1px solid #d6dde6;
+    border-radius:4px;
+    overflow:hidden;
+    margin-bottom:20px;
+}
+    .section-header{
+    background:#e8eef5;
+    border:1px solid #cfd8e3;
+    padding:12px 15px;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:#1d3f72;
+}
+  .label{
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:1px;
+    text-transform:uppercase;
+
+    color:#66788a;
+
+    margin-bottom:4px;
+}
+    .value{
+    background:transparent;
+    border:none;
+    border-bottom:1px solid #cfd8e3;
+
+    border-radius:0;
+
+    padding:6px 0;
+
+    font-size:14px;
+    font-weight:600;
+
+    color:#0d2f5f;
+
+    min-height:22px;
+}
+    .summary-strip{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+
+    border:1px solid #cfd8e3;
+}
+
+.summary-box{
+    padding:12px 15px;
+    background:#f7f9fc;
+    border-right:1px solid #cfd8e3;
+}
+
+.summary-title{
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:#66788a;
+}
+
+.summary-value{
+    font-size:24px;
+    font-weight:700;
+    color:#0d2f5f;
 }
     </style>
 
