@@ -927,7 +927,7 @@ ${ticketDetails.closed}
         ${projectId}
     </td>
 
-    <td style="border:1px solid black;" onclick="openProject('${projectId}')"><u>${data.customer}</u></td>
+    <td style="border:1px solid black;" onclick="openProject('${projectId}')" class="cust"><u>${data.customer}</u></td>
     ${!isFromHome ? `<td style="border:1px solid black;font-family:Arial, sans-serif;">
         <span class="status ${getStatusClass(data.status)}">
     ${data.status}
@@ -1002,7 +1002,11 @@ var paginationHtml = `
 <div style="text-align:center; margin-top:20px;">
 
     ${page > 0 ? `
-        <button type="button" onclick="goToPage(${prevPage})" style="padding:8px 15px; background:linear-gradient(135deg, #8E2DE2, #C471ED); color:white; border:none; border-radius:5px; cursor:pointer;">Previous</button>
+        <button type="button" onclick="goToPage(${prevPage})" style="padding:8px 15px;   background:linear-gradient(
+        135deg,
+        #5b2d8e 0%,
+        #8f50df 100%
+    ); color:white; border:none; border-radius:5px; cursor:pointer;">Previous</button>
     ` : ''}
 
     <span style="margin:0 15px; font-weight:bold;">
@@ -1011,7 +1015,11 @@ var paginationHtml = `
 
     ${page < totalPages - 1 ? `
         
-        <button type="button" onclick="goToPage(${nextPage})" style="padding:8px 15px; background:linear-gradient(135deg, #8E2DE2, #C471ED); color:white; border:none; border-radius:5px; cursor:pointer;">Next</button>
+        <button type="button" onclick="goToPage(${nextPage})" style="padding:8px 15px;   background:linear-gradient(
+        135deg,
+        #5b2d8e 0%,
+        #8f50df 100%
+    ); color:white; border:none; border-radius:5px; cursor:pointer;">Next</button>
     ` : ''}
 
 </div>
@@ -1100,12 +1108,27 @@ statOptions1 += '<option value="'+id+'">'+name+'</option>';
 htmlField.defaultValue = `
 
 <style>
-html, body{
-margin:0 !important;
-padding:0 !important;
-width:100%;
-height:100%;
-overflow-y:auto;
+html,
+body{
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    overflow:auto;
+    
+    /* Firefox */
+    scrollbar-width:none;
+
+    /* IE/Edge */
+    -ms-overflow-style:none;
+}
+
+/* Chrome, Edge, Safari */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar{
+    width:0;
+    height:0;
+    display:none;
 }
 .arrow{
     display:inline-block;
@@ -1386,9 +1409,7 @@ text-shadow:0 0 5px #8f50df;
 text-decoration: none;
 
 }
-.project-row {
-    cursor: pointer;
-}
+
 
 .status.todo{
     background:#7f8c8d;
@@ -1612,8 +1633,11 @@ text-decoration: none;
     color:white;
     font-weight:bold;
 }
+    .cust:hover{
+    cursor:pointer;
+    }
 </style>
-<form method="GET">
+<form method="GET" id="filterForm">
 <input type="hidden" id="pageInput" name="page" value="${page}">
 
 <input type="hidden" name="empid" value="${empId}">
@@ -1625,6 +1649,7 @@ text-decoration: none;
 <div class="content">
 
 <iframe id="mainFrame"
+scrolling="no"
         style="
         width:100%;
         height:100%;
@@ -1635,6 +1660,11 @@ text-decoration: none;
         left:0;
         background:white;
         overflow-y:hidden;
+        /* Firefox */
+    scrollbar-width:none;
+
+    /* IE/Edge */
+    -ms-overflow-style:none;
         
         "
         onload="hideLoader()">
@@ -1692,13 +1722,14 @@ text-decoration: none;
     <!-- BUTTON -->
     <div class="filter-actions">
 
-        <button
-            type="submit"
-            class="btn-primary"
-        >
-            Apply
-        </button>
-
+       
+<button
+    type="submit"
+    class="btn-primary"
+    id="applyBtn"
+    onclick="applyFilters()">
+    Apply
+</button>
     </div>
 
 </div>
@@ -1750,7 +1781,7 @@ ${paginationHtml}
 </div>
 <div id="loader">
     <div class="spinner"></div>
-    <p>Opening........</p>
+    <p>Loading........</p>
 </div>
 </form>
 <script>
@@ -1832,6 +1863,16 @@ function goToPage(page){
 
     document.forms[0].submit();
 }
+    function applyFilters(){
+
+    var loader = document.getElementById("loader");
+
+    loader.style.display = "block";
+
+    document.getElementById("homeContent").style.display = "none";
+
+    document.forms[0].submit();
+}
     window.addEventListener('storage', function(event) {
 
     if (event.key === 'logout-event') {
@@ -1885,7 +1926,7 @@ ticketUrl += "&fromproject=T";
     
     frame.src = ticketUrl;
 }
-    
+
 </script>
 `;
 

@@ -76,7 +76,7 @@ mappingSearch.run().each(function(result) {
     return true;
 });
 
-        // 🔥 ADD THIS (CRITICAL)
+        //  ADD THIS (CRITICAL)
         context.response.setHeader({
             name: 'Content-Type',
             value: 'application/json'
@@ -486,8 +486,8 @@ if (filterType === 'assigned' && empId) {
         empId
     ]);
 }
-// ✅ OPEN TICKETS FILTER
-// ✅ MY OPEN TICKETS (IMPORTANT)
+//  OPEN TICKETS FILTER
+//  MY OPEN TICKETS (IMPORTANT)
 if (filterType === 'open' && empId) {
 
     if (filters.length > 0) filters.push('AND');
@@ -520,7 +520,7 @@ if (filterType === 'allopen') {
     ]);
 }
 // Total tickets → no filter (show all)
-// ✅ CLOSED TICKETS (FIX)
+//  CLOSED TICKETS (FIX)
 if (filterType === 'closed' && empId) {
 
     if (filters.length > 0) filters.push('AND');
@@ -565,7 +565,7 @@ var pageIndex = parseInt(request.parameters.page) || 0;
 
 var currentPage = { data: [] };
 var totalCount = pagedData.count;
-// ✅ SAFE PAGINATION
+//  SAFE PAGINATION
 if (pagedData.pageRanges && pagedData.pageRanges.length > 0) {
 
     if (pageIndex < 0) pageIndex = 0;
@@ -773,7 +773,7 @@ if (!(mode === 'form' || request.parameters.hidefilters === 'true')){
     
 
     <div class="filter-actions">
-        <button type="submit" class="btn-primary">Apply</button>
+        <button type="submit" class="btn-primary" onclick="applyFilters()">Apply</button>
         
     </div>
 
@@ -785,7 +785,7 @@ htmlField.defaultValue = `
 
 <style>
 *{
-    box-sizing:border-box;   /* ✅ VERY IMPORTANT */
+    box-sizing:border-box;   /*  VERY IMPORTANT */
 }
 html, body{
     margin:0;
@@ -814,6 +814,7 @@ background:linear-gradient(
     
 );
 color:white;
+cursor:pointer;
 font-weight:bold;
 }
 .filter-card{
@@ -1196,8 +1197,8 @@ text-decoration: none;
 /* Table should scroll ONLY if needed */
 .table-container{
     flex:1;
-    overflow-y:auto;   /* ✅ only this scrolls */
-    /* ❌ REMOVE height:100% */
+    overflow-y:auto;   /*  only this scrolls */
+    /*  REMOVE height:100% */
 }
 
 /* Pagination fixed */
@@ -1384,7 +1385,7 @@ function openTicket(ticketId){
 
     loader.style.display = "block";
 
-    // 🔥 THIS LINE YOU MISSED
+    //  THIS LINE YOU MISSED
     document.getElementById("homeContent").style.display = "none";
 
     frame.style.display = "block";
@@ -1406,7 +1407,7 @@ document.getElementById('projectName').addEventListener('change', function () {
         return;
     }
 
-    // ✅ ALWAYS use clean Suitelet URL (script 2894)
+    //  ALWAYS use clean Suitelet URL (script 2894)
     var apiUrl = ticketUrl +
         "&action=getProducts" +
         "&customerId=" + customerId;
@@ -1503,7 +1504,7 @@ function hideLoader(){
 
     loader.style.display = "block";
 
-    // 🔥 hide table content
+    //  hide table content
     document.getElementById("homeContent").style.display = "none";
 
     // show iframe
@@ -1561,13 +1562,23 @@ var homeUrl = '${homeUrl}';
      function goBack(){
 
     var loader = document.getElementById("loader");
-    loader.style.display = "block";   // ✅ show loader
+    loader.style.display = "block";   //  show loader
 
     setTimeout(function(){
          window.parent.openHome();
         //window.parent.location.href = homeUrl;  // safer than function call
-        loader.style.display = "none";  // ✅ hide loader after returning
+        loader.style.display = "none";  //  hide loader after returning
     }, 300); // small delay for smooth UX
+}
+    function applyFilters(){
+
+    var loader = document.getElementById("loader");
+
+    loader.style.display = "block";
+
+    document.getElementById("homeContent").style.display = "none";
+
+    document.forms[0].submit();
 }
 </script>
 `;

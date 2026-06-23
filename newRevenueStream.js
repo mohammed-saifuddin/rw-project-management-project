@@ -490,20 +490,7 @@ listSearch.run().each(function(res){
 
     </td>
 
-    <td style="
-        border:1px solid #ddd;
-        text-align:center;
-    ">
-
-        <button
-            type="button"
-            class="delete-btn">
-
-            <i class="fa-solid fa-eye"></i>
-
-        </button>
-
-    </td>
+    
 
 </tr>
 `;
@@ -796,14 +783,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     <th style="border:1px solid #ddd">
         Revenue Stream
     </th>
-<th style="border:1px solid #ddd;font-family:Arial, sans-serif;font-size:12px;
-background:linear-gradient(
-135deg,
-    #E6E6FA,
-    #E6E6FA
-); width:120px;">
-    Action
-</th>
+
     
 
 </tr>

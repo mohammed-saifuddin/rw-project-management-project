@@ -1864,19 +1864,20 @@ margin-bottom:15px;
 
 .modern-grid{
     display:grid;
-    grid-template-columns:180px 1fr 180px 1fr;
-    gap:18px 22px;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
 }
 
 .field-box{
-    display:block;
+    width:100%;
+    min-width:0;
 }
 
 /* LABEL */
 .field-box label{
     display:block;
 
-    font-size:10px;
+    font-size:12px;
     font-weight:700;
 
     color:#66788a;
@@ -1889,27 +1890,28 @@ margin-bottom:15px;
 
 /* VALUE */
 .field-value{
-    background:transparent;
-    border:none;
+    width:100%;
+    box-sizing:border-box;
+
+    background:#fff;
     border-bottom:1px solid #cfd8e3;
 
-    border-radius:0;
+    padding:8px 10px;
+    min-height:38px;
 
-    padding:6px 0;
+    display:flex;
+    align-items:center;
+    font-size:16px;
+    font-family:calibri;
 
-    min-height:24px;
-
-    font-size:14px;
-    font-weight:600;
-
-    color:#0d2f5f;
-
-    width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
 }
+    
 .issue-box{
     background:#fff;
 
-    border:1px solid #cfd8e3;
+    border-bottom:1px solid #cfd8e3;
 
     padding:15px;
 
@@ -2191,9 +2193,9 @@ overflow:hidden;
     </div>
 
 </div>
-${historyHtml}
-${commentsHtml}
 
+${commentsHtml}
+${historyHtml}
     <button class="backBtn" type="button" onclick="goBack()">⬅ Back</button>
 </div>
 <div id="loader">

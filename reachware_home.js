@@ -1325,10 +1325,9 @@ var sprintBoardHtml = `
         </div>
 
         ${sprintData.done.map(t => `
-            <div class="ticket-card"
-     draggable="true"
-     data-ticketid="${t.id}"
-     ondragstart="drag(event)">
+            <div class="ticket-card done-ticket"
+     draggable="false"
+     data-ticketid="${t.id}">
                 <div>${t.number}</div>
                 <div>${t.project || ''}</div>
                 <small>${t.deadline || ''}</small>
@@ -3224,6 +3223,7 @@ html, body {
     
 );
   color:white;
+  cursor:pointer;
 }
 .data-val{
 border:1px solid #ddd;
@@ -3249,6 +3249,7 @@ border:1px solid #ddd;
     display: flex;
     flex-direction: row;      /*  sidebar + content side-by-side */
     min-height: calc(100vh - 60px);
+    
 }
 
 
@@ -3405,7 +3406,7 @@ color:darkblue;
     padding: 0 20px;
 
     height: auto;        /*  REMOVE FIXED HEIGHT */
-    overflow: visible;   /*  NO SCROLL, NO CUT */
+    overflow: hidden;   /*  NO SCROLL, NO CUT */
 }
 .con{
 
@@ -5475,7 +5476,10 @@ color:black;
 .ticket-card{
     cursor:grab;
 }
-
+.done-ticket{
+    cursor:not-allowed;
+    opacity:0.85;
+}
 .ticket-card:active{
     cursor:grabbing;
 }
@@ -6629,7 +6633,7 @@ if(m){
 
         options:{
             responsive:true,
-            cutout:'90%'
+            cutout:'60%'
         }
     });
 }
@@ -6676,7 +6680,7 @@ document.addEventListener('DOMContentLoaded',function(){
             responsive:true,
         
             maintainAspectRatio:false,
-            cutoff:'90%',
+            cutout:'60%',
             plugins:{
                 legend:{
                     position:'bottom'
@@ -6712,7 +6716,11 @@ document.addEventListener('DOMContentLoaded',function(){
             data: {
                 labels: ['My Assigned tickets','My Open tickets','My Closed tickets',' My Projects'],
                 datasets: [{ data: donutData.overview }]
-            }
+            },
+            options: {
+            responsive: true,
+            cutout: '60%',
+}
         });
     }
 
@@ -7295,16 +7303,16 @@ function markAllNotificationsRead(){
 
 function drag(ev){
 
-    var card = ev.currentTarget;
+    const card = ev.target;
 
-    var ticketId =
-        card.getAttribute('data-ticketid');
-
-    console.log('Dragging Ticket:', ticketId);
+    if(card.classList.contains('done-ticket')){
+        ev.preventDefault();
+        return false;
+    }
 
     ev.dataTransfer.setData(
-        'ticketid',
-        ticketId
+        "ticketid",
+        card.dataset.ticketid
     );
 }
  function updateTicketStatus(ticketId,statusId){
@@ -7440,8 +7448,49 @@ function drop(ev,statusId){
         statusId
     );
 }
-   
-    
+   function refreshNotificationBell(){
+
+    fetch(window.location.pathname +
+        '?action=getUnreadCount' +
+        '&empid=' + empId)
+
+    .then(response => response.text())
+
+    .then(function(count){
+
+        document.getElementById('notifCount')
+            .innerHTML = count;
+
+    });
+
+}
+    function loadLatestNotifications(){
+
+    fetch(window.location.pathname +
+        '?action=getNotifications' +
+        '&empid=' + empId)
+
+    .then(r => r.text())
+
+    .then(function(html){
+
+        document.getElementById('notificationList')
+            .innerHTML = html;
+
+    });
+
+}
+   window.addEventListener('storage', function(e){
+
+    if(e.key === 'notification_refresh'){
+
+        refreshNotificationBell();
+
+        loadLatestNotifications();
+    }
+
+});
+
 </script>
 
 `;

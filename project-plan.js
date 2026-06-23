@@ -29,6 +29,12 @@ try{
     body = JSON.parse(
         context.request.body || '{}'
     );
+    var creatorEmpId =
+    body.empId ||
+    context.request.parameters.empid ||
+    '';
+    
+log.debug('CREATOR EMP ID', creatorEmpId);
 
 }catch(e){
 
@@ -73,6 +79,13 @@ log.debug('PLAN NAME', body.planName);
 log.debug('PRODUCT', body.product);
 log.debug('REVENUE', body.revenue);
             var id = rec.save();
+
+       createNotification(
+    creatorEmpId,
+    'New Project Plan Created : ' + body.planName,
+    'PROJECT_PLAN_CREATED',
+    id
+);
             log.debug('Parent Created', id);
 
 log.debug(
@@ -121,54 +134,8 @@ log.debug(
         throw ex;
     }
 });
-// var milestoneSearch = search.create({
-//     type: 'customrecord_rw_project_mile_stone_types', // replace with your actual milestone master record
-//     filters: [
-//         ['isinactive','is','F']
-//     ],
-//     columns: [
-//         'internalid'
-//     ]
-// });
 
-// var sno = 1;
-// var uniqueMilestones = {};
 
-// milestoneSearch.run().each(function(result){
-
-//     var milestoneId = result.getValue('internalid');
-
-//     if(uniqueMilestones[milestoneId]){
-//         return true;
-//     }
-
-//     uniqueMilestones[milestoneId] = true;
-
-//     var childRec = record.create({
-//         type:'customrecord_rw_project_plan_temp_child'
-//     });
-
-//     childRec.setValue({
-//         fieldId:'custrecord_rw_proj_plan_temp_child_link',
-//         value:id
-//     });
-
-//     childRec.setValue({
-//         fieldId:'custrecord_rw_proj_plan_temp_child_sno',
-//         value:sno
-//     });
-
-//     childRec.setValue({
-//         fieldId:'custrecord_rw_project_temp_child_miles',
-//         value:milestoneId
-//     });
-
-//     childRec.save();
-
-//     sno++;
-
-//     return true;
-// });
             context.response.write(
                 JSON.stringify({
                     success: true,
@@ -209,7 +176,12 @@ log.debug(
 
  }
         var productId = productRec.save();
-
+createNotification(
+    creatorEmpId,
+    'New Product Created : ' + body.productName,
+    'PRODUCT_CREATED',
+    productId
+);
         context.response.write(
             JSON.stringify({
                 success:true,
@@ -372,6 +344,48 @@ search.create({
 
     return true;
 });
+function createNotification(empId, message, type, refId){
+
+    if(!empId) return;
+
+    var notifRec = record.create({
+        type:'customrecord2517'
+    });
+
+    // REQUIRED NAME FIELD
+    notifRec.setValue({
+        fieldId:'name',
+        value: message
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_employee',
+        value:empId
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_message',
+        value:message
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_type',
+        value:type
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_refid',
+        value:refId || ''
+    });
+
+    notifRec.setValue({
+        fieldId:'custrecord_rw_notif_read',
+        value:false
+    });
+
+    notifRec.save();
+}
+
 
 var rwOptions ='<option value="">--Select--</option>';
     var rwSearch=search.create({
@@ -1082,9 +1096,9 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
                 type="button"
                 class="save-btn"
                 onclick="addMilestoneRow()"
-                style="margin-bottom:15px;">
+                style="margin-bottom:15px;font-size:14px;">
 
-                + Add Milestone
+                + 
 
             </button>
 
@@ -1215,7 +1229,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 
 </div>
 <script>
-
+var empId = '${empId}';
 var suiteletUrl = '${suiteletUrl}';
 
 
@@ -1356,7 +1370,8 @@ function saveProjectPlan(){
                     revenue,
 
                 milestones:
-                    milestones
+                    milestones,
+                    empId:empId
             })
         }
     )
@@ -1368,7 +1383,10 @@ function saveProjectPlan(){
     var data = JSON.parse(res);
 
     if(data.success){
-
+ localStorage.setItem(
+        'notification_refresh',
+        Date.now()
+    );
         alert('Project Plan Created');
 
         location.reload();
@@ -1461,7 +1479,8 @@ function saveProjectPlan(){
             action:'createProduct',
             productName:productName,
             revenue:revenue,
-            template:template
+            template:template,
+            empId:empId
         })
     })
     .then(function(response){
@@ -1478,7 +1497,10 @@ function saveProjectPlan(){
             var data = JSON.parse(text);
 
             if(data.success){
-
+  localStorage.setItem(
+        'notification-refresh',
+        Date.now()
+    );
                 alert('Product Created Successfully');
 
                 location.reload();

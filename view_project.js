@@ -71,7 +71,7 @@ function getEmployeeDMSRole(empId){
     var emp = search.lookupFields({
         type: search.Type.EMPLOYEE,
         id: empId,
-        columns: ['custentityrw_dms_role']   // ✅ correct field
+        columns: ['custentityrw_dms_role']   // correct field
     });
 
     log.debug("DMS ROLE RAW", emp);
@@ -3411,13 +3411,14 @@ var empRoleMap = {};
 // historyHtml += `</div>`;
     lineItemsHtml += `
 <tr data-id="${lineId}">
-    <td style="border:1px solid #ccc;padding:8px;">
+    <td style="border:1px solid #ccc;padding:8px;font-size:14px;">
     <span
     onclick="togglePlan('${lineId}')"
     style="
         cursor:pointer;
         color:#27ae60;
         font-weight:bold;
+        font-size:14px;
         margin-right:8px;
     "
 >
@@ -3427,18 +3428,18 @@ var empRoleMap = {};
 
     ${product}
 </td>
-    <td style="border:1px solid #ccc;padding:8px;">${comments}</td>
-    <td style="border:1px solid #ccc;padding:8px;">
+    <td style="border:1px solid #ccc;padding:8px;font-size:14px;">${comments}</td>
+    <td style="border:1px solid #ccc;padding:8px;font-size:14px;">
         <span class="view-mode">
     <span class="status-badge ${getProjectStatusClass(linestatus)}">
         ${linestatus}
     </span>
 </span>
-        <select class="edit-mode status" style="display:none;" data-currenttext="${linestatus}">
+        <select class="edit-mode status" style="display:none;font-size:14px;" data-currenttext="${linestatus}">
             ${statOptions}
         </select>
     </td>
-  <td style="border:1px solid #ccc;padding:8px;">
+  <td style="border:1px solid #ccc;padding:8px;font-size:14px;">
 
     <span class="view-mode">
         ${startLineObj.display}
@@ -3448,13 +3449,13 @@ var empRoleMap = {};
         class="edit-mode startdate"
         type="date"
         value="${startLineObj.input}"
-        style="display:none;"
+        style="display:none;font-size:14px;"
     />
 
 </td>
 
 <!-- END DATE -->
-<td style="border:1px solid #ccc;padding:8px;">
+<td style="border:1px solid #ccc;padding:8px;font-size:14px;">
 
     <span class="view-mode">
         ${endLineObj.display}
@@ -3464,13 +3465,13 @@ var empRoleMap = {};
         class="edit-mode enddate"
         type="date"
         value="${endLineObj.input}"
-        style="display:none;"
+        style="display:none;font-size:14px;"
     />
 
 </td>
 
 <!-- UPDATED DEADLINE -->
-<td style="border:1px solid #ccc;padding:8px;">
+<td style="border:1px solid #ccc;padding:8px;font-size:14px;">
 
     <span class="view-mode">
         ${updatedLineObj.display}
@@ -3480,12 +3481,12 @@ var empRoleMap = {};
         class="edit-mode updateddeadline"
         type="date"
         value="${updatedLineObj.input}"
-        style="display:none;"
+        style="display:none;font-size:14px;"
     />
 
 </td>
     
-<td style="border:1px solid #ccc;padding:8px;">
+<td style="border:1px solid #ccc;padding:8px;font-size:14px;">
 
     <span class="view-mode duration-text">
         ${duration || ''}
@@ -3500,7 +3501,9 @@ var empRoleMap = {};
             display:none;
             width:80px;
             background:#f5f5f5;
+            font-size:14px;
             border:1px solid #ccc;
+            font-size:14px;
         "
     />
 
@@ -4605,13 +4608,27 @@ ${product}</td>
     
     htmlField.defaultValue = `
     <style>
+*{
+    box-sizing:border-box;
+}
         body{
             font-family: Arial;
             margin:0;
             padding:20px;
-            height:100%;
+            overflow:auto;
+            height:2000px;
             
         }
+            html,
+body{
+    margin:0 !important;
+    padding:0 !important;
+    width:100% !important;
+    height:2000px;
+    overflow:hidden !important;
+}
+
+
 .form-grid{
     display:grid;
     grid-template-columns:180px 1fr 180px 1fr;
@@ -4702,16 +4719,30 @@ ${product}</td>
     padding: 8px;
     border-radius: 5px;
 }
-        // .container{
-        //     max-width:1000px;
-            
-        //     height:fit-content;
-        //     margin:auto;
-        //     background:white;
-        //     padding:20px;
-        //     border-radius:10px;
-        //     box-shadow:0 0 10px rgba(0,0,0,0.1);
-        // }
+   html,
+body{
+    margin:0 !important;
+    padding:0 !important;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+
+    /* Hide scrollbar */
+    scrollbar-width:none !important;      /* Firefox */
+    -ms-overflow-style:none !important;   /* IE/Edge */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar{
+    width:0 !important;
+    display:none !important;
+}
+
+.container{
+    position:relative;
+    width:100%;
+    padding:20px;
+    box-sizing:border-box;
+}
 
         .title{
             font-size:20px;
@@ -4877,6 +4908,7 @@ ${product}</td>
     border:1px solid #cfd8e3;
 
     border-radius:2px;
+    
 
     padding:20px;
 
@@ -5258,8 +5290,7 @@ table thead th{
 </div>
     </div>
     </div>
-</div>
-<!-- ====================================== -->
+    <!-- ====================================== -->
 <!-- PRODUCT PLAN TABS -->
 <!-- ====================================== -->
 
@@ -5315,6 +5346,8 @@ ${canEdit ? `
 ` : ''}
 
 </div>
+</div>
+
 <div id="loader">
     <div class="spinner"></div>
     <p>Loading projects...</p>
