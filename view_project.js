@@ -8,9 +8,32 @@ define(['N/ui/serverWidget','N/record','N/url','N/search','N/format','N/file','N
 const onRequest = (context) => {
    
 if (context.request.method === 'POST') {
-var reqBody = JSON.parse(
-    context.request.body || '{}'
-);
+var reqBody = {};
+
+try {
+
+    if (
+        context.request.body &&
+        context.request.body.trim().startsWith("{")
+    ) {
+
+        reqBody = JSON.parse(context.request.body);
+
+    } else {
+
+        reqBody = context.request.parameters;
+
+    }
+
+} catch (e) {
+
+    log.error({
+        title: "POST BODY ERROR",
+        details: context.request.body
+    });
+
+    reqBody = context.request.parameters;
+}
 if(reqBody.action === 'deleteProduct'){
 
     try{
@@ -4607,6 +4630,8 @@ ${product}</td>
     });
     
     htmlField.defaultValue = `
+    <link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
 *{
     box-sizing:border-box;
@@ -5167,8 +5192,105 @@ table thead th{
     font-weight:700;
     color:#0d2f5f;
 }
-    </style>
+    #cname{
+    font-weight:bold;
+    font-family:calibri;
+    }
+    .success-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.45);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:999999;
+    animation:fadeIn .25s;
+}
 
+.success-dialog{
+    width:420px;
+    background:#fff;
+    border-radius:18px;
+    padding:35px;
+    text-align:center;
+    box-shadow:0 25px 60px rgba(0,0,0,.25);
+    animation:popup .3s ease;
+}
+
+.success-icon{
+    width:90px;
+    height:90px;
+    margin:auto;
+    border-radius:50%;
+    background:#eafaf1;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    margin-bottom:18px;
+}
+
+.success-icon i{
+    font-size:55px;
+    color:#16a34a;
+}
+
+.success-dialog h2{
+    margin:10px 0;
+    color:#1f2937;
+    font-size:24px;
+}
+
+.success-dialog p{
+    color:#6b7280;
+    line-height:1.6;
+    margin-bottom:25px;
+}
+
+.success-dialog button{
+    background:#4f46e5;
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:12px 35px;
+    font-size:15px;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.success-dialog button:hover{
+    background:#4338ca;
+    transform:translateY(-2px);
+}
+
+@keyframes popup{
+    from{
+        transform:scale(.8);
+        opacity:0;
+    }
+    to{
+        transform:scale(1);
+        opacity:1;
+    }
+}
+
+@keyframes fadeIn{
+    from{opacity:0;}
+    to{opacity:1;}
+}
+    .success-dialog h2{
+    color:#111827;
+    font-size:24px;
+    margin:15px 0 10px;
+}
+
+.success-dialog p{
+    color:#6b7280;
+    font-size:15px;
+    line-height:1.6;
+    margin:15px 0 25px;
+}
+    </style>
+<input type="hidden" id="originalComment">
     <div class="container">
     <div class="title">Project Details</div>
 
@@ -5187,7 +5309,7 @@ table thead th{
         <div class="value">${projectType}</div>
 
         <div class="label">Customer</div>
-        <div class="value">${customer}</div>
+        <div class="value" id="cname">${customer}</div>
 
        <div class="label">Subsidiary</div>
 <div class="value">${subsidiary}</div>
@@ -5358,8 +5480,27 @@ ${canEdit ? `
 <span id="saveBadge" style="display:none; color:green; margin-left:10px;">
     ✔ Saved
 </span>
+<div id="saveSuccessDialog" class="success-overlay" style="display:none;">
+    <div class="success-dialog">
+        <div class="success-icon">
+            <i class="fa fa-check-circle"></i>
+        </div>
+
+        <h2>Project Updated</h2>
+
+        <p>
+            The project has been successfully updated.
+            All changes have been saved.
+        </p>
+
+        <button type="button" onclick="closeSuccessDialog()">
+            OK
+        </button>
+    </div>
+</div>
     <script>
     var roleType = "${roleType}";
+    
     var pmDropdown = ` + JSON.stringify(pmDropdown) + `;
     var rwOptions = ` + JSON.stringify(rwOptions) + `;
 var funcDropdown = ` + JSON.stringify(funcDropdown) + `;
@@ -6153,7 +6294,7 @@ if(updateddeadline && projectUpdatedEndDate){
 });
     });
 
-    console.log("FINAL DATA SENT:", data); // 🔥 DEBUG
+    console.log("FINAL DATA SENT:", data); //  DEBUG
 
     if(data.length === 0){
         alert("No valid data to update");
@@ -6192,9 +6333,10 @@ empid: "${empId}"
 
     if(res === "success"){
 showToast("Project Saved Successfully ");
-alert("Project Saved Succesfully");
+// alert("Project Saved Succesfully");
+  showSuccessDialog();
   
-        // ✅ Update UI with new values
+        //  Update UI with new values
         document.querySelectorAll("tbody tr").forEach(function(row){
 
             var funcSel = row.querySelector("select.edit-mode.functional");
@@ -6292,7 +6434,7 @@ if(statusSelect){
 
         });
 
-        // ✅ Switch back to view mode
+        //  Switch back to view mode
         document.querySelectorAll(".edit-mode").forEach(el => el.style.display = "none");
         document.querySelectorAll(".view-mode").forEach(el => el.style.display = "inline");
 
@@ -6577,6 +6719,27 @@ function removeProduct(lineId){
                 alert("product removed");
         }
     });
+}
+    function showSuccessDialog(){
+    document.getElementById("saveSuccessDialog").style.display = "flex";
+    const dialog = document.getElementById("successDialog");
+    dialog.style.display = "block";
+
+    document.getElementById("successOkBtn").onclick = function () {
+
+        dialog.style.display = "none";
+
+        window.location.replace(projectUrl);
+
+    };
+}
+
+function closeSuccessDialog(){
+
+    document.getElementById("saveSuccessDialog").style.display = "none";
+
+    // Refresh page after user clicks OK
+    location.reload();
 }
     </script>
     `;

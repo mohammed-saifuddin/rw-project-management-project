@@ -641,6 +641,14 @@ button{
     justify-content:center;
     color:#333;
     }
+    .heading{
+    display:flex;
+    justify-content:center;
+    align-item:center;
+    font-size:14px;
+    font-family:calibri;
+    padding:12px;
+    }
         </style>
             <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -665,7 +673,9 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
             
 
            
-
+<div class="heading">
+<h2>New Revenue Stream</h2>
+</div>
 
   <div style="
     margin-bottom:15px;
@@ -679,7 +689,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     id="topEditBtn"
     onclick="openMilestoneDialog()">
 
-    + Add Revenue Stream
+    <i class="fa fa-plus" aria-hidden="true"></i>
 
 </button>
 

@@ -48,7 +48,33 @@ log.debug('CREATOR EMP ID', creatorEmpId);
 }
 
         if (body.action === 'createProjectPlan') {
+var duplicatePlan = search.create({
+    type: 'customrecord_rw_project_plan_template',
+    filters: [
+        ['name', 'is', body.planName],
+        'AND',
+        ['isinactive', 'is', 'F']
+    ],
+    columns: ['internalid']
+});
 
+var exists = false;
+
+duplicatePlan.run().each(function () {
+    exists = true;
+    return false;
+});
+
+if (exists) {
+
+    context.response.write(JSON.stringify({
+        success: false,
+        duplicate: true,
+        message: 'Project Plan already exists.'
+    }));
+
+    return;
+}
             var rec = record.create({
                 type: 'customrecord_rw_project_plan_template'
             });
@@ -148,7 +174,33 @@ log.debug(
    if(body.action === 'createProduct'){
 
     try{
+var duplicateProduct = search.create({
+    type: 'customrecord_rw_extend_products',
+    filters: [
+        ['name', 'is', body.productName],
+        'AND',
+        ['isinactive', 'is', 'F']
+    ],
+    columns: ['internalid']
+});
 
+var exists = false;
+
+duplicateProduct.run().each(function () {
+    exists = true;
+    return false;
+});
+
+if (exists) {
+
+    context.response.write(JSON.stringify({
+        success: false,
+        duplicate: true,
+        message: 'Product already exists.'
+    }));
+
+    return;
+}
         var productRec = record.create({
             type:'customrecord_rw_extend_products'
         });
@@ -934,6 +986,71 @@ data.push({
     border-radius:6px;
     cursor:pointer;
 }
+    .success-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.45);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:999999;
+}
+
+.success-dialog{
+    width:420px;
+    background:#fff;
+    border-radius:18px;
+    text-align:center;
+    padding:35px;
+    box-shadow:0 20px 50px rgba(0,0,0,.25);
+    animation:popup .25s ease;
+}
+
+@keyframes popup{
+    from{
+        transform:scale(.8);
+        opacity:0;
+    }
+    to{
+        transform:scale(1);
+        opacity:1;
+    }
+}
+
+.success-icon{
+    width:90px;
+    height:90px;
+    border-radius:50%;
+    background:#22c55e;
+    color:#fff;
+    font-size:55px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    margin:0 auto 20px;
+}
+
+.success-dialog h2{
+    margin:0;
+    font-size:26px;
+    color:#111827;
+}
+
+.success-dialog p{
+    margin:18px 0 28px;
+    color:#6b7280;
+    font-size:15px;
+}
+
+.success-btn{
+    background:linear-gradient(135deg,#002855,#5b2d8e,#8f50df);
+    color:#fff;
+    border:none;
+    padding:12px 30px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:15px;
+}
         </style>
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -1228,10 +1345,29 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     </div>
 
 </div>
+<div id="successDialog" class="success-overlay" style="display:none;">
+    <div class="success-dialog">
+
+        <div class="success-icon">
+            ✔
+        </div>
+
+        <h2 id="successTitle">Success</h2>
+
+        <p id="successMessage">
+            Operation completed successfully.
+        </p>
+
+        <button class="success-btn" type="button" onclick="closeSuccessDialog()">
+            OK
+        </button>
+
+    </div>
+</div>
 <script>
 var empId = '${empId}';
 var suiteletUrl = '${suiteletUrl}';
-
+var reloadAfterDialog = false;
 
 function openDetail(
     templateId,
@@ -1387,12 +1523,23 @@ function saveProjectPlan(){
         'notification_refresh',
         Date.now()
     );
-        alert('Project Plan Created');
+   showSuccessDialog(
+    'Project Plan Created',
+    'The project plan has been created successfully.',
+    'success',
+    true
+);
+location.reload();
 
-        location.reload();
     }else{
 
-        alert(data.message);
+     showSuccessDialog(
+    'Duplicate Project Plan',
+    data.message,
+    'warning',
+    false
+);
+location.reload();
     }
 });
 }
@@ -1501,13 +1648,24 @@ function saveProjectPlan(){
         'notification-refresh',
         Date.now()
     );
-                alert('Product Created Successfully');
-
-                location.reload();
+        showSuccessDialog(
+    'Product Created',
+    'The product has been created successfully.',
+    'success',
+    true
+);
+location.reload();
+                
 
             }else{
 
-                alert(data.message);
+      showSuccessDialog(
+    'Duplicate Product',
+    data.message,
+    'warning',
+    false
+);
+location.reload();
             }
 
         }catch(e){
@@ -1576,6 +1734,39 @@ function closeCreateProductModal(){
             'productTemplate'
         ).innerHTML = html;
     });
+}
+   function showSuccessDialog(title, message, type, reload){
+
+    reloadAfterDialog = reload || false;
+
+    document.getElementById('successTitle').innerHTML = title;
+    document.getElementById('successMessage').innerHTML = message;
+
+    var icon = document.querySelector('.success-icon');
+
+    if(type === 'success'){
+        icon.innerHTML = '✔';
+        icon.style.background = '#22c55e';
+    }
+    else if(type === 'warning'){
+        icon.innerHTML = '⚠';
+        icon.style.background = '#f59e0b';
+    }
+    else{
+        icon.innerHTML = '✖';
+        icon.style.background = '#ef4444';
+    }
+
+    document.getElementById('successDialog').style.display = 'flex';
+}
+
+function closeSuccessDialog(){
+
+    document.getElementById('successDialog').style.display = 'none';
+
+    if(reloadAfterDialog){
+        location.reload();
+    }
 }
 </script>
         `;

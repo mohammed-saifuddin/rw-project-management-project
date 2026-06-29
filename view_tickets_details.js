@@ -1311,7 +1311,7 @@ margin-bottom:15px;
     id="existingEditFiles"
     style="margin-top:10px;">
 </div>
-    <button type="button"
+    <button type="button" id="saveCommentBtn"
         onclick="saveComment()"
         style="
             margin-top:10px;
@@ -1327,7 +1327,7 @@ margin-bottom:15px;
             border-radius:6px;
             cursor:pointer;
         ">
-        Add Comment
+        Send
     </button>
 
     <div id="commentsContainer">
@@ -1338,6 +1338,7 @@ margin-bottom:15px;
 `;
 
     htmlField.defaultValue = `
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         html,body{
             font-family: Arial;
@@ -1590,10 +1591,11 @@ margin-bottom:15px;
     border-radius: 5px;
 }
         .container{
-            
-        
-            
-        }
+    margin:0 !important;
+    padding:0 !important;
+    width:100%;
+    max-width:100%;
+}
 
         .title{
             font-size:20px;
@@ -2024,6 +2026,185 @@ overflow:hidden;
 .backBtn:hover{
     background:#dde6f0;
 }
+    .loader-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(255,255,255,.7);
+    backdrop-filter:blur(3px);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:999999;
+}
+
+.loader-box{
+    background:#fff;
+    padding:25px 35px;
+    border-radius:12px;
+    text-align:center;
+    box-shadow:0 8px 30px rgba(0,0,0,.2);
+}
+
+.spinner{
+    width:45px;
+    height:45px;
+    border:5px solid #ddd;
+    border-top:5px solid #5b2d8e;
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+    margin:auto;
+}
+
+.loader-text{
+    margin-top:15px;
+    font-size:15px;
+    font-weight:600;
+}
+
+@keyframes spin{
+    to{
+        transform:rotate(360deg);
+    }
+}
+    .dialog-bg{
+    position:fixed;
+    inset:0;
+    background:transparent;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:99999;
+}
+
+.dialog-card{
+    width:360px;
+      background:#E6E6FA;
+      border:1px solid purple;
+    border-radius:14px;
+    padding:30px;
+    text-align:center;
+    animation:popup .25s;
+}
+.dialogMessage{
+font-size:14px;
+font-family:calibri;
+
+}
+.successIcon{
+    width:70px;
+    height:70px;
+    margin:auto;
+    border-radius:50%;
+    background:#28a745;
+    color:white;
+    font-size:36px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+@keyframes popup{
+
+    from{
+        transform:scale(.8);
+        opacity:0;
+    }
+
+    to{
+        transform:scale(1);
+        opacity:1;
+    }
+
+}
+    .success-dialog button{
+    background:#4f46e5;
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:12px 35px;
+    font-size:15px;
+    cursor:pointer;
+    transition:.2s;
+}
+    .uir-page-body,
+.uir-page,
+#div__body,
+#main_form{
+    margin:0 !important;
+    padding:0 !important;
+}
+    .container{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    bottom:0;
+
+    width:100vw;
+    height:100vh;
+
+    margin:0;
+    padding:0;
+
+    overflow:auto;
+}
+   .loader-overlay{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(255,255,255,.6);
+    backdrop-filter:blur(3px);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:999999;
+}
+
+.loader-box{
+    background:#fff;
+    padding:20px 30px;
+    border-radius:10px;
+    box-shadow:0 10px 30px rgba(0,0,0,.2);
+    text-align:center;
+}
+
+.spinner{
+    width:40px;
+    height:40px;
+    border:4px solid #ddd;
+    border-top:4px solid #6c4ce6;
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+}
+
+@keyframes spin{
+    to{
+        transform:rotate(360deg);
+    }
+}
+
+.toast{
+    position:fixed;
+    top:25px;
+    right:25px;
+    padding:14px 22px;
+    border-radius:8px;
+    color:#fff;
+    font-weight:600;
+    opacity:0;
+    transition:.3s;
+    z-index:999999;
+}
+
+.toast.success{
+    background:#16a34a;
+}
+
+.toast.show{
+    opacity:1;
+} 
     </style>
 
     <div class="container">
@@ -2201,6 +2382,42 @@ ${historyHtml}
 <div id="loader">
     <div class="spinner"></div>
     <p>Loading tickets...</p>
+</div>
+<div id="statusLoader" class="loader-overlay" style="display:none;">
+    <div class="loader-box">
+        <div class="spinner"></div>
+        <div class="loader-text">Updating ticket status...</div>
+    </div>
+</div>
+<div id="successDialog" class="dialog-bg" style="display:none;">
+    <div class="dialog-card">
+
+        <div class="successIcon">
+            ✓
+        </div>
+
+        <h2>Success</h2>
+
+        <p id="dialogMessage"></p>
+
+        <button onclick="closeDialog()" type="button" style="padding:12px;border-radius:12px;
+        font-size:14px;background:#9370DB;color:white;cursor:pointer;">
+            OK
+        </button>
+
+    </div>
+</div>
+<div id="commentLoader" class="loader-overlay" style="display:none;">
+    <div class="loader-box">
+        <div class="spinner"></div>
+        <div style="margin-top:12px;font-weight:600;">
+            Saving comment...
+        </div>
+    </div>
+</div>
+
+<div id="commentToast" class="toast success">
+    ✓ Comment added successfully
 </div>
     <script>
    
@@ -2711,81 +2928,126 @@ function renderSelectedFiles(){
     ).innerText = 'Reply';
 }
     var existingEditFiles = [];
-    function saveComment(){
 
-    var comment =
-        document.getElementById("newComment").value;
+    function showToast(message,type){
 
-    var fileInput =
-        document.getElementById(
-            "commentAttachment"
-        );
+    var toast = document.getElementById("toast");
+
+    toast.innerHTML = message;
+
+    toast.className = "toast show";
+
+    if(type === "success"){
+
+        toast.style.background = "#16a34a";
+
+    }else{
+
+        toast.style.background = "#dc2626";
+
+    }
+
+    setTimeout(function(){
+
+        toast.classList.remove("show");
+
+    },2500);
+
+}
+
+
+  function saveComment(){
+
+    var loader = document.getElementById("commentLoader");
+    var btn = document.getElementById("saveCommentBtn");
+
+    var comment = document.getElementById("newComment").value.trim();
 
     var editingId =
-        document.getElementById(
-            "editingCommentId"
-        ).value;
+        document.getElementById("editingCommentId").value;
 
-    if(
-    !comment ||
-    comment.trim() === ''
-){
+    if(comment === ''){
 
-    alert(
-        'Comment cannot be empty'
-    );
+        showToast("Comment cannot be empty","error");
+        return;
 
-    return;
-}
+    }
+
+    // Show Loader
+    loader.style.display = "flex";
+
+    // Disable button
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving...';
 
     var formData = new FormData();
 
-    formData.append(
-        'ticketId',
-        '${ticketId}'
-    );
+    formData.append('ticketId','${ticketId}');
+    formData.append('empid','${empId}');
+    formData.append('editingId',editingId);
+    formData.append('commentText',comment);
+
+    selectedFiles.forEach(function(file,index){
+
+        formData.append(
+            'commentAttachment_' + index,
+            file
+        );
+
+    });
 
     formData.append(
-        'empid',
-        '${empId}'
+        'existingFiles',
+        JSON.stringify(existingEditFiles)
     );
 
-    formData.append(
-        'editingId',
-        editingId
-    );
-
-    formData.append(
-        'commentText',
-        comment
-    );
-
-   selectedFiles.forEach(function(file,index){
-
-    formData.append(
-        'commentAttachment_' + index,
-        file
-    );
-});
-formData.append(
-    'existingFiles',
-    JSON.stringify(existingEditFiles)
-);
     fetch(window.location.href,{
-
         method:'POST',
-        body: formData
+        body:formData
+    })
+    .then(function(response){
+
+        if(!response.ok){
+            throw new Error("Failed");
+        }
+
+        return response.text();
 
     })
-    .then(() => {
+    .then(function(){
 
-      selectedFiles = [];
+        loader.style.display = "none";
 
-location.reload();
+        btn.disabled = false;
+        btn.innerHTML = "Save Comment";
+
+        showToast("Comment added successfully","success");
+
+        setTimeout(function(){
+
+            selectedFiles = [];
+
+            location.reload();
+
+        },1200);
+
+    })
+    .catch(function(error){
+
+        console.error(error);
+
+        loader.style.display = "none";
+
+        btn.disabled = false;
+        btn.innerHTML = "Save Comment";
+
+        showToast("Unable to save comment","error");
+
     });
+     location.reload();
 }
     function updateStatus(statusId){
-
+document.getElementById("statusLoader").style.display="flex";
     var formData = new FormData();
 
     formData.append(
@@ -2806,8 +3068,18 @@ location.reload();
 
     })
     .then(function(){
+ document.getElementById("statusLoader").style.display="none";
 
-        location.reload();
+        showSuccessDialog(
+            "Ticket status updated successfully."
+        );
+
+        
+    })
+        .catch(function(){
+
+        document.getElementById("statusLoader").style.display="none";
+
     });
 }
     sessionStorage.setItem(
@@ -2828,6 +3100,39 @@ if(window.parent){
         'notificationUpdated'
     )
 );
+
+    function showSuccessDialog(msg){
+
+    document.getElementById("dialogMessage").innerHTML=msg;
+
+    document.getElementById("successDialog").style.display="flex";
+
+}
+
+function closeDialog(){
+
+    location.reload();
+
+}
+    const overlay = document.getElementById("successDialog");
+
+if (window.parent && window.parent.document) {
+    window.parent.document.body.appendChild(overlay);
+}
+    document.addEventListener("DOMContentLoaded", function () {
+
+    const dialog = document.getElementById("successDialog");
+    if (dialog && window.top.document.body) {
+        window.top.document.body.appendChild(dialog);
+    }
+
+    const loader = document.getElementById("loader");
+    if (loader && window.top.document.body) {
+        window.top.document.body.appendChild(loader);
+    }
+
+});
+
     </script>
     `;
 

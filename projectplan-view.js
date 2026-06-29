@@ -170,7 +170,11 @@ if(action === 'create'){
 
         context.response.write(`
             <script>
-                alert('Milestone already exists');
+               showDialog(
+    "Duplicate Milestone",
+    "This milestone already exists.",
+    "warning"
+);
                 window.history.back();
             </script>
         `);
@@ -601,6 +605,99 @@ button{
 
     gap:8px;
 }
+    .dialog-overlay{
+
+    position:fixed;
+    top:0;
+    left:0;
+    width:100vw;
+    height:100vh;
+
+    background:rgba(0,0,0,.55);
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    z-index:999999;
+}
+
+.dialog-box{
+
+    width:360px;
+
+    background:#fff;
+
+    border-radius:12px;
+
+    padding:30px;
+
+    text-align:center;
+
+    animation:popup .25s ease;
+
+    box-shadow:0 20px 60px rgba(0,0,0,.25);
+
+}
+
+.dialog-icon{
+
+    width:70px;
+    height:70px;
+
+    border-radius:50%;
+
+    margin:auto;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    font-size:32px;
+
+    color:white;
+
+    background:#28a745;
+
+}
+
+.dialog-box button{
+
+    margin-top:20px;
+
+    padding:10px 22px;
+
+    border:none;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    color:white;
+
+    background:#5b2d8e;
+
+}
+
+@keyframes popup{
+
+from{
+
+transform:scale(.8);
+
+opacity:0;
+
+}
+
+to{
+
+transform:scale(1);
+
+opacity:1;
+
+}
+
+}
         </style>
                <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -701,6 +798,25 @@ background:#E6E6FA">
             </table>
 
         </div>
+        <div id="customDialog" class="dialog-overlay" style="display:none;">
+
+    <div class="dialog-box">
+
+        <div id="dialogIcon" class="dialog-icon">
+            ✓
+        </div>
+
+        <h3 id="dialogTitle">Success</h3>
+
+        <p id="dialogMessage"></p>
+
+        <button type="button" onclick="closeDialog()">
+            OK
+        </button>
+
+    </div>
+
+</div>
 <script>
 var milestoneDropdownOptions =
     ${JSON.stringify(milestoneOptions)};
@@ -877,7 +993,11 @@ async function saveNewMilestone(){
         // showToast(
         //     'Milestone already exists'
         // );
-         alert('Milestone already exists');
+         showDialog(
+    "Duplicate Milestone",
+    "This milestone already exists.",
+    "warning"
+);
         setTimeout(function(){
 
             location.reload();
@@ -890,7 +1010,11 @@ async function saveNewMilestone(){
     // showToast(
     //     'Adding milestone...'
     // );
-    alert('Adding milestone...');
+    showDialog(
+    "Please Wait",
+    "Adding milestone...",
+    "success"
+);
 
     var url =
         new URL(window.location.href);
@@ -1063,7 +1187,11 @@ rows.forEach(function(row){
         // showToast(
         //     'Milestone already exists'
         // );
-            alert('Milestone already exists');
+            showDialog(
+    "Duplicate Milestone",
+    "This milestone already exists.",
+    "warning"
+);
         setTimeout(function(){
 
             cancelEditMode();
@@ -1121,7 +1249,11 @@ rows.forEach(function(row){
                     // showToast(
                     //     'Milestone already exists'
                     // );
-                    alert('Milestone already exists');
+                    showDialog(
+    "Duplicate Milestone",
+    "This milestone already exists.",
+    "warning"
+);
 
                     setTimeout(function(){
 
@@ -1143,13 +1275,13 @@ rows.forEach(function(row){
     // showToast(
     //     'Milestones updated successfully'
     // );
-    alert('Milestones updated successfully');
+    showDialog(
+    "Success",
+    "Milestones updated successfully.",
+    "success"
+);
 
-    setTimeout(function(){
 
-        location.reload();
-
-    },1000);
 }
 
 function editAllRows(){
@@ -1237,9 +1369,17 @@ function editAllRows(){
         url.toString()
     );
 
-    alert(
-        'Milestone removed successfully'
-    );
+    showDialog(
+    "Deleted",
+    "Milestone removed successfully.",
+    "success"
+);
+
+setTimeout(function(){
+
+    location.reload();
+
+},1200);
 
     setTimeout(function(){
 
@@ -1275,9 +1415,17 @@ function editAllRows(){
         url.toString()
     );
 
-    alert(
-        'Milestone removed successfully'
-    );
+   showDialog(
+    "Deleted",
+    "Milestone removed successfully.",
+    "success"
+);
+
+setTimeout(function(){
+
+    location.reload();
+
+},1200);
 
     setTimeout(function(){
 
@@ -1410,6 +1558,48 @@ if(window.opener){
 if(window.parent){
 
     window.parent.refreshNotifications();
+}
+    function showDialog(title,message,type){
+
+    document.getElementById("dialogTitle").innerHTML=title;
+
+    document.getElementById("dialogMessage").innerHTML=message;
+
+    var icon=document.getElementById("dialogIcon");
+
+    if(type==="success"){
+
+        icon.innerHTML="✓";
+
+        icon.style.background="#28a745";
+
+    }
+
+    else if(type==="warning"){
+
+        icon.innerHTML="⚠";
+
+        icon.style.background="#f59e0b";
+
+    }
+
+    else{
+
+        icon.innerHTML="✖";
+
+        icon.style.background="#dc2626";
+
+    }
+
+    document.getElementById("customDialog").style.display="flex";
+
+}
+
+function closeDialog(){
+
+    document.getElementById("customDialog").style.display="none";
+    location.reload();
+
 }
 </script>
         `;

@@ -2875,9 +2875,7 @@ value:projecttype
     });
 }
 
-// =========================
-// CREATE NOTIFICATION
-// =========================
+
 
 
 var parentId = rec.save();

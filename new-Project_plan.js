@@ -6,8 +6,10 @@
 define([
     'N/ui/serverWidget',
     'N/search',
+    'N/url',
+'N/runtime',
     'N/record'
-], (serverWidget, search,record) => {
+], (serverWidget, search,url,runtime,record) => {
 
     const onRequest = (context) => {
 
@@ -133,6 +135,11 @@ function getOrCreateSNO(sno){
 
     return sno.toString();
 }
+var suiteletUrl = url.resolveScript({
+    scriptId: runtime.getCurrentScript().id,
+    deploymentId: runtime.getCurrentScript().deploymentId,
+    returnExternalUrl: true
+});
 function getSNOInternalId(sno){
 
     var snoId = '';
@@ -230,56 +237,58 @@ function isDuplicateMilestone(
 
 if(action === 'createmilestone'){
 
-    var milestoneName =
-        request.parameters.milestonename;
+    try{
 
-    var existingId = '';
+        var milestoneName = request.parameters.milestonename;
 
-    var mileSearch = search.create({
+        log.debug("Milestone Name", milestoneName);
 
-        type:
-        'customrecord_rw_project_mile_stone_types',
+        var existingId = '';
 
-        filters:[
-            ['name','is',milestoneName]
-        ],
-
-        columns:[
-            'internalid'
-        ]
-    });
-
-    mileSearch.run().each(function(r){
-
-        existingId =
-            r.getValue('internalid');
-
-        return false;
-    });
-
-    if(!existingId){
-
-        var mileRec =
-            record.create({
-
-                type:
-                'customrecord_rw_project_mile_stone_types'
-            });
-
-        mileRec.setValue({
-
-            fieldId:'name',
-
-            value: milestoneName
+        var mileSearch = search.create({
+            type:'customrecord_rw_project_mile_stone_types',
+            filters:[
+                ['name','is',milestoneName]
+            ],
+            columns:['internalid']
         });
 
-        existingId =
-            mileRec.save();
-    }
+        mileSearch.run().each(function(r){
+            existingId = r.getValue('internalid');
+            return false;
+        });
+
+        if(!existingId){
+
+            var mileRec = record.create({
+                type:'customrecord_rw_project_mile_stone_types'
+            });
+
+            mileRec.setValue({
+                fieldId:'name',
+                value:milestoneName
+            });
+
+            existingId = mileRec.save();
+
+            log.debug("Created Milestone", existingId);
+        }
+
+        context.response.write(existingId);
+
+    }catch(e){
+
+    log.error({
+        title: 'CREATE ERROR',
+        details: e
+    });
 
     context.response.write(
-        existingId
+        e.name + " : " + e.message + "\n" + e.stack
     );
+
+    return;
+}
 
     return;
 }
@@ -403,6 +412,7 @@ log.debug({
     }
 });
         var recId = rec.save();
+        
     var milestoneNameText =
     search.lookupFields({
 
@@ -426,15 +436,17 @@ createNotification(
 
     }catch(e){
 
-        log.debug(
-            'CREATE ERROR',
-            e
-        );
+    log.error({
+        title: 'CREATE ERROR',
+        details: e
+    });
 
-        context.response.write(
-            'error'
-        );
-    }
+    context.response.write(
+        e.name + "\n" +
+        e.message + "\n" +
+        e.stack
+    );
+}
 log.debug(
     'MILESTONE CREATED',
     recId
@@ -815,6 +827,125 @@ button{
     justify-content:center;
     color:#333;
     }
+    .dialog-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:999999;
+    animation:fadeIn .25s;
+}
+
+.dialog-box{
+    width:420px;
+    background:#fff;
+    border-radius:18px;
+    padding:30px;
+    text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.25);
+    animation:popup .3s ease;
+}
+
+.dialog-icon{
+    width:80px;
+    height:80px;
+    border-radius:50%;
+    margin:auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:38px;
+    color:#fff;
+    margin-bottom:18px;
+}
+
+.dialog-success{
+    background:#22c55e;
+}
+
+.dialog-danger{
+    background:#ef4444;
+}
+
+.dialog-warning{
+    background:#f59e0b;
+}
+
+.dialog-info{
+    background:#3b82f6;
+}
+
+#dialogTitle{
+    margin:0;
+    color:#1f2937;
+    font-size:24px;
+}
+
+#dialogMessage{
+    margin-top:15px;
+    color:#666;
+    line-height:1.6;
+    font-size:15px;
+}
+
+.dialog-buttons{
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    margin-top:28px;
+}
+
+.dialog-btn{
+    min-width:110px;
+    border:none;
+    padding:12px 20px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:15px;
+    font-weight:600;
+}
+
+.dialog-btn.ok{
+    background:linear-gradient(135deg,#002855,#8f50df);
+    color:#fff;
+}
+
+.dialog-btn.cancel{
+    background:#ececec;
+    color:#444;
+}
+
+@keyframes popup{
+    from{
+        transform:scale(.8);
+        opacity:0;
+    }
+    to{
+        transform:scale(1);
+        opacity:1;
+    }
+}
+
+@keyframes fadeIn{
+    from{
+        opacity:0;
+    }
+    to{
+        opacity:1;
+    }
+}
+    .heading{
+    display:flex;
+    justify-content:center;
+    align-item:center;
+    }
+    .tab{
+    display:flex;
+    margin-left:60px;
+    margin-right:60px;
+    }
         </style>
             <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -831,7 +962,10 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 <input type="hidden"
        id="productName"
        value="${product}">
-
+<input
+    type="hidden"
+    id="suiteletUrl"
+    value="${suiteletUrl}">
 <input type="hidden"
        id="revenueName"
        value="${revenue}">
@@ -840,23 +974,28 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
            
 
             
-
+<div class="heading">
+<h1>Create New Milestone</h1>
+</div>
            
 
 
   <div style="
     margin-bottom:15px;
     display:flex;
+    margin-left:60px;
+    
     
     gap:10px;
 ">
+
 
     <button
     type="button"
     id="topEditBtn"
     onclick="openMilestoneDialog()">
 
-    + Add Milestone
+    <i class="fa fa-plus" aria-hidden="true"></i>
 
 </button>
 
@@ -946,7 +1085,8 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     </div>
 
 </div>
-
+  
+<div class="tab">
             <table>
 
                 <thead>
@@ -981,8 +1121,36 @@ background:linear-gradient(
                 </tbody>
 
             </table>
-
+</div>
         </div>
+        <div id="customDialog" class="dialog-overlay">
+    <div class="dialog-box">
+
+        <div id="dialogIcon" class="dialog-icon">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+
+        <h2 id="dialogTitle">Success</h2>
+
+        <p id="dialogMessage">
+            Operation completed successfully.
+        </p>
+
+        <div id="dialogButtons" class="dialog-buttons">
+            <button id="dialogCancel"
+                class="dialog-btn cancel"
+                style="display:none;">
+                Cancel
+            </button>
+
+            <button id="dialogOk"
+                class="dialog-btn ok">
+                OK
+            </button>
+        </div>
+
+    </div>
+</div>
 <script>
 var milestoneDropdownOptions =
     ${JSON.stringify(milestoneOptions)};
@@ -1122,6 +1290,67 @@ window.addEventListener(
         },500);
     }
 );
+function showDialog(options){
+
+    return new Promise(function(resolve){
+
+        document.getElementById("customDialog").style.display="flex";
+
+        document.getElementById("dialogTitle").innerHTML=options.title;
+        document.getElementById("dialogMessage").innerHTML=options.message;
+
+        var icon=document.getElementById("dialogIcon");
+
+        icon.className="dialog-icon dialog-"+options.type;
+
+        if(options.type==="success"){
+            icon.innerHTML='<i class="fa-solid fa-circle-check"></i>';
+        }
+
+        if(options.type==="danger"){
+            icon.innerHTML='<i class="fa-solid fa-trash"></i>';
+        }
+
+        if(options.type==="warning"){
+            icon.innerHTML='<i class="fa-solid fa-triangle-exclamation"></i>';
+        }
+
+        if(options.type==="info"){
+            icon.innerHTML='<i class="fa-solid fa-circle-info"></i>';
+        }
+
+        var ok=document.getElementById("dialogOk");
+        var cancel=document.getElementById("dialogCancel");
+
+        if(options.confirm){
+
+            cancel.style.display="inline-block";
+
+        }else{
+
+            cancel.style.display="none";
+
+        }
+
+        ok.onclick=function(){
+
+            document.getElementById("customDialog").style.display="none";
+
+            resolve(true);
+
+        };
+
+        cancel.onclick=function(){
+
+            document.getElementById("customDialog").style.display="none";
+
+            resolve(false);
+
+        };
+
+    });
+
+}
 async function saveNewMilestone(){
 
     var milestoneName =
@@ -1154,9 +1383,15 @@ document.querySelectorAll(
 
 if(duplicateFound){
 
-    alert(
-        'Milestone already exists'
-    );
+     await showDialog({
+
+    type:"warning",
+
+    title:"Milestone already exists",
+
+    message:"The milestone already exists"
+
+});
 
     document.getElementById(
         'dialog_mile'
@@ -1200,8 +1435,11 @@ if(duplicateFound){
     //         alreadyExists = true;
     //     }
     // });
-var createUrl =
-    new URL(window.location.href);
+var createUrl = new URL(
+    document.getElementById("suiteletUrl").value
+);
+
+
 
 createUrl.searchParams.set(
     'action',
@@ -1238,10 +1476,20 @@ milestone =
     // showToast(
     //     'Adding milestone...'
     // );
-    alert('Adding milestone...');
+     await showDialog({
 
-    var url =
-        new URL(window.location.href);
+    type:"success",
+
+    title:"Milestone is adding",
+
+    message:"The milestone  is adding.."
+
+});
+    location.reload();
+
+    var url = new URL(
+    document.getElementById("suiteletUrl").value
+);
 
     url.searchParams.set(
         'action',
@@ -1291,14 +1539,20 @@ url.searchParams.set(
         url.toString()
     );
 
-var result =
-    await response.text();
+var result = await response.text();
 
+console.log(result);
 if(result == 'duplicate'){
 
-    alert(
-        'Milestone already exists'
-    );
+    await showDialog({
+
+    type:"warning",
+
+    title:"Milestone already exists",
+
+    message:"The milestone already exists"
+
+});
 
     return;
 }
@@ -1308,9 +1562,17 @@ if(result == 'duplicate'){
     // );
     if(result == 'success'){
 
-    alert(
-        'Milestone added successfully'
-    );
+    await showDialog({
+
+    type:"success",
+
+    title:"Milestone Created",
+
+    message:"The milestone has been added successfully."
+
+});
+
+location.reload();
 
 }else if(result == 'invalidsno'){
 
@@ -1445,7 +1707,15 @@ rows.forEach(function(row){
         // showToast(
         //     'Milestone already exists'
         // );
-            alert('Milestone already exists');
+             await showDialog({
+
+    type:"warning",
+
+    title:"Milestone already exists",
+
+    message:"The milestone already exists"
+
+});
         setTimeout(function(){
 
             cancelEditMode();
@@ -1525,7 +1795,15 @@ rows.forEach(function(row){
     // showToast(
     //     'Milestones updated successfully'
     // );
-    alert('Milestones updated successfully');
+     await showDialog({
+
+    type:"success",
+
+    title:"Milestone updated successfully",
+
+    message:"The milestone updated successfully"
+
+});
 
     setTimeout(function(){
 
@@ -1623,9 +1901,9 @@ async function updateMilestone(recId){
             'templateName'
         ).value;
 
-    var url =
-        new URL(window.location.href);
-
+    var url = new URL(
+    document.getElementById("suiteletUrl").value
+);
     url.searchParams.set(
         'templateid',
         templateId
@@ -1677,17 +1955,25 @@ url.searchParams.set(
 }
     async function deleteMilestone(recId){
 
-    var confirmDelete =
-        confirm(
-            'Are you sure you want to remove this milestone?'
-        );
+   var confirmDelete=await showDialog({
 
-    if(!confirmDelete){
-        return;
-    }
+    type:"warning",
 
-    var url =
-        new URL(window.location.href);
+    title:"Delete Milestone",
+
+    message:"Are you sure you want to remove this milestone? This action cannot be undone.",
+
+    confirm:true
+
+});
+
+if(!confirmDelete){
+    return;
+}
+
+    var url = new URL(
+    document.getElementById("suiteletUrl").value
+);
 
     url.searchParams.set(
         'action',
@@ -1703,9 +1989,17 @@ url.searchParams.set(
         url.toString()
     );
 
-    alert(
-        'Milestone removed successfully'
-    );
+    await showDialog({
+
+    type:"danger",
+
+    title:"Milestone Removed",
+
+    message:"The selected milestone has been removed successfully."
+
+});
+
+location.reload();
 
     setTimeout(function(){
 
