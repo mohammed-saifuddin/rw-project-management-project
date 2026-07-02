@@ -1351,6 +1351,42 @@ function showDialog(options){
     });
 
 }
+    function refreshSuitelet() {
+
+    const url = new URL(document.getElementById("suiteletUrl").value);
+
+    url.searchParams.set("templateid",
+        document.getElementById("templateId").value);
+
+    url.searchParams.set("templatename",
+        document.getElementById("templateName").value);
+
+    url.searchParams.set("product",
+        document.getElementById("productName").value);
+
+    url.searchParams.set("revenue",
+        document.getElementById("revenueName").value);
+
+    url.searchParams.set("empid",
+        document.getElementById("empId").value);
+
+    // Prevent browser cache
+    url.searchParams.set("_ts", new Date().getTime());
+
+    window.location.replace(url.toString());
+}
+    async function loadMilestoneTable(){
+
+    const url = new URL(document.getElementById("suiteletUrl").value);
+
+    url.searchParams.set("action","getrows");
+    url.searchParams.set("templateid",
+        document.getElementById("templateId").value);
+
+    const html = await (await fetch(url)).text();
+
+    document.getElementById("mileBody").innerHTML = html;
+}
 async function saveNewMilestone(){
 
     var milestoneName =
@@ -1476,16 +1512,22 @@ milestone =
     // showToast(
     //     'Adding milestone...'
     // );
-     await showDialog({
+    var response = await fetch(createUrl.toString());
+var result = (await response.text()).trim();
 
-    type:"success",
+if (result === "success") {
 
-    title:"Milestone is adding",
+    closeMilestoneDialog();
 
-    message:"The milestone  is adding.."
+    await showDialog({
+        type: "success",
+        title: "Milestone Created",
+        message: "The milestone has been added successfully."
+    });
 
-});
-    location.reload();
+    refreshSuitelet();
+}
+
 
     var url = new URL(
     document.getElementById("suiteletUrl").value
@@ -1539,9 +1581,11 @@ url.searchParams.set(
         url.toString()
     );
 
-var result = await response.text();
 
-console.log(result);
+var result = (await response.text()).trim();
+
+console.log("RESULT:", result);
+//alert(result);
 if(result == 'duplicate'){
 
     await showDialog({
@@ -1553,14 +1597,14 @@ if(result == 'duplicate'){
     message:"The milestone already exists"
 
 });
-
+ refreshMilestones();
     return;
 }
 
     // showToast(
     //     'Milestone added successfully'
     // );
-    if(result == 'success'){
+    if(result === 'success'){
 
     await showDialog({
 
@@ -1572,7 +1616,13 @@ if(result == 'duplicate'){
 
 });
 
-location.reload();
+ 
+ setTimeout(function () {
+        refreshSuitelet();
+    }, 2000);
+    return;
+
+
 
 }else if(result == 'invalidsno'){
 
@@ -1592,8 +1642,28 @@ location.reload();
 
     },1000);
     closeMilestoneDialog();
+    location.reload();
 }
+function refreshMilestones() {
+    var url = new URL(document.getElementById("suiteletUrl").value);
 
+    url.searchParams.set("templateid",
+        document.getElementById("templateId").value);
+
+    url.searchParams.set("templatename",
+        document.getElementById("templateName").value);
+
+    url.searchParams.set("product",
+        document.getElementById("productName").value);
+
+    url.searchParams.set("revenue",
+        document.getElementById("revenueName").value);
+
+    url.searchParams.set("empid",
+        document.getElementById("empId").value);
+
+    window.location.href = url.toString();
+}
 function cancelEditMode(){
 
     var rows =
@@ -1966,7 +2036,7 @@ url.searchParams.set(
     confirm:true
 
 });
-
+refreshMilestones();
 if(!confirmDelete){
     return;
 }
@@ -1999,13 +2069,7 @@ if(!confirmDelete){
 
 });
 
-location.reload();
 
-    setTimeout(function(){
-
-        location.reload();
-
-    },500);
 }
 function editRow(recId){
 
@@ -2045,20 +2109,8 @@ if(sel){
         );
 }
 }
-if(window.opener){
 
-    window.opener.refreshNotifications();
-}
-
-if(window.parent){
-
-    window.parent.refreshNotifications();
-}
-    window.dispatchEvent(
-    new CustomEvent(
-        'notificationUpdated'
-    )
-);
+ 
 </script>
         `;
 

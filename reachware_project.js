@@ -294,6 +294,8 @@ filters.push([
     'is',
     'F'
 ]);
+
+
 var projectSearch = search.create({
     type: 'customrecord_rw_portal_access2',
      filters:filters,
@@ -1279,12 +1281,13 @@ display:none !important;
 body{
 font-family:Arial;
 margin:0;
+
 }
 
 .content{
-padding:0px;
+padding:20px;
 margin-top:-28px;
-
+overflow-y:hidden;
 
 }
 
@@ -1462,7 +1465,7 @@ text-decoration: none;
     align-items:flex-end;
     gap:18px;
 
-    padding:14px 18px;
+    padding:10px 14px;
     margin:12px 5px 18px 5px;
 
     background:linear-gradient(
@@ -1648,18 +1651,18 @@ text-decoration: none;
 <input type="hidden" name="title" value="${dynamicTitle}">
 <div class="content">
 
-<iframe id="mainFrame"
-scrolling="no"
+<iframe id="mainFrame" scrolling="no"
         style="
         width:100%;
         height:100%;
         border:none;
         display:none;
         position:absolute;
+        margin-left:30px;
         top:0;
         left:0;
         background:white;
-        overflow-y:hidden;
+        overflow:hidden;
         /* Firefox */
     scrollbar-width:none;
 
@@ -1676,7 +1679,7 @@ scrolling="no"
     <!-- CUSTOMER -->
     <div class="filter-group">
 
-        <label>Customer</label>
+        
 
         <select
             name="customer"
@@ -1698,7 +1701,7 @@ scrolling="no"
     <!-- STATUS -->
     <div class="filter-group">
 
-        <label>Project Status</label>
+        
 
         <select
             name="projectstatus"

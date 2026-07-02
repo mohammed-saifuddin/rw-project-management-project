@@ -1280,15 +1280,15 @@ table tr.ho:hover td {
 
 <div class="content">
 
-<iframe id="mainFrame"
+<iframe id="mainFrame" scrolling="no"
         style="
         width:100%;
         height:100%;
         border:none;
         display:none;
         position:absolute;
-        margin-top:10px;
-        margin-left:6px;
+        margin-top:8px;
+        margin-left:14px;
         top:0;
         left:0;
         background:white;

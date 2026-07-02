@@ -1051,6 +1051,33 @@ data.push({
     cursor:pointer;
     font-size:15px;
 }
+ 
+   html,
+body,
+#main_form,
+#main_form_div,
+#div__body,
+.uir-page,
+.uir-page-body,
+#custpage_html_fs,
+#custpage_html_val{
+    scrollbar-width:none !important;      /* Firefox */
+    -ms-overflow-style:none !important;   /* IE/Edge */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#main_form::-webkit-scrollbar,
+#main_form_div::-webkit-scrollbar,
+#div__body::-webkit-scrollbar,
+.uir-page::-webkit-scrollbar,
+.uir-page-body::-webkit-scrollbar,
+#custpage_html_fs::-webkit-scrollbar,
+#custpage_html_val::-webkit-scrollbar{
+    width:0 !important;
+    height:0 !important;
+    display:none !important;
+}
         </style>
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">

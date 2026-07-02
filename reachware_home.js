@@ -3050,6 +3050,7 @@ html, body {
     background: var(--bg);
     background: linear-gradient(135deg, var(--bg), #e9dbeb);
     font-family: 'Inter', sans-serif;
+    
 }
     
     .card-container{
@@ -3406,7 +3407,7 @@ color:darkblue;
     padding: 0 20px;
 
     height: auto;        /*  REMOVE FIXED HEIGHT */
-    overflow: hidden;   /*  NO SCROLL, NO CUT */
+    overflow-y: hidden;   /*  NO SCROLL, NO CUT */
 }
 .con{
 
@@ -5483,7 +5484,7 @@ color:black;
 .ticket-card:active{
     cursor:grabbing;
 }
-    
+    s
 </style>
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -5628,7 +5629,7 @@ ${newRevenueStream}
 
 <div class="content">
 
-<div id="projectContent" style="display:none;width:100%;height:100%;">
+<div id="projectContent" style="display:none;width:100%;">
 
   <iframe id="mainFrame"
         style="
@@ -5637,11 +5638,14 @@ ${newRevenueStream}
         border:none;
         display:none;
         margin-top:40px;
+        
         position:absolute;
+        
         top:0;
         left:0;
         background:white;
         overflow-y:hidden;
+        overflow-x:hidden;
         
         "
         onload="hideLoader()">

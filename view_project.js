@@ -4640,8 +4640,8 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
             font-family: Arial;
             margin:0;
             padding:20px;
-            overflow:auto;
-            height:2000px;
+            overflow:hidden;
+            
             
         }
             html,
@@ -4649,7 +4649,7 @@ body{
     margin:0 !important;
     padding:0 !important;
     width:100% !important;
-    height:2000px;
+    
     overflow:hidden !important;
 }
 
@@ -5199,7 +5199,12 @@ table thead th{
     .success-overlay{
     position:fixed;
     inset:0;
-    background:rgba(0,0,0,.45);
+    background:linear-gradient(
+    135deg,
+    white 20%,
+    white 40%,
+    white 100%
+);;
     display:flex;
     justify-content:center;
     align-items:center;

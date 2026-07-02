@@ -1097,6 +1097,73 @@ input[type="password"] {
     align-items:center;
     justify-content:center;
     }
+    .dialog-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.35);
+    z-index:999999;
+    justify-content:center;
+    align-items:center;
+}
+
+.dialog-box{
+    width:360px;
+    background:#fff;
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 20px 45px rgba(0,0,0,.25);
+    animation:dialogPop .25s ease;
+}
+
+.dialog-header{
+    background:#8E2DE2;
+    color:#fff;
+    padding:14px 18px;
+    font-size:17px;
+    font-weight:600;
+}
+
+.dialog-header i{
+    margin-right:8px;
+}
+
+.dialog-message{
+    padding:22px;
+    color:#444;
+    font-size:14px;
+    line-height:22px;
+}
+
+.dialog-footer{
+    text-align:right;
+    padding:14px 18px;
+    border-top:1px solid #eee;
+}
+
+.dialog-btn{
+    border:none;
+    background:#8E2DE2;
+    color:#fff;
+    padding:8px 22px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.dialog-btn:hover{
+    background:#6d1fc8;
+}
+
+@keyframes dialogPop{
+    from{
+        transform:scale(.85);
+        opacity:0;
+    }
+    to{
+        transform:scale(1);
+        opacity:1;
+    }
+}
         </style>
 
        <link rel="stylesheet"
@@ -1252,7 +1319,22 @@ Update Password
        </div>
        
         </div>
-       
+       <div id="dialogOverlay" class="dialog-overlay">
+    <div class="dialog-box">
+        <div class="dialog-header">
+            <i id="dialogIcon" class="fa-solid fa-circle-exclamation"></i>
+            <span id="dialogTitle">Validation</span>
+        </div>
+
+        <div id="dialogMessage" class="dialog-message"></div>
+
+        <div class="dialog-footer">
+            <button class="dialog-btn" onclick="closeDialog()">
+                OK
+            </button>
+        </div>
+    </div>
+</div>
         <script>
         document.title="Reachware Project Management - Login";
 
@@ -1283,7 +1365,7 @@ var password = document.getElementById("password").value.trim();
 
 /* Email check */
 if(!email){
-    alert("Please enter email first");
+    showDialog("Validation","Please enter email.");
     return ;
 }
 
@@ -1319,17 +1401,17 @@ var email = document.getElementById("email").value.trim();
 var password = document.getElementById("password").value.trim();
 
 if(!email){
-    alert("Please enter email");
+    showDialog("Validation","Please enter email.");
     return false;
 }
 
 if(!password){
-    alert("Please enter password");
+    showDialog("Validation","Please enter password.");
     return false;
 }
 /* Minimum length check */
 if(password.length < 8){
-    alert("Password must be at least 8 characters");
+    showDialog("Validation","Password must be 8 character or more");
     return ;
 }
 
@@ -1337,11 +1419,24 @@ if(password.length < 8){
 var regex = /^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[@$!%*#?&]).+$/;
 
 if(!regex.test(password)){
-    alert("Password must contain letters, numbers and special characters");
+    
+    showDialog("Validation","Password must contain letters, numbers and special characters");
     return;
 }
 return true;
 
+}
+function showDialog(title,message){
+
+    document.getElementById("dialogTitle").innerHTML = title;
+    document.getElementById("dialogMessage").innerHTML = message;
+
+    document.getElementById("dialogOverlay").style.display="flex";
+}
+
+function closeDialog(){
+
+    document.getElementById("dialogOverlay").style.display="none";
 }
         </script>
         `;
@@ -1355,14 +1450,19 @@ return true;
 
         var emailValue = context.request.parameters.email || '';
         var password = context.request.parameters.password || '';
-         function hashPassword(password){
+     function hashPassword(password){
+
+    if (!password) {
+        return "";
+    }
 
     var hashObj = crypto.createHash({
         algorithm: crypto.HashAlg.SHA256
     });
 
     hashObj.update({
-        input: password
+        input: String(password),
+        inputEncoding: crypto.Encoding.UTF_8
     });
 
     return hashObj.digest({

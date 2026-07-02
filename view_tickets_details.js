@@ -1345,9 +1345,10 @@ margin-bottom:15px;
             margin:0px;
             
             
+            
             background:white;
-            overflow:hidden;
-            height:100%;
+            
+            
             
         }
 .form-grid {
@@ -1600,7 +1601,7 @@ margin-bottom:15px;
         .title{
             font-size:20px;
             font-weight:bold;
-            margin-bottom:20px;
+            margin-bottom:10px;
             text-align:center;
         }
 
@@ -1968,17 +1969,8 @@ margin-bottom:15px;
     border-radius:6px;
 }
     
-body{
-    overflow-x:hidden !important;
-    overflow-y:hidden !important;
-    
-    
-    
-}
-.container{
-overflow:hidden;
 
-}
+
 .summary-strip{
     display:grid;
     grid-template-columns:repeat(4,1fr);
@@ -2133,21 +2125,7 @@ font-family:calibri;
     margin:0 !important;
     padding:0 !important;
 }
-    .container{
-    position:fixed;
-    top:0;
-    left:0;
-    right:0;
-    bottom:0;
-
-    width:100vw;
-    height:100vh;
-
-    margin:0;
-    padding:0;
-
-    overflow:auto;
-}
+    
    .loader-overlay{
     position:fixed;
     top:0;
@@ -2205,6 +2183,23 @@ font-family:calibri;
 .toast.show{
     opacity:1;
 } 
+    html,
+body{
+    margin:0;
+    padding:0;
+    
+    overflow-x:hidden;
+    overflow-y:auto;
+}
+
+.container{
+    position:relative;
+    width:100%;
+    min-height:100vh;
+    overflow:visible;
+    padding:20px;
+    box-sizing:border-box;
+}
     </style>
 
     <div class="container">
@@ -3044,7 +3039,7 @@ function renderSelectedFiles(){
         showToast("Unable to save comment","error");
 
     });
-     location.reload();
+     //location.reload();
 }
     function updateStatus(statusId){
 document.getElementById("statusLoader").style.display="flex";
