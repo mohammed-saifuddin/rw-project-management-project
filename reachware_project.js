@@ -1401,6 +1401,7 @@ cursor:pointer;
 color:#3c5c8a;
 margin-bottom:10px;
 background:none;
+
 border:none;
 display:flex;
 align-item:left;
@@ -1658,7 +1659,7 @@ text-decoration: none;
         border:none;
         display:none;
         position:absolute;
-        margin-left:30px;
+        
         top:0;
         left:0;
         background:white;

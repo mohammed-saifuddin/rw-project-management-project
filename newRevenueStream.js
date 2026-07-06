@@ -1,1577 +1,627 @@
+
+
 /**
  * @NApiVersion 2.1
  * @NScriptType Suitelet
  */
 
-define([
-    'N/ui/serverWidget',
-    'N/search',
-    'N/record'
-], (serverWidget, search,record) => {
+define(['N/ui/serverWidget', 'N/record', 'N/search','N/url','N/runtime'],
+(serverWidget, record, search,url,runtime) => {
 
-    const onRequest = (context) => {
+    function onRequest(context) {
 
-        var request = context.request;
+     var request = context.request;
 
-       var templateId =
-    request.parameters.templateid ||
-    request.parameters.id ||
-    '';
-        var templateName = request.parameters.templatename || '';
+    if (context.request.method === "POST") {
 
-        var product = request.parameters.product || '';
+    const action = context.request.parameters.action;
 
-        var revenue = request.parameters.revenue || '';
+    if (action === "create") {
 
-        var form = serverWidget.createForm({
-            title: 'Project Plan Detail'
-        });
+        var duplicateSearch = search.create({
 
-        var htmlField = form.addField({
-            id: 'custpage_html',
-            type: serverWidget.FieldType.INLINEHTML,
-            label: 'HTML'
-        });
-
-        var rows = '';
-//         var milestoneOptions = '';
-
-// var addedMilestones = {};
-
-// var milestoneSearch = search.create({
-
-//     type:'customrecord_rw_project_mile_stone_types',
-
-//     filters:[
-//         ['isinactive','is','F']
-//     ],
-
-//     columns:[
-//         'internalid',
-//         'name'
-//     ]
-// });
-
-// milestoneSearch.run().each(function(r){
-
-//     var id =
-//         r.getValue('internalid');
-
-//     var name =
-//         r.getValue('name');
-
-//     if(!addedMilestones[name]){
-
-//         milestoneOptions +=
-
-//             '<option value="' +
-//             id +
-//             '">' +
-//             name +
-//             '</option>';
-
-//         addedMilestones[name] = true;
-//     }
-
-//     return true;
-// });
-
-var milestoneOptions = '';
-
-var listSearch = search.create({
-
-    type:'customrecord_rw_proj_rev_stream',
+    type:"customrecord_rw_proj_rev_stream",
 
     filters:[
-        ['isinactive','is','F']
+        ["name","is",request.parameters.name]
     ],
 
-    columns:[
-        'internalid',
-        'name'
-    ]
+    columns:["internalid"]
+
 });
 
-listSearch.run().each(function(r){
-
-    var id =
-        r.getValue('internalid');
-
-    var name =
-        r.getValue('name');
-
-    milestoneOptions +=
-
-        '<option value="' +
-        id +
-        '">' +
-        name +
-        '</option>';
-
-    return true;
+var exists = duplicateSearch.run().getRange({
+    start:0,
+    end:1
 });
-var action = request.parameters.action || '';
-function getOrCreateSNO(sno, search, record){
 
-    var snoId = '';
+if(exists.length){
 
-    var snoSearch = search.create({
-
-        type:
-        'customlist_rw_serial_no',
-
-        filters:[
-            ['name','is',sno]
-        ],
-
-        columns:[
-            'internalid'
-        ]
-    });
-
-    snoSearch.run().each(function(r){
-
-        snoId =
-            r.getValue('internalid');
-
-        return false;
-    });
-
-    if(snoId){
-        return snoId;
-    }
-
-    var snoRec =
-        record.create({
-
-            type:
-            'customrecord_rw_sno'
-        });
-
-    snoRec.setValue({
-
-        fieldId:'name',
-
-        value:sno.toString()
-    });
-
-    return snoRec.save();
-}
-function getOrCreateSNO(sno){
-
-    return sno.toString();
-}
-function getSNOInternalId(sno){
-
-    var snoId = '';
-
-    var snoSearch = search.create({
-
-        type:'customlist_rw_serial_no',
-
-        filters:[
-            ['name','is',sno.toString()]
-        ],
-
-        columns:[
-            'internalid'
-        ]
-    });
-
-    snoSearch.run().each(function(r){
-
-        snoId =
-            r.getValue('internalid');
-
-        return false;
-    });
-
-    if(snoId){
-
-        return snoId;
-    }
-
-    var snoRec =
-        record.create({
-
-            type:'customlist_rw_serial_no'
-        });
-
-    snoRec.setValue({
-
-        fieldId:'name',
-
-        value:sno.toString()
-    });
-
-    snoId =
-        snoRec.save();
-
-    return snoId;
-}
-function isDuplicateMilestone(
-    templateId,
-    milestoneId
-){
-
-    var duplicate = false;
-
-    var childSearch = search.create({
-
-        type:
-        'customrecord_rw_project_plan_temp_child',
-
-        columns:[
-            'internalid',
-            'custrecord_rw_proj_plan_temp_child_link',
-            'custrecord_rw_project_temp_child_miles'
-        ]
-    });
-
-    childSearch.run().each(function(r){
-
-        var existingTemplate =
-            r.getValue(
-                'custrecord_rw_proj_plan_temp_child_link'
-            );
-
-        var existingMilestone =
-            r.getValue(
-                'custrecord_rw_project_temp_child_miles'
-            );
-
-        if(
-            existingTemplate == templateId &&
-            existingMilestone == milestoneId
-        ){
-
-            duplicate = true;
-
-            return false;
-        }
-
-        return true;
-    });
-
-    return duplicate;
-}
-
-if(action === 'createmilestone'){
-
-    var milestoneName =
-        request.parameters.milestonename;
-
-    var existingId = '';
-
-    var mileSearch = search.create({
-
-        type:
-        'customrecord_rw_proj_rev_stream',
-
-        filters:[
-            ['name','is',milestoneName]
-        ],
-
-        columns:[
-            'internalid'
-        ]
-    });
-
-    mileSearch.run().each(function(r){
-
-        existingId =
-            r.getValue('internalid');
-
-        return false;
-    });
-
-    if(!existingId){
-
-        var mileRec =
-            record.create({
-
-                type:
-                'customrecord_rw_proj_rev_stream',
-                isDynamic:true
-            });
-
-        mileRec.setValue({
-
-            fieldId:'name',
-
-            value: milestoneName
-        });
-
-        existingId =
-            mileRec.save();
-    }
-
-    context.response.write(
-        existingId
-    );
-
+    context.response.write("exists");
     return;
+
 }
-if(action === 'create'){
-
-    try{
-
-       var templateId =
-    request.parameters.templateid ||
-    request.parameters.template;
-
-        var milestoneId =
-            request.parameters.milestone;
-
-       
-if(
-    isDuplicateMilestone(
-        templateId,
-        milestoneId
-    )
-){
-
-    context.response.write(
-        'duplicate'
-    );
-
-    return;
-}
-        var rec =
-            record.create({
-
-                type:
-                'customrecord_rw_project_plan_temp_child'
-            });
+var rec = record.create({
+    type: "customrecord_rw_proj_rev_stream"
+});
 
         rec.setValue({
-
-            fieldId:
-            'custrecord_rw_proj_plan_temp_child_link',
-
-            value:
-            templateId
+            fieldId: "name",
+            value: context.request.parameters.name
         });
-var snoInternalId =
-    getSNOInternalId(
-        request.parameters.tempsno
-    );
 
-rec.setValue({
+        var id = rec.save();
 
-    fieldId:
-    'custrecord_rw_proj_plan_temp_child_sno',
-
-    value:
-    snoInternalId
-});
-        rec.setValue({
-
-            fieldId:
-            'custrecord_rw_project_temp_child_miles',
-
-            value:
-            milestoneId
+        context.response.setHeader({
+            name: "Content-Type",
+            value: "application/json"
         });
-log.debug({
-    title:'LINKING TEMPLATE',
-    details:{
-        templateId: templateId,
-        milestoneId: milestoneId
+
+       var suiteletUrl = url.resolveScript({
+    scriptId: runtime.getCurrentScript().id,
+    deploymentId: runtime.getCurrentScript().deploymentId,
+    params: {
+        empid: request.parameters.empid,
+        email: request.parameters.email
     }
 });
-        var recId = rec.save();
 
-        context.response.write(
-            'success'
-        );
+context.response.write('success');
 
-    }catch(e){
-
-        log.debug(
-            'CREATE ERROR',
-            e
-        );
-
-        context.response.write(
-            'error'
-        );
+        return;
     }
-log.debug(
-    'MILESTONE CREATED',
-    recId
-);
-    return;
-}
-if(action === 'delete'){
-
-    var recId =
-        request.parameters.recid;
+    if (action === "delete") {
 
     record.delete({
-
-        type:
-        'customrecord_rw_project_plan_temp_child',
-
-        id: recId
+        type: "customrecord_rw_proj_rev_stream",
+        id: request.parameters.id
     });
 
-    context.response.write('deleted');
-
+    context.response.write("deleted");
     return;
 }
-if(action === 'update'){
-
-    var recId =
-        request.parameters.recid;
-
-    var childRec =
-        record.load({
-
-            type:
-            'customrecord_rw_project_plan_temp_child',
-
-            id: recId
-        });
-
-    childRec.setValue({
-
-        fieldId:
-        'custrecord_rw_project_temp_child_miles',
-
-        value:
-        request.parameters.milestone
-    });
-
-    childRec.setValue({
-
-        fieldId:
-        'custrecord_rw_proj_plan_temp_child_sno',
-
-        value:
-        request.parameters.tempsno
-    });
-
-    childRec.save();
-
-    context.response.write(
-        'success'
-    );
-
-    return;
 }
-        var i = 1;
 
-listSearch.run().each(function(res){
 
-    var recId =
-        res.getValue('internalid');
+        if (context.request.method === 'GET') {
 
-    var projectType =
-        res.getValue('name');
+            const form = serverWidget.createForm({
+                title: ' '
+            });
 
-    rows += `
+            const html = form.addField({
+                id: 'custpage_html',
+                type: serverWidget.FieldType.INLINEHTML,
+                label: 'HTML'
+            });
+let tableRows = '';
 
-<tr>
+const revenueSearch = search.create({
+    type: 'customrecord_rw_proj_rev_stream',
+    columns: [
+    'internalid',
+    search.createColumn({
+        name: 'name',
+        sort: search.Sort.ASC
+    })
+]
+});
 
-    <td style="border:1px solid #ddd">
+let sno = 1;
 
-        <span class="data">
-            ${i}
-        </span>
+revenueSearch.run().each(function(result){
 
-    </td>
+    const id = result.getValue('internalid');
 
-    <td style="border:1px solid #ddd">
-
-        <span class="data">
-            ${projectType}
-        </span>
-
-    </td>
-
-    
-
-</tr>
-`;
-
-    i++;
+    tableRows += `
+        <tr id="row_${id}">
+            <td style="border:1px solid #ddd;text-align:center;">${sno++}</td>
+            <td style="border:1px solid #ddd;">${result.getValue('name')}</td>
+            <td style="border:1px solid #ddd;text-align:center;">
+                <button
+                    type="button"
+                    class="deleteBtn"
+                    onclick="deleteRevenue(${id})">
+                    <i class="fa fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `;
 
     return true;
 });
+   html.defaultValue = `
 
-        var html = `
 
-        <style>
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
-       
-
+<style>
 
 body{
-    padding:0 !important;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#f5f7fb;
 }
 
-
-#main_form{
-    border:none !important;
-    box-shadow:none !important;
-    background:transparent !important;
-    padding:0 !important;
+.toolbar{
+    display:flex;
+    justify-content:flex-end;
+    margin-bottom:20px;
 }
 
-.uir-page-title{
-    display:none !important;
+.add-btn{
+    width:42px;
+    height:42px;
+    border:none;
+    border-radius:50%;
+    background:#5b21b6;
+    color:#fff;
+    cursor:pointer;
+    font-size:18px;
+    transition:.3s;
+    box-shadow:0 5px 15px rgba(0,0,0,.15);
 }
 
-.uir-outside-fields-table{
-    border:none !important;
+.add-btn:hover{
+    background:#6d28d9;
+    transform:scale(1.08);
 }
 
-.uir-outside-fields-table td{
-    border:none !important;
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:#fff;
+    
+    overflow:hidden;
 }
 
-.uir-page-body{
-    margin:0 !important;
-    padding:0 !important;
-    border:none !important;
-}
-
-      #main_form_div,
-#custpage_html_fs,
-#custpage_html_val{
-
-    overflow:visible !important;
-    height:auto !important;
-    max-height:none !important;
-}
-
-.card{
-
-    overflow:visible !important;
-}
-
-            .title{
-                font-size:24px;
-                color:#8f50df;
-                font-weight:bold;
-                margin-bottom:20px;
-            }
-
-            .info{
-                margin-bottom:10px;
-                font-size:14px;
-            }
-
-            table{
-                width:100%;
-                border-collapse:collapse;
-                
-            }
-
-            th{
-                background:
-linear-gradient(
+th{
+       background:linear-gradient(
     135deg,
     #E6E6FA,
     #E6E6FA
-);
-                color:darkblue;
-                padding:12px;
-                font-size:12px;
-                text-transform:uppercase;
-            }
-
-            td{
-                padding:8px;
-                
-            }
-.input{
-    width:100%;
-    padding:8px;
-    border:1px solid #ccc;
-    border-radius:6px;
-}
-.delete-btn{
-
-    
-
-    color:red;
-    background:white;
-
-    border:none;
-
-    padding:0;
-
-    border-radius:8px;
-
-    cursor:pointer;
-
-    font-size:16px;
-
-    font-weight:600;
-
-    transition:0.3s ease;
-}
-
-.delete-btn:hover{
-
-    transform:translateY(-2px);
-
-    box-shadow:
-        0 8px 18px rgba(239,68,68,0.25);
-}
-button{
-        background:linear-gradient(
-    135deg,
-    #002855 0%,
-    #5b2d8e 50%,
-    #8f50df 100%
 );;
-    color:white;
+    color:darkblue;
+    padding:12px;
+    font-size:14px;
+    text-align:left;
+}
+
+td{
+    padding:12px;
+    font-size:14px;
+    border-bottom:1px solid #eee;
+}
+
+tr:hover{
+    background:#faf5ff;
+}
+
+/* Modal */
+
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.45);
+    z-index:9999;
+}
+
+.modal-content{
+
+    width:420px;
+    background:#fff;
+    border-radius:12px;
+    margin:8% auto;
+    padding:25px;
+    box-shadow:0 20px 50px rgba(0,0,0,.25);
+    animation:popup .25s;
+}
+
+@keyframes popup{
+
+from{
+    transform:scale(.8);
+    opacity:0;
+}
+
+to{
+    transform:scale(1);
+    opacity:1;
+}
+
+}
+
+.modal-header{
+
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+
+}
+
+.modal-header h2{
+
+margin:0;
+font-size:20px;
+
+}
+
+.close{
+
+font-size:24px;
+cursor:pointer;
+color:#888;
+
+}
+
+.close:hover{
+
+color:red;
+
+}
+
+.form-group{
+
+margin-bottom:18px;
+
+}
+
+label{
+
+display:block;
+font-weight:bold;
+margin-bottom:8px;
+
+}
+
+input{
+
+width:100%;
+padding:11px;
+border:1px solid #ccc;
+border-radius:6px;
+font-size:14px;
+box-sizing:border-box;
+
+}
+
+.footer{
+
+display:flex;
+justify-content:flex-end;
+gap:10px;
+
+}
+
+.cancel{
+
+background:#ddd;
+border:none;
+padding:10px 18px;
+border-radius:6px;
+cursor:pointer;
+
+}
+
+.save{
+
+background:#5b21b6;
+color:#fff;
+border:none;
+padding:10px 22px;
+border-radius:6px;
+cursor:pointer;
+
+}
+
+.save:hover{
+
+background:#6d28d9;
+
+}
+.deleteBtn{
+    background:#ef4444;
+    color:#fff;
     border:none;
-    padding:8px 14px;
-    border-radius:6px;
+    border-radius:5px;
+    padding:7px 10px;
     cursor:pointer;
 }
-    .data{
-    font-size:12px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:#333;
-    }
-    .heading{
-    display:flex;
-    justify-content:center;
-    align-item:center;
-    font-size:14px;
-    font-family:calibri;
-    padding:12px;
-    }
-        </style>
-            <link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<input type="hidden"
-       id="templateId"
-       value="${templateId}">
-       <input type="hidden"
-       id="templateName"
-       value="${templateName}">
 
-<input type="hidden"
-       id="productName"
-       value="${product}">
+.deleteBtn:hover{
+    background:#dc2626;
+}
+.heading{
+display:flex;
+justify-content:center;
+align-item:center;
+font-weight:bold;
+font-size:24px;
+font-family:calibri;
+}
+</style>
 
-<input type="hidden"
-       id="revenueName"
-       value="${revenue}">
-        <div class="card">
 
-           
+<div class="heading">New Revenue Stream</div>
+<div class="toolbar">
 
-            
-
-           
-<div class="heading">
-<h2>New Revenue Stream</h2>
-</div>
-
-  <div style="
-    margin-bottom:15px;
-    display:flex;
-    
-    gap:10px;
-">
-
-    <button
-    type="button"
-    id="topEditBtn"
-    onclick="openMilestoneDialog()">
-
-    <i class="fa fa-plus" aria-hidden="true"></i>
-
+<button class="add-btn" type="button" onclick="openModal()">
+<i class="fa-solid fa-plus"></i>
 </button>
 
-    
+</div>
+
+<table>
+
+<thead>
+
+<tr>
+
+
+<th style="border:1px solid #ddd;">S.NO</th>
+<th style="border:1px solid #ddd;">Revenue Stream</th>
+<th style="border:1px solid #ddd;">Action</th>
+</tr>
+
+</thead>
+
+<tbody>
+
+${tableRows}
+
+</tbody>
+
+</table>
+
+<!-- Modal -->
+
+<div class="modal" id="modal">
+
+<div class="modal-content">
+
+<div class="modal-header">
+
+<h2>Create Revenue Stream</h2>
+
+<span class="close" onclick="closeModal()">&times;</span>
+
+</div>
+
+<div class="form-group">
+
+<label>Revenue Stream Name</label>
+
+<input
+type="text"
+id="name"
+placeholder="Enter Revenue Stream">
+
+</div>
+
+<div class="footer">
+
+<button class="cancel" type="button"
+onclick="closeModal()">
+
+Cancel
+
+</button>
 
 <button
-    type="button"
-    id="topSaveBtn"
-    style="display:none;"
-    onclick="saveAllRows()">
+class="save"
+type="button"
+onclick="saveRecord()">
 
-    Save
+Create
 
 </button>
 
 </div>
-<div id="mileDialog"
-     style="
-        display:none;
-        position:fixed;
-        top:0;
-        left:0;
-        width:100%;
-        height:100%;
-        background:rgba(0,0,0,0.5);
-        z-index:99999;
-     ">
+
+</div>
+
+</div>
+<div id="customDialog" style="
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,.45);
+z-index:999999;
+align-items:center;
+justify-content:center;">
 
     <div style="
-        background:#fff;
-        width:400px;
-        margin:120px auto;
-        padding:20px;
-        border-radius:12px;
-        box-shadow:0 4px 12px rgba(0,0,0,0.2);
-    ">
+    width:380px;
+    background:#fff;
+    border-radius:12px;
+    padding:25px;
+    text-align:center;
+    box-shadow:0 15px 40px rgba(0,0,0,.25);">
 
-        <h3 style="
-            margin-top:0;
-            color:#8f50df;
-        ">
-            Add New Revenue Stream
-        </h3>
-
-        <div style="margin-bottom:15px;">
-
-            <label>
-                Revenue Stream
-            </label>
-
-           <input
-    type="text"
-    id="dialog_mile"
-    class="input"
-    placeholder="Enter Revenue Stream Name"
-    style="margin-top:8px;" />
-
+        <div id="dialogIcon" style="font-size:55px;color:#22c55e;">
+            <i class="fa fa-circle-check"></i>
         </div>
 
-        <div style="
-            display:flex;
-            justify-content:flex-end;
-            gap:10px;
-        ">
+        <h2 id="dialogTitle" style="margin:15px 0 10px;">
+            Success
+        </h2>
 
-            <button
-                type="button"
-                onclick="closeMilestoneDialog()"
+        <div id="dialogMessage" style="font-size:15px;margin-bottom:25px;">
+        </div>
+
+        <button id="dialogCancel"
+                style="display:none;">
+            Cancel
+        </button>
+
+        <button id="dialogOk" type="button"
                 style="
-                    background:#999;
-                ">
-
-                Cancel
-
-            </button>
-
-            <button
-                type="button"
-                onclick="saveNewMilestone()">
-
-                Save
-
-            </button>
-
-        </div>
+                background:#5b21b6;
+                color:#fff;
+                border:none;
+                padding:10px 25px;
+                border-radius:6px;
+                cursor:pointer;">
+            OK
+        </button>
 
     </div>
 
 </div>
-
-            <table>
-
-                <thead>
-
-                   <tr>
-
-    <th style="border:1px solid #ddd">
-        S.NO
-    </th>
-
-    <th style="border:1px solid #ddd">
-        Revenue Stream
-    </th>
-
-    
-
-</tr>
-
-                </thead>
-
-                <tbody id="mileBody">
-
-                    ${rows}
-
-                </tbody>
-
-            </table>
-
-        </div>
 <script>
-var milestoneDropdownOptions =
-    ${JSON.stringify(milestoneOptions)};
-function openMilestoneDialog(){
 
-    document.getElementById(
-        'mileDialog'
-    ).style.display = 'block';
+function openModal(){
+
+document.getElementById("modal").style.display="block";
+
 }
 
-function closeMilestoneDialog(){
+function closeModal(){
 
-    document.getElementById(
-        'mileDialog'
-    ).style.display = 'none';
-}
-function addNewRow(){
+document.getElementById("modal").style.display="none";
 
-    var tbody =
-        document.getElementById(
-            'mileBody'
-        );
+document.getElementById("name").value="";
 
-    var row =
-        document.createElement('tr');
-
-    var nextSno =
-        document.querySelectorAll(
-            '#mileBody tr'
-        ).length + 1;
-
-    row.innerHTML =
-
-        '<td style="border:1px solid #ddd;display:flex;justify-content:center;">' +
-
-            nextSno +
-
-        '</td>' +
-
-        '<td style="border:1px solid #ddd">' +
-
-            '<select id="new_mile"' +
-                    ' class="input">' +
-
-                milestoneDropdownOptions +
-
-            '</select>' +
-
-        '</td>' +
-
-        '<td style="border:1px solid #ddd">' +
-
-            '<button type="button"' +
-                    ' onclick="saveNewMilestone()">' +
-
-                'Save' +
-
-            '</button>' +
-
-        '</td>';
-
-    tbody.appendChild(row);
-
-    row.scrollIntoView({
-        behavior:'smooth',
-        block:'end'
-    });
 }
 
-function showToast(message){
+window.onclick=function(e){
 
-    var oldToast =
-        document.getElementById(
-            'customToast'
-        );
+if(e.target==document.getElementById("modal")){
 
-    if(oldToast){
+closeModal();
 
-        oldToast.remove();
-    }
-
-    var toast =
-        document.createElement('div');
-
-    toast.id = 'customToast';
-
-    toast.innerHTML = message;
-
-    toast.style.position = 'fixed';
-    toast.style.top = '20px';
-    toast.style.right = '20px';
-    toast.style.background = '#8f50df';
-    toast.style.color = '#fff';
-    toast.style.padding = '12px 18px';
-    toast.style.borderRadius = '8px';
-    toast.style.zIndex = '999999';
-    toast.style.fontSize = '14px';
-    toast.style.boxShadow =
-        '0 4px 10px rgba(0,0,0,0.2)';
-
-    document.body.appendChild(toast);
-
-    setTimeout(function(){
-
-        toast.remove();
-
-    },3000);
 }
-window.addEventListener(
-    'load',
-    function(){
 
-        document.body.style.overflow =
-            'hidden';
-
-        document.documentElement.style.overflow =
-            'hidden';
-
-        setTimeout(function(){
-
-            var height =
-                document.body.scrollHeight;
-
-            if(window.parent){
-
-                var iframe =
-                    window.parent.document
-                    .querySelector('iframe');
-
-                if(iframe){
-
-                    iframe.style.height =
-                        height + 'px';
-                }
-            }
-
-        },500);
-    }
-);
-async function saveNewMilestone(){
-
-    var milestoneName =
-    document.getElementById(
-        'dialog_mile'
-    ).value.trim();
-
-if(!milestoneName){
-
-    alert(
-        'Please enter revenue stream name'
-    );
-
-    return;
 }
-var duplicateFound = false;
+function showDialog(title, message, callback){
 
-document.querySelectorAll(
-    '#mileBody span[id^="mile_text_"]'
-).forEach(function(span){
+    document.getElementById("dialogTitle").innerHTML = title;
+    document.getElementById("dialogMessage").innerHTML = message;
 
-    if(
-        span.innerText.trim().toLowerCase() ==
-        milestoneName.toLowerCase()
-    ){
+    document.getElementById("customDialog").style.display = "flex";
 
-        duplicateFound = true;
-    }
-});
+    document.getElementById("dialogCancel").style.display = "none";
 
-if(duplicateFound){
+    document.getElementById("dialogOk").onclick = function(){
 
-    alert('Revenue Stream already exists');
+        document.getElementById("customDialog").style.display = "none";
 
-    document.getElementById(
-        'dialog_mile'
-    ).value = '';
-
-    return;
+        if(callback){
+            callback();
+        }
+    };
 }
-    var templateId =
-        document.getElementById(
-            'templateId'
-        ).value;
-
-    var templateName =
-        document.getElementById(
-            'templateName'
-        ).value;
-
-    var product =
-        document.getElementById(
-            'productName'
-        ).value;
-
-    var revenue =
-        document.getElementById(
-            'revenueName'
-        ).value;
-
-    var sno =
-        document.querySelectorAll(
-            '#mileBody tr'
-        ).length + 1;
-
-    // var alreadyExists = false;
-
-    // document.querySelectorAll(
-    //     'select[id^="mile_"]'
-    // ).forEach(function(sel){
-
-    //     if(sel.value == milestone){
-
-    //         alreadyExists = true;
-    //     }
-    // });
-var createUrl =
-    new URL(window.location.href);
-
-createUrl.searchParams.set(
-    'action',
-    'createmilestone'
-);
-
-createUrl.searchParams.set(
-    'milestonename',
-    milestoneName
-);
-
-var milestone =
-    await fetch(
-        createUrl.toString()
-    );
-
-milestone =
-    await milestone.text();
-    // if(alreadyExists){
-
-    //     // showToast(
-    //     //     'Milestone already exists'
-    //     // );
-    //      alert('Milestone already exists');
-    //     setTimeout(function(){
-
-    //         location.reload();
-
-    //     },1000);
-
-    //     return;
-    // }
-
-    // showToast(
-    //     'Adding milestone...'
-    // );
-    alert('Adding revenue stream...');
-
-    var url =
-        new URL(window.location.href);
-
-    url.searchParams.set(
-        'action',
-        'create'
-    );
-
-    url.searchParams.set(
-        'tempsno',
-        sno
-    );
-
    
-    
+function addRevenueRow(name) {
 
-    url.searchParams.set(
-        'templateid',
-        templateId
-    );
-
-    url.searchParams.set(
-        'templatename',
-        templateName
-    );
-
-    url.searchParams.set(
-        'product',
-        product
-    );
-
-    url.searchParams.set(
-        'revenue',
-        revenue
-    );
-
-    url.searchParams.set(
-        'milestone',
-        milestone
-    );
-
-    var response =
-    await fetch(
-        url.toString()
-    );
-
-var result =
-    await response.text();
-
-if(result == 'duplicate'){
-
-    alert(
-        'Revenue stream already exists'
-    );
-
-    return;
+   location.reload();
 }
+function saveRecord() {
 
-    // showToast(
-    //     'Milestone added successfully'
-    // );
-    if(result == 'success'){
+    const name = document.getElementById("name").value.trim();
 
-    alert(
-        'Revenue stream added successfully'
-    );
-
-}else if(result == 'invalidsno'){
-
-    alert(
-        'SNO value not found in RW SNO list'
-    );
-
-    return;
-}
-    else{
-        alert(
-            'Revenue Stream created'
-        );}
-    setTimeout(function(){
-
-        location.reload();
-
-    },1000);
-    closeMilestoneDialog();
-}
-
-function cancelEditMode(){
-
-    var rows =
-        document.querySelectorAll(
-            '#mileBody tr'
-        );
-
-    rows.forEach(function(row){
-
-        var spanSno =
-            row.querySelector(
-                'span[id^="sno_text_"]'
-            );
-
-        var spanMile =
-            row.querySelector(
-                'span[id^="mile_text_"]'
-            );
-
-        var inputSno =
-            row.querySelector(
-                'input[id^="sno_"]'
-            );
-
-        var selectMile =
-            row.querySelector(
-                'select[id^="mile_"]'
-            );
-
-        if(spanSno)
-            spanSno.style.display='block';
-
-        if(spanMile)
-            spanMile.style.display='block';
-
-        if(inputSno)
-            inputSno.style.display='none';
-
-        if(selectMile){
-
-            selectMile.style.display='none';
-
-            selectMile.style.border =
-                '1px solid #ccc';
-
-            selectMile.value =
-                selectMile.getAttribute(
-                    'data-selected'
-                );
-        }
-    });
-
-    document.getElementById(
-        'topEditBtn'
-    ).style.display='inline-block';
-
-    document.getElementById(
-        'topSaveBtn'
-    ).style.display='none';
-
-    document.getElementById(
-        'topSaveBtn'
-    ).disabled = false;
-
-    document.getElementById(
-        'topSaveBtn'
-    ).innerHTML = 'Save';
-}
-async function saveAllRows(){
-
-    var rows =
-        document.querySelectorAll(
-            '#mileBody tr'
-        );
-
-    var selectedMilestones = [];
-
-    var duplicateFound = false;
-
-    var finalSelections = {};
-
-rows.forEach(function(row){
-
-    var select =
-        row.querySelector(
-            'select[id^="mile_"]'
-        );
-
-    if(select){
-
-        var value = select.value;
-
-        if(finalSelections[value]){
-
-            duplicateFound = true;
-
-            select.style.border =
-                '2px solid red';
-
-        }else{
-
-            finalSelections[value] = true;
-
-            select.style.border =
-                '1px solid #ccc';
-        }
-    }
-});
-    if(duplicateFound){
-
-        // showToast(
-        //     'Milestone already exists'
-        // );
-            alert('Milestone already exists');
-        setTimeout(function(){
-
-            cancelEditMode();
-
-        },1000);
-
-        return false;
-    }
-
-    document.getElementById(
-        'topSaveBtn'
-    ).innerHTML = 'Saving...';
-
-    document.getElementById(
-        'topSaveBtn'
-    ).disabled = true;
-
-    for(const row of rows){
-
-        var select =
-            row.querySelector(
-                'select[id^="mile_"]'
-            );
-
-        var snoInput =
-            row.querySelector(
-                'input[id^="sno_"]'
-            );
-
-        if(select && snoInput){
-
-            var recId =
-                select.id.replace(
-                    'mile_',
-                    ''
-                );
-
-            var oldValue =
-                select.getAttribute(
-                    'data-selected'
-                );
-
-            if(oldValue != select.value){
-
-                var response =
-                    await updateMilestone(recId);
-
-                var text =
-                    await response.text();
-
-                if(text.includes(
-                    'Milestone already exists'
-                )){
-
-                    // showToast(
-                    //     'Milestone already exists'
-                    // );
-                    alert('Milestone already exists');
-
-                    setTimeout(function(){
-
-                        cancelEditMode();
-
-                    },1000);
-
-                    return false;
-                }
-
-                select.setAttribute(
-                    'data-selected',
-                    select.value
-                );
-            }
-        }
-    }
-
-    // showToast(
-    //     'Milestones updated successfully'
-    // );
-    alert('Revenue stream updated successfully');
-
-    setTimeout(function(){
-
-        location.reload();
-
-    },1000);
-}
-
-function editAllRows(){
-
-    var rows =
-        document.querySelectorAll(
-            '#mileBody tr'
-        );
-
-    rows.forEach(function(row){
-
-        var spanSno =
-            row.querySelector(
-                'span[id^="sno_text_"]'
-            );
-
-        var spanMile =
-            row.querySelector(
-                'span[id^="mile_text_"]'
-            );
-
-        var inputSno =
-            row.querySelector(
-                'input[id^="sno_"]'
-            );
-
-        var selectMile =
-            row.querySelector(
-                'select[id^="mile_"]'
-            );
-
-        if(spanSno)
-            spanSno.style.display='none';
-
-        if(spanMile)
-            spanMile.style.display='none';
-
-        if(inputSno)
-            inputSno.style.display='block';
-
-        if(selectMile){
-
-            selectMile.style.display='block';
-
-            selectMile.value =
-                selectMile.getAttribute(
-                    'data-selected'
-                );
-        }
-    });
-
-    document.getElementById(
-        'topEditBtn'
-    ).style.display='none';
-
-    document.getElementById(
-        'topSaveBtn'
-    ).style.display='inline-block';
-}
-async function updateMilestone(recId){
-
-    var sno =
-        document.getElementById(
-            'sno_' + recId
-        ).value;
-
-    var milestone =
-        document.getElementById(
-            'mile_' + recId
-        ).value;
-
-    var templateId =
-        document.getElementById(
-            'templateId'
-        ).value;
-
-    var product =
-        document.getElementById(
-            'productName'
-        ).value;
-
-    var revenue =
-        document.getElementById(
-            'revenueName'
-        ).value;
-
-    var templateName =
-        document.getElementById(
-            'templateName'
-        ).value;
-
-    var url =
-        new URL(window.location.href);
-
-    url.searchParams.set(
-        'templateid',
-        templateId
-    );
-
-    url.searchParams.set(
-        'templatename',
-        templateName
-    );
-
-    url.searchParams.set(
-        'product',
-        product
-    );
-
-    url.searchParams.set(
-        'revenue',
-        revenue
-    );
-
-    url.searchParams.set(
-        'action',
-        'update'
-    );
-
-    url.searchParams.set(
-        'recid',
-        recId
-    );
-
-    url.searchParams.set(
-        'tempsno',
-        sno
-    );
-
-    url.searchParams.set(
-        'milestone',
-        milestone
-    );
-
-    return fetch(
-        url.toString()
-    );
-}
-    async function deleteMilestone(recId){
-
-    var confirmDelete =
-        confirm(
-            'Are you sure you want to remove this milestone?'
-        );
-
-    if(!confirmDelete){
+    if (!name) {
+        alert("Please enter Revenue Stream Name");
         return;
     }
 
-    var url =
-        new URL(window.location.href);
+    fetch(window.location.href, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "action=create&name=" + encodeURIComponent(name)
+    })
 
-    url.searchParams.set(
-        'action',
-        'delete'
+    .then(response => response.text())
+
+    .then(text => {
+
+        console.log(text);
+if(text==="exists"){
+
+    showDialog(
+        "Already Exists",
+        "Revenue Stream already exists."
     );
 
-    url.searchParams.set(
-        'recid',
-        recId
-    );
+    return;
 
-    await fetch(
-        url.toString()
-    );
-
-    alert(
-        'Milestone removed successfully'
-    );
-
-    setTimeout(function(){
-
-        location.reload();
-
-    },500);
 }
-function editRow(recId){
 
-    document.getElementById(
-        'sno_text_' + recId
-    ).style.display = 'none';
+        if (text === "success") {
 
-    document.getElementById(
-        'mile_text_' + recId
-    ).style.display = 'none';
+            closeModal();
 
-    document.getElementById(
-        'sno_' + recId
-    ).style.display = 'block';
+            showDialog(
+                "Success",
+                "Revenue Stream created successfully.",
+                function () {
 
-    document.getElementById(
-        'mile_' + recId
-    ).style.display = 'block';
+                    addRevenueRow(name);
 
-    document.getElementById(
-        'edit_' + recId
-    ).style.display = 'none';
+                }
+            );
 
-    document.getElementById(
-        'save_' + recId
-    ).style.display = 'inline-block';
-    var sel =
-    document.getElementById(
-        'mile_' + recId
+        } else {
+
+            alert("Unexpected response: " + text);
+
+        }
+
+    })
+
+    .catch(function(err) {
+
+        console.error(err);
+        alert(err);
+
+    });
+
+}
+    function deleteRevenue(id){
+
+    showDialog(
+        "Confirmation",
+        "Are you sure you want to delete this Revenue Stream?",
+        function(){
+
+            fetch(window.location.href,{
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/x-www-form-urlencoded"
+                },
+                body:"action=delete&id="+id
+            })
+            .then(res=>res.text())
+            .then(function(text){
+
+                if(text==="deleted"){
+
+                    document.getElementById("row_"+id).remove();
+
+                }
+
+            });
+
+        }
     );
 
-if(sel){
-
-    sel.value =
-        sel.getAttribute(
-            'data-selected'
-        );
-}
 }
 </script>
-        `;
 
-        htmlField.defaultValue = html;
 
-        context.response.writePage(form);
-    };
+`;
+            context.response.writePage(form);
+
+        } 
+    }
 
     return { onRequest };
+
 });

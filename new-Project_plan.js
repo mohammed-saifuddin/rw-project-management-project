@@ -763,13 +763,16 @@ body{
     #E6E6FA
 );;
                 color:darkblue;
-                padding:12px;
-                font-size:12px;
+                padding:14px;
+                font-size:14px;
                 text-transform:uppercase;
             }
 
             td{
-                padding:8px;
+                padding:14px;
+                font-size:14px;
+                color: black;
+
                 
             }
 .input{
@@ -946,6 +949,20 @@ button{
     margin-left:60px;
     margin-right:60px;
     }
+    #topEditBtn{
+    width:42px;
+    height:42px;
+    border:none;
+    
+    border-radius:50%;
+    background:#5b21b6;
+    color:#fff;
+    cursor:pointer;
+    font-size:18px;
+    transition:.3s;
+    box-shadow:0 5px 15px rgba(0,0,0,.15);
+
+    }
         </style>
             <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -984,6 +1001,8 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     margin-bottom:15px;
     display:flex;
     margin-left:60px;
+    display:flex;
+    
     
     
     gap:10px;
@@ -995,7 +1014,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     id="topEditBtn"
     onclick="openMilestoneDialog()">
 
-    <i class="fa fa-plus" aria-hidden="true"></i>
+    <i class="fa fa-plus"  aria-hidden="true"></i>
 
 </button>
 
@@ -2109,7 +2128,7 @@ if(sel){
         );
 }
 }
-
+document.title="Create MileStone"
  
 </script>
         `;
