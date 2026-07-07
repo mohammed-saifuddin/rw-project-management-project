@@ -899,24 +899,24 @@ var avatarLetter = (empRole && empRole.length > 0)
 var ticketMenu = '';
 
 if (roleType !== 'PMO') {
-    ticketMenu = `<div class="menu" onclick="openTickets(); closeMenu()"><i class="fa-solid fa-ticket"></i> <span> Tickets</span></div>`;
+    ticketMenu = `<div class="menu" onclick="setActiveMenu(this);openTickets(); closeMenu()"><i class="fa-solid fa-ticket"></i> <span> Tickets</span></div>`;
 }
 var projectPlan ='';
 if(roleType === 'PM'){
-    projectPlan = `<div class="menu" onclick="openProjectPlan(); closeMenu()"><i class="fa-solid fa-chart-gantt"></i>   Project Plan</div>`;
+    projectPlan = `<div class="menu" onclick="setActiveMenu(this);openProjectPlan(); closeMenu()"><i class="fa-solid fa-chart-gantt"></i>   Project Plan</div>`;
 }
 
 var newProjectPlan ='';
 if(roleType === 'PM'){
-    newProjectPlan = `<div class="menu" onclick="openNewProjectPlan(); closeMenu()"><i class="fa-solid fa-file-circle-plus"></i>  Milestone</div>`;
+    newProjectPlan = `<div class="menu" onclick="setActiveMenu(this);openNewProjectPlan(); closeMenu()"><i class="fa-solid fa-file-circle-plus"></i>  Milestone</div>`;
 }
 var newRevenueStream ='';
 if(roleType === 'PM'){
-    newRevenueStream = `<div class="menu" onclick="openRevenueStream(); closeMenu()"><i class="fa-solid fa-chart-area"></i>   Revenue Stream</div>`;
+    newRevenueStream = `<div class="menu" onclick="setActiveMenu(this);openRevenueStream(); closeMenu()"><i class="fa-solid fa-chart-area"></i>   Revenue Stream</div>`;
 }
 var projectMenu = '';
 if(roleType !== 'OTHER'){
-    projectMenu = '<div class="menu" onclick="openProjects(); closeMenu()"> <i class="fa-solid fa-list"></i>  Projects</div>';
+    projectMenu = '<div class="menu" onclick="setActiveMenu(this);openProjects(); closeMenu()"> <i class="fa-solid fa-list"></i>  Projects</div>';
 }
 function getCurrentMonthDates(){
     var today = new Date();
@@ -3381,22 +3381,30 @@ cursor:pointer;
     margin-top:10px;
 }
 .menu{
-padding:12px;
+padding:14px;
 border-bottom:1px solid #0c4f82;
 cursor:pointer;
 font-family:sans-serif;
-font-size:14px;
+font-size:16px;
 font-weight:bold;
 font-family:calibri;
 display:flex;
 gap:20px;
 text-transform:capitalize;
 }
+.menu.active{
+    background:#6f3ba2;
+    color:#fff;
+    font-weight:bold;
+}
 
+.menu.active i{
+    color:#fff;
+}
 .menu:hover{
 background:white;
 text-decoration: underline;
-border-radius:5px;
+border-radius:8px;
 color:darkblue;
 
 }
@@ -7495,7 +7503,29 @@ function drop(ev,statusId){
     }
 
 });
+function setActiveMenu(menu){
 
+    localStorage.setItem("activeMenu", menu.id);
+
+    document.querySelectorAll(".menu").forEach(function(item){
+        item.classList.remove("active");
+    });
+
+    menu.classList.add("active");
+}
+    window.onload = function(){
+
+    var active = localStorage.getItem("activeMenu");
+
+    if(active){
+        var menu = document.getElementById(active);
+
+        if(menu){
+            menu.classList.add("active");
+        }
+    }
+
+};
 </script>
 
 `;

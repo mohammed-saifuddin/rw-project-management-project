@@ -711,13 +711,13 @@ data.push({
                 color:darkblue;
                 padding:12px;
                 text-align:left;
-                font-size:14px;
+                font-size:16px;
             }
 
             td{
                 padding:10px;
                 border-bottom:1px solid #ddd;
-                font-size:13px;
+                font-size:14px;
             }
 
            

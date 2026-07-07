@@ -335,7 +335,7 @@ childSearch.run().each(function(res){
 
 <tr>
 
-    <td style="border:1px solid #ddd" >
+    <td style="border:1px solid #ddd;font-size:16px;padding:10px;" >
 
         <span id="sno_text_${recId}" class="data">
             ${sno}
@@ -349,7 +349,7 @@ childSearch.run().each(function(res){
 
     </td>
 
-    <td style="border:1px solid #ddd">
+    <td style="border:1px solid #ddd;font-size:16px;padding:10px;">
 
         <span id="mile_text_${recId}" class="data">
             ${milestone}
@@ -490,7 +490,7 @@ body{
 
             .info{
                 margin-bottom:10px;
-                font-size:14px;
+                font-size:16px;
             }
 
             table{
@@ -506,7 +506,9 @@ body{
             }
 
             td{
-                padding:8px;
+                padding:10px;
+                font-size:16px;
+                
                 
             }
 .input{
@@ -678,6 +680,10 @@ button{
     background:#5b2d8e;
 
 }
+    .dialog-box p {
+    font-size:14px;
+    font-weight:bold;
+    }
 
 @keyframes popup{
 

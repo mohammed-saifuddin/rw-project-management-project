@@ -1343,10 +1343,11 @@ margin-bottom:15px;
         html,body{
             font-family: Arial;
             margin:0px;
+            margin-top:-10px
             
             
             
-            background:white;
+            
             
             
             
@@ -1782,7 +1783,10 @@ margin-bottom:15px;
     display:flex;
     justify-content:space-between;
     align-items:center;
-    margin-bottom:25px;
+
+    height:60px;
+    
+
     overflow-y:hidden;
 }
 
@@ -2079,7 +2083,8 @@ margin-bottom:15px;
 }
 .dialogMessage{
 font-size:14px;
-font-family:calibri;
+
+font-weight:bold;
 
 }
 .successIcon{
@@ -2197,9 +2202,14 @@ body{
     width:100%;
     min-height:100vh;
     overflow:visible;
-    padding:20px;
+    
+    
     box-sizing:border-box;
 }
+    .successDialog p{
+    font-size:18px;
+    font-weight:bold;
+    }
     </style>
 
     <div class="container">
@@ -2950,7 +2960,15 @@ function renderSelectedFiles(){
 
 }
 
+function loadComments() {
 
+    fetch(window.location.href + "&loadComments=T")
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById("commentsContainer").innerHTML = html;
+        });
+
+}
   function saveComment(){
 
     var loader = document.getElementById("commentLoader");
@@ -3016,7 +3034,7 @@ function renderSelectedFiles(){
         btn.disabled = false;
         btn.innerHTML = "Save Comment";
 
-        showToast("Comment added successfully","success");
+        //showToast("Comment added successfully","success");
 
         setTimeout(function(){
 

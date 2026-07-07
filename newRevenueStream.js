@@ -188,7 +188,7 @@ th{
 }
 
 td{
-    padding:12px;
+    padding:10px;
     font-size:14px;
     border-bottom:1px solid #eee;
 }

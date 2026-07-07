@@ -26,6 +26,11 @@ var filterType = context.request.parameters.filter;
 log.debug("Filter Type", filterType);
 if (isNaN(page) || page < 0) page = 0;
 var pageSize = 10;
+// total → no filter
+// ---------------- FILTER VALUES ----------------
+
+var customerFilter = request.parameters.customer || '';
+var statusFilter   = request.parameters.projectstatus || '';
 var customerOptions = '<option value="">All Customers</option>';
 
 var customerData = [];
@@ -70,21 +75,10 @@ customerData.sort(function(a,b){
 customerData.forEach(function(customer){
 
     customerOptions += `
-
-        <option value="${customer.id}"
-
-            ${
-                request.parameters.clientName ==
-                customer.id
-
-                ? 'selected'
-                : ''
-            }>
-
-            ${customer.name}
-
-        </option>
-    `;
+<option value="${customer.id}"
+    ${customerFilter == customer.id ? 'selected' : ''}>
+    ${customer.name}
+</option>`;
 });
 
  var loginUrl = url.resolveScript({
@@ -250,11 +244,7 @@ else if(filterType === 'myprojects' && empId){
                 ]
     ]);
 }
-// total → no filter
-// ---------------- FILTER VALUES ----------------
 
-var customerFilter = request.parameters.customer || '';
-var statusFilter   = request.parameters.projectstatus || '';
 
 // ---------------- APPLY FILTERS ----------------
 
@@ -1102,7 +1092,12 @@ statSearch1.run().each(function(result){
      var isSelected = (name === 'Not Started') ? 'selected' : '';
 var isDisabled = (name !== 'Not Started') ? 'disabled' : '';
 
-statOptions1 += '<option value="'+id+'">'+name+'</option>';
+var selected = (statusFilter == id) ? 'selected' : '';
+
+statOptions1 +=
+    '<option value="' + id + '" ' + selected + '>' +
+    name +
+    '</option>';
 
     return true;
 });
@@ -1116,7 +1111,7 @@ body{
     padding:0;
     width:100%;
     height:100%;
-    overflow:auto;
+    overflow:hidden;
     
     /* Firefox */
     scrollbar-width:none;
@@ -1242,6 +1237,7 @@ th{
    text-transform: uppercase;
    
    font-family:calibri;
+   font-size:16px;
      white-space: nowrap;      /* Prevents text from wrapping */
     overflow: hidden;         /* Hides overflow text */
     text-overflow: ellipsis;
@@ -1302,11 +1298,13 @@ th{
 background:#6f2da8;
 color:white;
 padding:10px;
+font-size:16px;
 border:0px solid #ccc;
 }
 
 td{
 padding:10px;
+font-size:12px;
 
 text-align:center;
 }
@@ -1341,7 +1339,7 @@ linear-gradient(
     #E6E6FA
 );
     color:darkblue;
-    font-size:13px;
+    font-size:16px;
 }
 
 td{
@@ -1640,6 +1638,12 @@ text-decoration: none;
     .cust:hover{
     cursor:pointer;
     }
+    /* Table should scroll ONLY if needed */
+.table-container{
+    flex:1;
+    overflow-y:auto;   /*  only this scrolls */
+    /*  REMOVE height:100% */
+}
 </style>
 <form method="GET" id="filterForm">
 <input type="hidden" id="pageInput" name="page" value="${page}">
@@ -1689,6 +1693,7 @@ text-decoration: none;
                 padding:8px 10px;
                 border:1px solid #ccc;
                 border-radius:8px;
+                font-size:14px;
                 min-width:220px;
             "
         >
@@ -1712,6 +1717,7 @@ text-decoration: none;
                 border:1px solid #ccc;
                 border-radius:8px;
                 min-width:220px;
+                font-size:14px;
             "
         >
 
@@ -1728,7 +1734,7 @@ text-decoration: none;
 
        
 <button
-    type="submit"
+    type="button"
     class="btn-primary"
     id="applyBtn"
     onclick="applyFilters()">

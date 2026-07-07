@@ -738,21 +738,21 @@ if (!(mode === 'form' || request.parameters.hidefilters === 'true')){
         <label>Client Name</label>
         
 
-               <select name="clientName" id="projectName">
+               <select name="clientName" id="projectName" class="inp">
                ${customerOptions}
                </select>
     </div>
     <div class="filter-group">
         <label>Rw Product</label>
         
-               <select name="rwProduct" id="rwProduct">
+               <select name="rwProduct" id="rwProduct" class="inp">
                ${productOptions}
                </select>
     </div>
     <div class="filter-group">
         <label>Status</label>
         
-          <select name="status">
+          <select name="status" class="inp">
     <option value="">All</option>
     <option value="1" ${request.parameters.status=='1'?'selected':''}>To Do</option>
     <option value="2" ${request.parameters.status=='2'?'selected':''}>In Progress</option>
@@ -764,7 +764,7 @@ if (!(mode === 'form' || request.parameters.hidefilters === 'true')){
     <div class="filter-group">
         <label>Requester Name</label>
         
-                <select name="requesterName">
+                <select name="requesterName"  class="inp">
                ${empOptions}
                </select>
     </div>
@@ -986,12 +986,13 @@ th{
 background:#6f2da8;
 color:white;
 padding:10px;
+font-size:16px;
 border:0px solid #ccc;
 }
 
 td{
 padding:10px;
-
+font-size:14px;
 text-align:center;
 }
 #loader {
@@ -1021,6 +1022,7 @@ th{
     background:#E6E6FA;
     color:darkblue;
     font-size:13px;
+    font-size:16px;
 }
 
 td{
@@ -1100,6 +1102,7 @@ text-decoration: none;
     align-items:flex-end;
     padding:8px 10px;
     margin:0;
+    padding:8px;
     background:#ffffff;
     border-radius:12px;
     box-shadow:0 4px 12px rgba(0,0,0,0.1);
@@ -1109,20 +1112,26 @@ text-decoration: none;
 .filter-group{
     display:flex;
     flex-direction:column;
+    font-size:14px;
+    border-radius:8px;
     gap:5px;
 }
 
 .filter-group label{
-    font-size:11px;
+    font-size:14px;
     font-weight:600;
     color:#555;
 }
-
+.inp{
+border-radius:8px;
+padding:8px;
+}
 .filter-group input{
     padding:8px 10px;
     border:1px solid #ccc;
+    border-radius:8px;
     
-    font-size:13px;
+    font-size:16px;
     outline:none;
     transition:0.2s;
 }
@@ -1287,7 +1296,7 @@ table tr.ho:hover td {
         border:none;
         display:none;
         position:absolute;
-        margin-top:8px;
+        margin-top:-40px;
         margin-left:14px;
         top:0;
         left:0;

@@ -1108,6 +1108,10 @@ function getCompletedProjectStatusId(){
 var completedMilestoneStatusId =
     getCompletedMilestoneStatusId();
 
+    log.debug(
+    "Completed Status ID",
+    completedMilestoneStatusId
+);
 var completedProductStatusId =
     getCompletedProductStatusId();
 
@@ -2247,7 +2251,29 @@ milestoneStatusSearch.run().each(function(res){
     return true;
 });
 var lineItemsHtml = '';
+function getCompletedMilestoneStatusId() {
 
+    var completedId = '';
+
+    search.create({
+        type: 'customlist_rw_portal_milestone_status',
+        filters: [
+            ['name', 'is', 'Completed']
+        ],
+        columns: ['internalid']
+    })
+    .run()
+    .each(function(r) {
+        completedId = r.getValue('internalid');
+        return false;
+    });
+
+    return completedId;
+}
+
+var completedMilestoneStatusId = getCompletedMilestoneStatusId();
+
+log.debug("GET Completed Status ID", completedMilestoneStatusId);
 var lineSearch = search.create({
     type: 'customrecord_rw_portal_access2',
     filters: [
@@ -2386,7 +2412,6 @@ var milestoneRowColor = '#ffffff';
 var canEditMilestone =
     (roleType === 'PM');
 var milestoneRows = '';
-
 
 if(templateId){
 
@@ -2606,7 +2631,34 @@ else if(
 
 var isPM =
     (roleType === 'PM');
-    
+    log.debug('LOCK CHECK', {
+    customerPlanId: customerPlanId,
+    milestoneStatusId: milestoneStatusId,
+    completedMilestoneStatusId: completedMilestoneStatusId,
+    rowLocked: String(milestoneStatusId) === String(completedMilestoneStatusId)
+});
+log.debug("COMPARE VALUES", {
+    milestoneStatusId: milestoneStatusId,
+    completedMilestoneStatusId: completedMilestoneStatusId,
+    numMilestone: Number(milestoneStatusId),
+    numCompleted: Number(completedMilestoneStatusId),
+    equal: Number(milestoneStatusId) === Number(completedMilestoneStatusId),
+    typeMilestone: typeof milestoneStatusId,
+    typeCompleted: typeof completedMilestoneStatusId
+});
+    var rowLocked = false;
+
+log.debug("COMPARE", {
+    milestoneStatusId: milestoneStatusId,
+    completedMilestoneStatusId: completedMilestoneStatusId,
+    type1: typeof milestoneStatusId,
+    type2: typeof completedMilestoneStatusId
+});
+
+rowLocked = Number(milestoneStatusId) === Number(completedMilestoneStatusId);
+
+log.debug("ROWLOCKED RESULT", rowLocked);
+
    if(isPM){
 
 milestoneRows += `
@@ -2615,6 +2667,7 @@ milestoneRows += `
     class="milestoneRow"
     data-planid="${customerPlanId}"
     data-milestoneid="${milestoneId}"
+    data-locked="${rowLocked}"
     data-productid="${productId}"
     data-sno="${sno}"
      style="
@@ -2649,7 +2702,7 @@ milestoneRows += `
         startDate || startdate
     ).input
 }"
-    style="display:none;width:100%;"
+    style="display:none;width:100%;" ${rowLocked ? "disabled" : ""}
 />
 
 </td>
@@ -2672,7 +2725,7 @@ milestoneRows += `
         milestoneenddate || enddate
     ).input
 }"
-    style="display:none;width:100%;"
+    style="display:none;width:100%;" ${rowLocked ? "disabled" : ""}
 />
 
 </td>
@@ -2688,7 +2741,7 @@ milestoneRows += `
         class="edit-mode ms-duration"
         readonly
         value="${estDuration || ''}"
-        style="display:none;width:80px;"
+        style="display:none;width:80px;" ${rowLocked ? "disabled" : ""}
     />
 
 </td>
@@ -2764,6 +2817,7 @@ milestoneRows += `
         type="date"
         class="edit-mode ms-actual"
         value="${getDateValues(actualCompleted).input}"
+        ${rowLocked ? "disabled" : ""}
         style="
             display:none;
             width:100%;
@@ -2834,7 +2888,7 @@ milestoneRows += `
         class="edit-mode ms-aging"
         readonly
         value="${aging || ''}"
-        style="display:none;width:80px;"
+        style="display:none;width:80px;" ${rowLocked ? "disabled" : ""}
     />
 
 </td>
@@ -2849,7 +2903,7 @@ milestoneRows += `
         type="text"
         class="edit-mode ms-timespent"
         value="${timeSpent || ''}"
-        style="display:none;width:80px;"
+        style="display:none;width:80px;" ${rowLocked ? "disabled" : ""}
     />
 
 </td>
@@ -2864,7 +2918,7 @@ milestoneRows += `
         style="
             display:none;
             width:100%;
-            min-height:60px;
+            min-height:60px; ${rowLocked ? "disabled" : ""}
         "
     >${milestoneComments || ''}</textarea>
 
@@ -2877,6 +2931,7 @@ milestoneRows += `
 
     <select
     class="edit-mode ms-status"
+    ${rowLocked ? "disabled" : ""}
     style="display:none;width:100%;"
 >
 ${milestoneStatusOptions.replace(
@@ -6634,6 +6689,25 @@ isEditMode = true;
             th.style.display = '';
         });
     autopopulateConsultants();
+    document.querySelectorAll(".milestoneRow").forEach(function(row){
+
+    if(row.dataset.locked === "true"){
+
+        row.querySelectorAll(
+            "input, select, textarea, button"
+        ).forEach(function(el){
+
+            if(
+                !el.classList.contains("view-mode")
+            ){
+                el.disabled = true;
+            }
+
+        });
+
+    }
+
+});
 }
   document.addEventListener("DOMContentLoaded", function () {
 
