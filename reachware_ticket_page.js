@@ -231,6 +231,45 @@ function getEmployeeRole(empInternalId){
 
     return '';
 }
+var pmOptions = '<option value="">--Select--</option>';
+
+var pmSearch = search.create({
+    type: search.Type.EMPLOYEE,
+    filters: [
+        ['isinactive','is','F']
+    ],
+    columns: [
+        'internalid',
+        'firstname',
+        'lastname',
+        'custentity_rw_dms_designation'
+    ]
+});
+
+pmSearch.run().each(function(result){
+
+    var designationId = result.getValue({
+        name: 'custentity_rw_dms_designation'
+    });
+
+    if (parseInt(designationId) !== 2) {
+        return true;
+    }
+
+    var fullName =
+        (result.getValue('firstname') || '') +
+        ' ' +
+        (result.getValue('lastname') || '');
+
+    pmOptions +=
+        '<option value="' +
+        result.getValue('internalid') +
+        '">' +
+        fullName.trim() +
+        '</option>';
+
+    return true;
+});
 function getEmployeeDMSRole(empId){
 
     if(!empId) return '';
@@ -501,6 +540,7 @@ height:100%;
 html, body {
     margin: 0 !important;
     padding: 0 !important;
+    
     height:100%;
     
 }
@@ -762,7 +802,7 @@ font-family:Arial, sans-serif;
      <div class="form-row">
         <label>Project Manager</label>
         <select class="" name="coworker" >
-          ${emp1Options}
+          ${pmOptions}
             
         </select>
     </div>
@@ -820,7 +860,7 @@ ${statOptions}
         <label class="required">Assigned To</label>
         
         <select class="" name="assignedTo" required>
-            ${empOptions}
+            ${emp1Options}
         </select>
     </div>
 

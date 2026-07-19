@@ -2636,7 +2636,7 @@ var customerRec = record.create({
 customerRec.setValue({ fieldId: 'altname', value: name });
 customerRec.setValue({ fieldId: 'subsidiary', value: 1 });
 
-// ✅ IMPORTANT
+//  IMPORTANT
 customerRec.setValue({
     fieldId: 'custentity_rw_emp_port_access',
     value: true
@@ -2670,11 +2670,11 @@ if(customername){
     var customerLookup = search.lookupFields({
         type: search.Type.CUSTOMER,
         id: customername,
-        columns:['entityid']
+        columns: ['altname']
     });
 
     customerText =
-        customerLookup.entityid || '';
+        customerLookup.altname || '';
 }
 var invoice = req.parameters.invoice;
 var accountmanager = req.parameters.accountmanager;
@@ -2928,20 +2928,21 @@ var notifRec = record.create({
 }
 createNotification(
     empId,
-    'New Project Created  ',
+    'New Project Created - ' + customerText,
     'PROJECT_CREATED',
     parentId
 );
+
 createNotification(
     projectmanager,
-    'New Project Created',
+    'New Project Created - ' + customername,
     'PROJECT_CREATED',
     parentId
 );
 
 createNotification(
     accountmanager,
-    'New Project Created',
+    'New Project Created - ' + customername,
     'PROJECT_CREATED',
     parentId
 );

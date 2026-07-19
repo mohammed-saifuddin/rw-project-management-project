@@ -623,16 +623,16 @@ if (!data || data.length === 0) {
 
         tableRows += `
             <tr class="ho" onclick="openTicket('${result.getValue('internalid')}')">
-            <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_ticketno') || ''}</td>
-                <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_projectname') || ''}</td>
-                <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_rwsuiteapp') || ''}</td>
-                <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_requesttype') || ''}</td>
-                <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_name') || ''}</td>
-                <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_date') || ''}</td>
+            <td style="" class="ticket-id">${result.getValue('custrecord_rw_ticket_ticketno') || ''}</td>
+                <td style="">${result.getText('custrecord_rw_ticket_projectname') || ''}</td>
+                <td style="">${result.getText('custrecord_rw_ticket_rwsuiteapp') || ''}</td>
+                <td style="">${result.getText('custrecord_rw_ticket_requesttype') || ''}</td>
+                <td style="">${result.getText('custrecord_rw_ticket_name') || ''}</td>
+                <td style="">${result.getValue('custrecord_rw_ticket_date') || ''}</td>
                 
                 
-                <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_deadline') || ''}</td>
-                <td style="border:1px solid black;">
+                <td style="">${result.getValue('custrecord_rw_ticket_deadline') || ''}</td>
+                <td style="">
 
 <span class="status ${getStatusClass(
     result.getText('custrecord_rw_ticket_ticketstatus')
@@ -654,14 +654,14 @@ var totalPages = pagedData.pageRanges.length || 1;
 
 //     tableRows += `
 //         <tr  class="ho">
-//             <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_requesttype') || ''}</td>
-//             <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_name') || ''}</td>
-//             <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_date') || ''}</td>
-//             <td style="border:1px solid black;">${result.getValue('custrecord_rw_ticket_ticketno') || ''}</td>
-//             <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_projectname') || ''}</td>
-//             <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_rwsuiteapp')  || ''}</td>
-//             <td style="border:1px solid black;">${result.getText('custrecord_rw_ticket_ticketstatus') || ''}</td>
-//             <td style="border:1px solid black;"> ${result.getValue('custrecord_rw_ticket_deadline') || ''}</td>
+//             <td style="">${result.getText('custrecord_rw_ticket_requesttype') || ''}</td>
+//             <td style="">${result.getValue('custrecord_rw_ticket_name') || ''}</td>
+//             <td style="">${result.getValue('custrecord_rw_ticket_date') || ''}</td>
+//             <td style="">${result.getValue('custrecord_rw_ticket_ticketno') || ''}</td>
+//             <td style="">${result.getText('custrecord_rw_ticket_projectname') || ''}</td>
+//             <td style="">${result.getText('custrecord_rw_ticket_rwsuiteapp')  || ''}</td>
+//             <td style="">${result.getText('custrecord_rw_ticket_ticketstatus') || ''}</td>
+//             <td style=""> ${result.getValue('custrecord_rw_ticket_deadline') || ''}</td>
 //         </tr>
 //     `;
 // });
@@ -1271,6 +1271,34 @@ table tr.ho:hover td {
 );
     color: #fff;
 }
+    .table-wrapper{
+    width:100%;
+    overflow:auto;
+    background:#fff;
+    border-radius:16px;
+    border:1px solid #ececec;
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+
+.modern-table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0;
+    min-width:1200px;
+}
+    .modern-table tbody tr:nth-child(even) td{
+
+    background:#fafafa;
+    color:black;
+}
+    
+    
+    .ticket-id{
+
+    color:#5b2d8e;
+
+    font-weight:600;
+}
 </style>
 <form method="GET">
 <div class="main-container">
@@ -1296,11 +1324,11 @@ table tr.ho:hover td {
         border:none;
         display:none;
         position:absolute;
-        margin-top:-40px;
+        margin-top:10px;
         margin-left:14px;
         top:0;
         left:0;
-        background:white;
+        background-color:white;
         overflow-y:hidden;
         overflow-x:hidden;
         
@@ -1329,20 +1357,21 @@ ${filterHtml}
 
 </div>
     
+<div class="table-wrapper">
 
-        <table>
+        <table class="modern-table">
 
 <tr>
-<th style="border:1px solid black;">Ticket ID</th>
-<th style="border:1px solid black;">Client Name</th>
-<th style="border:1px solid black;">RW Product</th>
-<th style="border:1px solid black;">Request Type</th>
-<th style="border:1px solid black;">Requester Name</th>
-<th style="border:1px solid black;">Date</th>
+<th style="">Ticket ID</th>
+<th style="">Client Name</th>
+<th style="">RW Product</th>
+<th style="">Request Type</th>
+<th style="">Requester Name</th>
+<th style="">Date</th>
 
 
-<th style="border:1px solid black;">Deadline</th>
-<th style="border:1px solid black;">Status</th>
+<th style="">Deadline</th>
+<th style="">Status</th>
 </tr>
 
 
@@ -1350,7 +1379,7 @@ ${filterHtml}
 ${tableRows}
 
 </table>
-
+</div>
     </div>
 
     <div class="pagination">

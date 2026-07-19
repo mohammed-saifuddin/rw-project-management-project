@@ -13,8 +13,11 @@ var empId = context.request.parameters.empid
          || '';
 
 var email = context.request.parameters.email;
-var empInternalId = getEmployeeInternalId(email);
-log.debug("Employee Internal ID", empInternalId);
+log.debug(
+        "Remaining Usage",
+        runtime.getCurrentScript().getRemainingUsage()
+    );
+
 if (
     context.request.parameters.action ===
     'updateTicketStatus'
@@ -43,18 +46,123 @@ if (
     context.response.write('success');
     return;
 }
+function getProjectStats() {
 
-function getTotalCount(){
-    var projectSearch = search.create({
-        type:'customrecord_rw_portal_access',
-        filters: ['isinactive','is','F'],
-        columns:[],
-        
-    })
-    var count =projectSearch.runPaged().count;
-    log.debug("Total project",count);
-    return count;
+    var stats = {
+        total: 0,
+        open: 0,
+        closed: 0,
+        kickoff: 0,
+        progress: 0,
+        uat: 0,
+        golive: 0,
+        coc: 0,
+        business: 0,
+        training: 0,
+        support: 0
+    };
+
+    search.create({
+        type: 'customrecord_rw_portal_access',
+        filters: [
+            ['isinactive', 'is', 'F']
+        ],
+        columns: [
+            'custrecord_rw_portal_status'
+        ]
+    }).run().each(function (r) {
+
+        stats.total++;
+
+        var status = r.getValue('custrecord_rw_portal_status');
+
+        switch (status) {
+            case '1': stats.kickoff++; break;
+            case '2': stats.progress++; break;
+            case '4': stats.uat++; break;
+            case '5': stats.golive++; break;
+            case '6': stats.coc++; stats.closed++; break;
+            case '7': stats.business++; stats.closed++; break;
+            case '8': stats.closed++; break;
+            case '9': stats.training++; break;
+            case '11': stats.support++; break;
+        }
+
+        if (['6', '7', '8'].indexOf(status) === -1) {
+            stats.open++;
+        }
+
+        return true;
+    });
+
+    return stats;
 }
+function getTicketStats(empId) {
+
+    var stats = {
+        total: 0,
+        open: 0,
+        closed: 0,
+        assigned: 0,
+        myOpen: 0,
+        myClosed: 0
+    };
+
+    var ticketSearch = search.create({
+        type: 'customrecord_rw_ticket',
+        columns: [
+            'custrecord_rw_ticket_ticketstatus',
+            'custrecord_rw_ticket_assignedto'
+        ]
+    });
+
+    ticketSearch.run().each(function (r) {
+
+        var statusId = r.getValue('custrecord_rw_ticket_ticketstatus');
+        var assignedTo = r.getValue('custrecord_rw_ticket_assignedto');
+
+        // Total Tickets
+        stats.total++;
+
+        // Total Open / Closed
+        if (statusId == '5') {
+            stats.closed++;
+        } else {
+            stats.open++;
+        }
+
+        // Logged-in User Assigned Tickets
+        if (assignedTo == empId) {
+
+            stats.assigned++;
+
+            // Logged-in User Open Tickets
+            if (statusId != '5') {
+                stats.myOpen++;
+            }
+
+            // Logged-in User Closed Tickets
+            if (statusId == '5') {
+                stats.myClosed++;
+            }
+        }
+
+        return true;
+    });
+
+    return stats;
+}
+// function getTotalCount(){
+//     var projectSearch = search.create({
+//         type:'customrecord_rw_portal_access',
+//         filters: ['isinactive','is','F'],
+//         columns:[],
+        
+//     })
+//     var count =projectSearch.runPaged().count;
+//     log.debug("Total project",count);
+//     return count;
+// }
 function getMyProjectCount(empId){
 
     if(!empId) return 0;
@@ -86,16 +194,16 @@ function getMyProjectCount(empId){
 
     return projectSearch.runPaged().count;
 }
-function getTotalTicketCount(){
-    var ticketSearch =search.create({
-        type:'customrecord_rw_ticket',
-        filters:[],
-        columns:[],
-    })
-    var count=ticketSearch.runPaged().count;
-    log.debug("Total tickets",count);
-    return count;
-}
+// function getTotalTicketCount(){
+//     var ticketSearch =search.create({
+//         type:'customrecord_rw_ticket',
+//         filters:[],
+//         columns:[],
+//     })
+//     var count=ticketSearch.runPaged().count;
+//     log.debug("Total tickets",count);
+//     return count;
+// }
 function getEmployeeInternalId(email){
 
     var empSearch = search.create({
@@ -115,194 +223,176 @@ function getEmployeeInternalId(email){
 
     return null;
 }
-function getAssignedTicketCount(empId){
+// function getAssignedTicketCount(empId){
 
-    if(!empId) return 0;
+//     if(!empId) return 0;
 
-    var ticketSearch = search.create({
-        type: 'customrecord_rw_ticket',
-        filters: [
-            ['custrecord_rw_ticket_assignedto','anyof', empId]
-        ]
-    });
+//     var ticketSearch = search.create({
+//         type: 'customrecord_rw_ticket',
+//         filters: [
+//             ['custrecord_rw_ticket_assignedto','anyof', empId]
+//         ]
+//     });
 
-    return ticketSearch.runPaged().count;
-}
-function getInProgressCount(){
-    var projectSearch = search.create({
-        type:'customrecord_rw_portal_access',
-        filters:[
-            ['custrecord_rw_portal_status','anyof','2']
-        ],
-        columns:[],
+//     return ticketSearch.runPaged().count;
+// }
+// function getInProgressCount(){
+//     var projectSearch = search.create({
+//         type:'customrecord_rw_portal_access',
+//         filters:[
+//             ['custrecord_rw_portal_status','anyof','2']
+//         ],
+//         columns:[],
         
-    })
-    var count =projectSearch.runPaged().count;
-    log.debug("Total project in progress",count);
-    return count;
-}
-function getKickOffCount(){
-    var projectSearch = search.create({
-        type:'customrecord_rw_portal_access',
-        filters:[
-             ['isinactive','is','F'],
-             'AND',
-            ['custrecord_rw_portal_status','anyof',['1']]
-        ],
-        columns:[],
+//     })
+//     var count =projectSearch.runPaged().count;
+//     log.debug("Total project in progress",count);
+//     return count;
+// }
+// function getKickOffCount(){
+//     var projectSearch = search.create({
+//         type:'customrecord_rw_portal_access',
+//         filters:[
+//              ['isinactive','is','F'],
+//              'AND',
+//             ['custrecord_rw_portal_status','anyof',['1']]
+//         ],
+//         columns:[],
         
-    })
-    var count =projectSearch.runPaged().count;
-    log.debug("Total project in progress",count);
-    return count;
-}
-function getBussinessCount(){
-    var projectSearch = search.create({
-        type:'customrecord_rw_portal_access',
-        filters:[
-            ['custrecord_rw_portal_status','anyof','7']
-        ],
-        columns:[],
+//     })
+//     var count =projectSearch.runPaged().count;
+//     log.debug("Total project in progress",count);
+//     return count;
+// }
+// function getBussinessCount(){
+//     var projectSearch = search.create({
+//         type:'customrecord_rw_portal_access',
+//         filters:[
+//             ['custrecord_rw_portal_status','anyof','7']
+//         ],
+//         columns:[],
         
-    })
-    var count =projectSearch.runPaged().count;
-    log.debug("Total project in progress",count);
-    return count;
-}
-function getTrainingCount(){
-    var projectSearch = search.create({
-        type:'customrecord_rw_portal_access',
-        filters:[
-            ['custrecord_rw_portal_status','anyof','9']
-        ],
-        columns:[],
+//     })
+//     var count =projectSearch.runPaged().count;
+//     log.debug("Total project in progress",count);
+//     return count;
+// }
+// function getTrainingCount(){
+//     var projectSearch = search.create({
+//         type:'customrecord_rw_portal_access',
+//         filters:[
+//             ['custrecord_rw_portal_status','anyof','9']
+//         ],
+//         columns:[],
         
-    })
-    var count =projectSearch.runPaged().count;
-    log.debug("Total project in progress",count);
-    return count;
-}
-function getUATCount(){
-    var projectSearch = search.create({
-        type:'customrecord_rw_portal_access',
-        filters:[
-            ['custrecord_rw_portal_status','anyof','4']
-        ],
-        columns:[],
+//     })
+//     var count =projectSearch.runPaged().count;
+//     log.debug("Total project in progress",count);
+//     return count;
+// }
+// function getUATCount(){
+//     var projectSearch = search.create({
+//         type:'customrecord_rw_portal_access',
+//         filters:[
+//             ['custrecord_rw_portal_status','anyof','4']
+//         ],
+//         columns:[],
         
-    })
-    var count =projectSearch.runPaged().count;
-    log.debug("Total project in progress",count);
-    return count;
-}
-function getGoliveCount(){
-    var projectSearch = search.create({
-        type:'customrecord_rw_portal_access',
-        filters:[
-            ['custrecord_rw_portal_status','anyof','5']
-        ],
-        columns:[],
+//     })
+//     var count =projectSearch.runPaged().count;
+//     log.debug("Total project in progress",count);
+//     return count;
+// }
+// function getGoliveCount(){
+//     var projectSearch = search.create({
+//         type:'customrecord_rw_portal_access',
+//         filters:[
+//             ['custrecord_rw_portal_status','anyof','5']
+//         ],
+//         columns:[],
         
-    })
-    var count =projectSearch.runPaged().count;
-    log.debug("Total project in progress",count);
-    return count;
-}
-var debugSearch = search.create({
-    type:'customrecord_rw_portal_access',
-    filters:[
-        ['isinactive','is','F']
-    ],
-    columns:[
-        'internalid',
-        'custrecord_rw_portal_status'
-    ]
-});
+//     })
+//     var count =projectSearch.runPaged().count;
+//     log.debug("Total project in progress",count);
+//     return count;
+// }
 
-debugSearch.run().each(function(res){
-
-    log.debug("ID", res.getValue('internalid'));
-    log.debug("STATUS VALUE", res.getValue('custrecord_rw_portal_status'));
-    log.debug("STATUS TEXT", res.getText('custrecord_rw_portal_status'));
-
-    return true;
-});
 
 var empRoleMap = {};
-function getCOCCount(){
-    var projectSearch = search.create({
-        type:'customrecord_rw_portal_access',
-        filters:[
-            ['isinactive','is','F'],
-             'AND',
-            ['custrecord_rw_portal_status','is','6']
-        ],
-        columns:[],
+// function getCOCCount(){
+//     var projectSearch = search.create({
+//         type:'customrecord_rw_portal_access',
+//         filters:[
+//             ['isinactive','is','F'],
+//              'AND',
+//             ['custrecord_rw_portal_status','is','6']
+//         ],
+//         columns:[],
         
-    })
-    var count =projectSearch.runPaged().count;
-    log.debug("Total project in progress",count);
-    return count;
-}
-function getSupportCount(){
-    var projectSearch = search.create({
-        type:'customrecord_rw_portal_access',
-        filters:[
-            ['isinactive','is','F'],
-             'AND',
-            ['custrecord_rw_portal_status','anyof',['11']]
-        ],
-        columns:[],
+//     })
+//     var count =projectSearch.runPaged().count;
+//     log.debug("Total project in progress",count);
+//     return count;
+// }
+// function getSupportCount(){
+//     var projectSearch = search.create({
+//         type:'customrecord_rw_portal_access',
+//         filters:[
+//             ['isinactive','is','F'],
+//              'AND',
+//             ['custrecord_rw_portal_status','anyof',['11']]
+//         ],
+//         columns:[],
         
-    })
-    var count =projectSearch.runPaged().count;
-    log.debug("Total project in progress",count);
-    return count;
-}
-function getOpenProjectCount(){
+//     })
+//     var count =projectSearch.runPaged().count;
+//     log.debug("Total project in progress",count);
+//     return count;
+// }
+// function getOpenProjectCount(){
 
-    var projectSearch = search.create({
-        type:'customrecord_rw_portal_access',
+//     var projectSearch = search.create({
+//         type:'customrecord_rw_portal_access',
 
-        filters:[
+//         filters:[
 
-            ['isinactive','is','F'],
-            'AND',
+//             ['isinactive','is','F'],
+//             'AND',
 
-            ['custrecord_rw_portal_status','noneof',['6','7','8']],
-            'AND',
+//             ['custrecord_rw_portal_status','noneof',['6','7','8']],
+//             'AND',
 
-            ['custrecord_rw_portal_status','isnotempty','']
-        ]
-    });
+//             ['custrecord_rw_portal_status','isnotempty','']
+//         ]
+//     });
 
-    var count = projectSearch.runPaged().count;
+//     var count = projectSearch.runPaged().count;
 
-    log.debug("Total open projects", count);
+//     log.debug("Total open projects", count);
 
-    return count;
-}
+//     return count;
+// }
 
-function getClosedProjectCount(){
+// function getClosedProjectCount(){
 
-    var projectSearch = search.create({
-        type:'customrecord_rw_portal_access',
+//     var projectSearch = search.create({
+//         type:'customrecord_rw_portal_access',
 
-        filters:[
+//         filters:[
 
-            ['isinactive','is','F'],
-            'AND',
+//             ['isinactive','is','F'],
+//             'AND',
 
-            ['custrecord_rw_portal_status','anyof',['6','7','8']]
-        ]
-    });
+//             ['custrecord_rw_portal_status','anyof',['6','7','8']]
+//         ]
+//     });
 
-    var count = projectSearch.runPaged().count;
+//     var count = projectSearch.runPaged().count;
 
-    log.debug("Total closed projects", count);
+//     log.debug("Total closed projects", count);
 
-    return count;
-}
+//     return count;
+// }
 function getMyClosedProjectCount(empId){
 
     if(!empId) return 0;
@@ -323,57 +413,34 @@ function getMyClosedProjectCount(empId){
     return projectSearch.runPaged().count;
 }
 
-function getOpenTicketsCount(){
-    var ticketSearch=search.create({
-        type:'customrecord_rw_ticket',
-        filters:[
-            ['custrecord_rw_ticket_ticketstatus','noneof','5']
-        ]
-    })
-    var count=ticketSearch.runPaged().count;
-    log.debug("Total open tickets",count);
-    return count;
-}
-var debugSearch = search.create({
-    type:'customrecord_rw_portal_access',
+// function getOpenTicketsCount(){
+//     var ticketSearch=search.create({
+//         type:'customrecord_rw_ticket',
+//         filters:[
+//             ['custrecord_rw_ticket_ticketstatus','noneof','5']
+//         ]
+//     })
+//     var count=ticketSearch.runPaged().count;
+//     log.debug("Total open tickets",count);
+//     return count;
+// }
 
-    filters:[
-        ['isinactive','is','F']
-    ],
-
-    columns:[
-        'internalid',
-        'custrecord_rw_portal_status'
-    ]
-});
-
-debugSearch.run().each(function(res){
-
-    log.debug(
-        "PROJECT",
-        "ID: " + res.getValue('internalid') +
-        " STATUS: " + res.getValue('custrecord_rw_portal_status') +
-        " TEXT: " + res.getText('custrecord_rw_portal_status')
-    );
-
-    return true;
-});
-var openTicketCount=getOpenTicketCount();
-function getclosedTicketsCount(){
+// var openTicketCount=getOpenTicketCount();
+// function getclosedTicketsCount(){
     
-    var ticketSearch=search.create({
-        type:'customrecord_rw_ticket',
-        filters:[
-            ['custrecord_rw_ticket_assignedto','anyof',empId],
-            'AND',
-            ['custrecord_rw_ticket_ticketstatus','anyof','5']
-        ]
-    })
-    var count=ticketSearch.runPaged().count;
-    log.debug("Total closed tickets",count);
-    return count;
-}
-var closedTicketCount=getclosedTicketsCount();
+//     var ticketSearch=search.create({
+//         type:'customrecord_rw_ticket',
+//         filters:[
+//             ['custrecord_rw_ticket_assignedto','anyof',empId],
+//             'AND',
+//             ['custrecord_rw_ticket_ticketstatus','anyof','5']
+//         ]
+//     })
+//     var count=ticketSearch.runPaged().count;
+//     log.debug("Total closed tickets",count);
+//     return count;
+// }
+// var closedTicketCount=getclosedTicketsCount();
 function getEmployeeRole(empInternalId){
     if(!empInternalId) return '';
 
@@ -420,17 +487,17 @@ function getRoleTypeFromDMS(roleName){
 
     return 'OTHER';
 }
-function getOpenTicketCount(){
-    var ticketSearch=search.create({
-        type:'customrecord_rw_ticket',
-        filters:[
-            ['custrecord_rw_ticket_ticketstatus','noneof','5']
-        ]
-    })
-    var count=ticketSearch.runPaged().count;
-    log.debug("Total open tickets",count);
-    return count;
-}
+// function getOpenTicketCount(){
+//     var ticketSearch=search.create({
+//         type:'customrecord_rw_ticket',
+//         filters:[
+//             ['custrecord_rw_ticket_ticketstatus','noneof','5']
+//         ]
+//     })
+//     var count=ticketSearch.runPaged().count;
+//     log.debug("Total open tickets",count);
+//     return count;
+// }
 function getSprintBoardData(empId){
 
     var data = {
@@ -606,27 +673,55 @@ function getHighPriorityTicketList(){
 
     return tickets;
 }
-var projectCount=getTotalCount();
-var inProgressCount=getInProgressCount();
-var totalTickets=getTotalTicketCount();
-var openProjects=getOpenProjectCount();
-var closedProjects=getClosedProjectCount();
-var openTickets=getOpenTicketCount();
+// var projectCount=getTotalCount();
+// var inProgressCount=getInProgressCount();
+
+// var ticketStats = getTicketStats(empId);
+
+// var totalTickets   = ticketStats.total;
+// var openTicketCount    = ticketStats.open;
+// var myClosedTickets  = ticketStats.closed;
+// var assignedTickets = ticketStats.assigned;
+// var openProjects=getOpenProjectCount();
+// var closedProjects=getClosedProjectCount();
+// var openTickets=getOpenTicketCount();
+var ticketStats = getTicketStats(empId);
+
+var totalTickets      = ticketStats.total;
+var totalOpenTickets  = ticketStats.open;
+var totalClosedTickets = ticketStats.closed;
+
+var myAssignedTickets = ticketStats.assigned;
+var myOpenTickets     = ticketStats.myOpen;
+var myClosedTickets   = ticketStats.myClosed;
 var empInternalId = getEmployeeInternalId(email);
 var empRole = getEmployeeRole(empInternalId);
 log.debug("Employee Role", empRole);
 var highPriorityTickets = getHighPriorityTicketList();
-var assignedTickets = getAssignedTicketCount(empId);
-var kickOffCount=getKickOffCount();
-var bussinesCount=getBussinessCount();
-var training=getTrainingCount();
-var uatCount=getUATCount();
+// var assignedTickets = getAssignedTicketCount(empId);
+// var kickOffCount=getKickOffCount();
+// var bussinesCount=getBussinessCount();
+// var training=getTrainingCount();
+// var uatCount=getUATCount();
 var myClosedProjects = getMyClosedProjectCount(empId);
-var golive=getGoliveCount();
-var coc=getCOCCount();
+// var golive=getGoliveCount();
+// var coc=getCOCCount();
 var pmProjectCount = getMyProjectCount(empId);
-var support=getSupportCount();
+// var support=getSupportCount();
 var sprintData = getSprintBoardData(empId);
+var stats = getProjectStats();
+
+var projectCount    = stats.total;
+var openProjects    = stats.open;
+var closedProjects  = stats.closed;
+var kickOffCount    = stats.kickoff;
+var inProgressCount = stats.progress;
+var uatCount        = stats.uat;
+var golive          = stats.golive;
+var coc             = stats.coc;
+var bussinesCount   = stats.business;
+var training        = stats.training;
+var support         = stats.support;
 function getRoleType(roleName){
     if (!roleName) return 'OTHER';
     roleName = roleName.toLowerCase();
@@ -705,7 +800,7 @@ var roleType = getRoleType(empRole);
 log.debug(empRole)
 let statsHeader = '';
 let statsValues = '';
-var empInternalId = getEmployeeInternalId(email);
+
 let projectStatsHeader = '';
 let projectStatsValues = '';
 
@@ -761,8 +856,9 @@ else if(roleType === 'PM'){
     <div class="st-header">Total Projects</div>
     <div class="st-header">Open Projects</div>
     <div class="st-header">In Progress</div>
-    <div class="st-header">My Closed Projects</div>
     <div class="st-header">My Projects</div>
+    <div class="st-header">My Closed Projects</div>
+    
 `;
 
 projectStatsValues = `
@@ -770,8 +866,9 @@ projectStatsValues = `
         
         <div class="data-val" id="tit" onclick="openProjects('open')">${openProjects}</div>
         <div class="data-val" id="tit" onclick="openProjects('inprogress')">${inProgressCount}</div>
+        <div class="data-val" id="tit" onclick="openProjects('myprojects')">${pmProjectCount}</div>
          <div class="data-val" id="tit" onclick="openProjects('close')">${myClosedProjects}</div>
-         <div class="data-val" id="tit" onclick="openProjects('myprojects')">${pmProjectCount}</div>
+         
 `;
 
 ticketStatsHeader = `
@@ -783,9 +880,9 @@ ticketStatsHeader = `
 
 ticketStatsValues = `
     <div class="data-val" id="tit" onclick="openTickets('total')">${totalTickets}</div>
-        <div class="data-val" id="tit" onclick="openTickets('allopen')">${openTicketCount}</div>
+        <div class="data-val" id="tit" onclick="openTickets('allopen')">${totalOpenTickets}</div>
         
-        <div class="data-val" id="tit" onclick="openTickets('assigned')">${assignedTickets}</div>
+        <div class="data-val" id="tit" onclick="openTickets('assigned')">${myAssignedTickets}</div>
         <div class="data-val" id="tit" onclick="openTickets('open')">${myOpenCount}</div>
         
 `;
@@ -803,9 +900,9 @@ else if(roleType === 'DEV'){
     statsValues = `
     <div class="data-val" id="tit" onclick="openProjects('myprojects')">${pmProjectCount}</div>
       
-    <div class="data-val" id="tit" onclick="openTickets('assigned')">${assignedTickets}</div>
+    <div class="data-val" id="tit" onclick="openTickets('assigned')">${myAssignedTickets}</div>
     <div class="data-val" id="tit" onclick="openTickets('open')">${myOpenCount}</div>
-     <div class="data-val" id="tit" onclick="openTickets('closed')">${closedTicketCount}</div>
+     <div class="data-val" id="tit" onclick="openTickets('closed')">${myClosedTickets}</div>
     `;
 }
 else{
@@ -926,91 +1023,7 @@ function getCurrentMonthDates(){
 
     return { firstDay, lastDay };
 }
-function getCalendarEvents(){
 
-    var events = [];
-
-    var projectSearch = search.create({
-        type:'customrecord_rw_portal_access',
-
-        filters:[
-            ['isinactive','is','F']
-        ],
-
-        columns:[
-            'internalid',
-            'custrecord_rw_portal_customername',
-            'custrecord_rw_portal_start_date',
-            'custrecord_rw_portal_end_date',
-            'custrecord_rw_portal_status'
-        ]
-    });
-
-    projectSearch.run().each(function(res){
-
-        var projectName =
-            res.getText('custrecord_rw_portal_customername');
-
-        var status =
-            res.getValue('custrecord_rw_portal_status');
-
-        var startDate =
-            res.getValue('custrecord_rw_portal_start_date');
-
-        var endDate =
-            res.getValue('custrecord_rw_portal_end_date');
-
-        var projectId =
-            res.getValue('internalid');
-
-        // UAT
-        if(status == '4' && startDate){
-
-            events.push({
-                title:'UAT - ' + projectName,
-                start: formatCalendarDate(startDate),
-                color:'#3b82f6',
-                url:'${viewProjectUrl}&projectId=' + projectId
-            });
-        }
-
-        // Go Live
-        if(status == '5' && startDate){
-
-            events.push({
-                title:'Go Live - ' + projectName,
-                start: formatCalendarDate(startDate),
-                color:'#10b981',
-                url:'${viewProjectUrl}&projectId=' + projectId
-            });
-        }
-
-        // COC
-        if(status == '6' && endDate){
-
-            events.push({
-                title:'COC - ' + projectName,
-                start: formatCalendarDate(endDate),
-                color:'#8b5cf6',
-                url:'${viewProjectUrl}&projectId=' + projectId
-            });
-        }
-
-        return true;
-    });
-
-    return events;
-}
-function formatCalendarDate(nsDate){
-
-    if(!nsDate) return '';
-
-    var parts = nsDate.split('/');
-
-    return parts[2] + '-' +
-           parts[1].padStart(2,'0') + '-' +
-           parts[0].padStart(2,'0');
-}
 function getProjectProgress(){
 
     var data = [];
@@ -2083,6 +2096,7 @@ var highPriorityCardOfLoggedInUser = `
 
 </div>
 `;
+
 function getOverdueProjects(empId, roleType){
 
     if(!empId) return [];
@@ -2183,6 +2197,64 @@ function getOverdueProjects(empId, roleType){
     return projects;
 }
 var overdueProjects =getOverdueProjects();
+function getNotifications(empId){
+
+    var notifications = [];
+
+    var notifSearch = search.create({
+
+        type: 'customrecord2517',
+
+        filters: [
+
+            ['custrecord_rw_notif_employee','anyof',empId],
+            'AND',
+            ['isinactive','is','F']
+
+        ],
+
+        columns: [
+
+            search.createColumn({
+                name:'custrecord1518',
+                sort:search.Sort.DESC
+            }),
+
+            'internalid',
+            'custrecord_rw_notif_message',
+            'custrecord_rw_notif_read',
+            'custrecord_rw_notif_type',
+            'custrecord_rw_notif_refid'
+
+        ]
+
+    });
+
+    notifSearch.run().each(function(r){
+
+        notifications.push({
+
+            id: r.getValue('internalid'),
+
+            message: r.getValue('custrecord_rw_notif_message'),
+
+            created: r.getValue('custrecord1518'),
+
+            read: r.getValue('custrecord_rw_notif_read'),
+
+            type: r.getValue('custrecord_rw_notif_type'),
+
+            refId: r.getValue('custrecord_rw_notif_refid')
+
+        });
+
+        return true;
+
+    });
+
+    return notifications;
+
+}
 // function getOverdueProjects(empId, roleType){
 
 //     if(!empId) return [];
@@ -2381,6 +2453,7 @@ var overdueProjectCardInneruser = `
                     gap:12px;
                     border-bottom:1px solid #eee;
                     font-size:12px;
+                    
                     font-family:Arial, sans-serif;
                 ">
                 <span>${p.project || '-'}</span>
@@ -2684,89 +2757,42 @@ var highPriorityCard = `
 
 </div>
 `;
-function getNotifications(empId){
 
-    var data = [];
+function getUnreadNotificationCount(empId){
+
+    if(!empId){
+        return 0;
+    }
 
     var notifSearch = search.create({
-
-        type:'customrecord2517',
-
-        filters:[
-    ['custrecord_rw_notif_employee','anyof',empId],
-    'AND',
-    ['custrecord_rw_notif_read','is','F']
-],
-        
-
-        columns:[
-
-            search.createColumn({
-                name:'created',
-                sort:search.Sort.DESC
-            }),
-
-            'internalid',
-            'custrecord_rw_notif_message',
-            'isinactive'
+        type: 'customrecord2517',
+        filters: [
+            ['custrecord_rw_notif_employee','anyof',empId],
+            'AND',
+            ['custrecord_rw_notif_read','is','F']
         ]
     });
 
-    notifSearch.run().each(function(res){
-
-        data.push({
-
-    id: res.getValue('internalid'),
-
-    message: res.getValue(
-        'custrecord_rw_notif_message'
-    ),
-
-    created: res.getValue('created'),
-
-    inactive: res.getValue('isinactive')
-});
-
-        return true;
-    });
-
-    return data;
+    return notifSearch.runPaged().count;
 }
-function getUnreadNotificationCount(empId){
+// var notifications = [];
 
-    var count = 0;
 
-    var notifSearch = search.create({
+// try {
 
-        type:'customrecord2517',
+//     notifications = getNotifications(empId);
 
-        filters:[
+// } catch (e) {
 
-            [
-                'custrecord_rw_notif_employee',
-                'anyof',
-                empId
-            ],
+//     log.error({
+//         title: "getNotifications Error",
+//         details: e
+//     });
 
-            'AND',
+    
 
-            ['custrecord_rw_notif_read','is','F']
-        ],
-
-        columns:['internalid']
-    });
-
-    notifSearch.run().each(function(){
-
-        count++;
-
-        return true;
-    });
-
-    return count;
-}
-var notifications = getNotifications(empId);
-
+// }
+notifications = getNotifications(empId);
 var unreadCount = getUnreadNotificationCount(empId);
 var notifHtml = `
 <div class="notif-wrapper">
@@ -3281,12 +3307,13 @@ border:1px solid #ddd;
     #8f50df 100%
 );;
     color:white;
-    height:60px;
+    height:64px;
     padding:0 20px;
     display:flex;
     font-family: sans-serif;
     font-weight:100;
     font-size:14px;
+    padding:10px 18px;
     //text-transform:uppercase;
     align-items:center;
     position:sticky;
@@ -3345,7 +3372,7 @@ cursor:pointer;
 // }
 .sidebar{
      position:fixed;      
-    top: 60px;             
+    top: 64px;             
     left: 0;
 
     width: 0px;
@@ -3412,7 +3439,7 @@ color:darkblue;
 
     .content{
     flex: 1;
-    padding: 0 20px;
+    padding: 0 15px;
 
     height: auto;        /*  REMOVE FIXED HEIGHT */
     overflow-y: hidden;   /*  NO SCROLL, NO CUT */
@@ -5492,13 +5519,62 @@ color:black;
 .ticket-card:active{
     cursor:grabbing;
 }
-    s
+    @media screen and (max-width:320px){
+
+body{
+    font-size:12px;
+}
+
+.menu{
+    padding:8px;
+}
+
+.card{
+    margin:5px;
+}
+
+}
+@media screen and (max-width:768px){
+
+.card-container{
+    grid-template-columns:1fr;
+}
+
+.stats{
+    flex-direction:column;
+}
+
+.chart-section{
+    flex-direction:column;
+}
+
+.chart-card{
+    width:100%;
+}
+
+button{
+    width:100%;
+}
+
+}
+@media screen and (max-width:1199px){
+
+.card-container{
+    grid-template-columns:repeat(3,1fr);
+}
+
+.chart-card{
+    width:100%;
+}
+
+}
 </style>
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <div class="con" sytle="width:100%;margin:0;padding:0;background:pink;">
 <div class="header">
 
@@ -6225,9 +6301,9 @@ function renderMyTicketDonut(){
             ],
             datasets: [{
                 data: [
-                    ${assignedTickets},
+                    ${myAssignedTickets},
                     ${myOpenCount},
-                    ${closedTicketCount}
+                    ${myClosedTickets}
                 ],
                 backgroundColor: [
                     '#6f3ba2',   // purple
@@ -6329,7 +6405,7 @@ function toggleChartVisibility(){
 
     var roleType = "${roleType}";
 
-    // ✅ Show only for PM AND only on Home
+    //  Show only for PM AND only on Home
     if(roleType === "PM" && home.style.display !== "none"){
         pie.style.display = "block";
     }else{
@@ -6585,8 +6661,8 @@ function renderPieCharts(){
 
     var pieData = {
         project: [${projectCount}, ${openProjects}, ${inProgressCount}, ${closedProjects}],
-        ticket: [${totalTickets}, ${openTicketCount}, ${totalTickets - openTicketCount}],
-        my: [${pmProjectCount}, ${assignedTickets}, ${myOpenCount}]
+        ticket: [${totalTickets}, ${totalOpenTickets}, ${totalTickets - totalOpenTickets}],
+        my: [${pmProjectCount}, ${myAssignedTickets}, ${myOpenCount}]
     };
 
     // PROJECT PIE
@@ -6637,9 +6713,9 @@ if(m){
 
                 data: [
                     ${pmProjectCount},
-                    ${assignedTickets},
+                    ${myAssignedTickets},
                     ${myOpenCount},
-                    ${closedTicketCount}
+                    ${myClosedTickets}
                 ]
             }]
         },
@@ -6707,16 +6783,16 @@ document.addEventListener('DOMContentLoaded',function(){
 
     var donutData = {
         overview: [
-            ${assignedTickets},
+            ${myAssignedTickets},
             ${myOpenCount},
-            ${closedTicketCount},
+            ${myClosedTickets},
             
             ${pmProjectCount}
         ],
         myTickets: [
-            ${assignedTickets},
+            ${myAssignedTickets},
             ${myOpenCount},
-            ${closedTicketCount},
+            ${myClosedTickets},
             
         ]
     };
@@ -7526,6 +7602,11 @@ function setActiveMenu(menu){
     }
 
 };
+document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) {
+        location.reload();
+    }
+});
 </script>
 
 `;

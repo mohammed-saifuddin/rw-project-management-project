@@ -335,7 +335,7 @@ childSearch.run().each(function(res){
 
 <tr>
 
-    <td style="border:1px solid #ddd;font-size:16px;padding:10px;" >
+    <td>
 
         <span id="sno_text_${recId}" class="data">
             ${sno}
@@ -349,7 +349,7 @@ childSearch.run().each(function(res){
 
     </td>
 
-    <td style="border:1px solid #ddd;font-size:16px;padding:10px;">
+    <td>
 
         <span id="mile_text_${recId}" class="data">
             ${milestone}
@@ -704,6 +704,91 @@ opacity:1;
 }
 
 }
+ .table-wrapper{
+    width:100%;
+    overflow-x:auto;
+    background:#fff;
+    border-radius:18px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 12px 30px rgba(0,0,0,.08);
+}
+
+.modern-table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0;
+    min-width:900px;
+}
+     
+    .modern-table thead th{
+
+    position:sticky;
+    top:0;
+
+    background:#E6E6FA;
+
+    color:black;
+
+    padding:15px 18px;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    text-transform:uppercase;
+
+    letter-spacing:.5px;
+
+    border:none;
+
+    white-space:nowrap;
+
+    z-index:100;
+}
+   
+    .modern-table tbody td{
+
+    padding:14px 18px;
+
+    background:#fff;
+
+    border-bottom:1px solid #edf2f7;
+
+    color:#374151;
+
+    font-size:14px;
+
+    transition:.25s;
+}
+   .modern-table tbody tr:nth-child(even) td{
+
+    background:#fafafa;
+    color:black;
+}
+
+    .modern-table thead th:first-child{
+
+    border-top-left-radius:16px;
+}
+
+.modern-table thead th:last-child{
+
+    border-top-right-radius:16px;
+}
+    .modern-table tbody tr{
+
+    transition:.25s;
+}
+
+.modern-table tbody tr:hover td{
+
+    background:#5b2d8e,
+       
+
+    color:white;
+
+    
+}
         </style>
                <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -771,19 +856,19 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 
 </div>
 
-
-            <table>
+<div class="table-wrapper">
+            <table class="modern-table">
 
                 <thead>
 
                    <tr>
 
-    <th style="border:1px solid #ddd; font-family:Arial, sans-serif; font-size:12px;text-transform:uppercase;font-weight:bold; background:#E6E6FA">
+    <th style=" font-family:Arial, sans-serif; font-size:12px;text-transform:uppercase;font-weight:bold;">
         S.NO
     </th>
 
-   <th style="border:1px solid #ddd;font-family:Arial, sans-serif;font-size:12px;text-transform:uppercase;font-weight:bold;
-background:#E6E6FA">
+   <th style="font-family:Arial, sans-serif;font-size:12px;text-transform:uppercase;font-weight:bold;
+">
     Milestone
 </th>
 
@@ -802,7 +887,7 @@ background:#E6E6FA">
                 </tbody>
 
             </table>
-
+</div>
         </div>
         <div id="customDialog" class="dialog-overlay" style="display:none;">
 

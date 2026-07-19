@@ -1595,6 +1595,8 @@ margin-bottom:15px;
         .container{
     margin:0 !important;
     padding:0 !important;
+    
+    
     width:100%;
     max-width:100%;
 }
@@ -1602,7 +1604,7 @@ margin-bottom:15px;
         .title{
             font-size:20px;
             font-weight:bold;
-            margin-bottom:10px;
+            
             text-align:center;
         }
 
@@ -1952,7 +1954,9 @@ margin-bottom:15px;
 
 .topHeader{
 
-    margin-bottom:18px;
+    margin-bottom:10px;
+    margin-top:-45px;
+    
 }
 
 .statusBtn{
@@ -2082,7 +2086,7 @@ margin-bottom:15px;
     animation:popup .25s;
 }
 .dialogMessage{
-font-size:14px;
+font-size:16px;
 
 font-weight:bold;
 
@@ -2194,6 +2198,7 @@ body{
     padding:0;
     
     overflow-x:hidden;
+
     overflow-y:auto;
 }
 
@@ -2201,6 +2206,7 @@ body{
     position:relative;
     width:100%;
     min-height:100vh;
+    margin-top:-60px;
     overflow:visible;
     
     
@@ -2381,7 +2387,27 @@ body{
 </div>
 
 ${commentsHtml}
-${historyHtml}
+<button
+    type="button"
+    id="toggleSystemNotesBtn"
+    onclick="toggleSystemNotes()"
+    style="
+        margin-top:20px;
+        padding:10px 18px;
+        background:#1d3f72;
+        color:#fff;
+        border:none;
+        border-radius:6px;
+        cursor:pointer;
+        font-weight:600;
+    ">
+    View System Notes
+</button>
+
+<div id="systemNotesContainer" style="display:none; margin-top:15px;">
+    ${historyHtml}
+</div>
+<br/>
     <button class="backBtn" type="button" onclick="goBack()">⬅ Back</button>
 </div>
 <div id="loader">
@@ -3145,7 +3171,19 @@ if (window.parent && window.parent.document) {
     }
 
 });
+function toggleSystemNotes() {
 
+    var div = document.getElementById("systemNotesContainer");
+    var btn = document.getElementById("toggleSystemNotesBtn");
+
+    if (div.style.display === "none") {
+        div.style.display = "block";
+        btn.innerHTML = "Hide System Notes";
+    } else {
+        div.style.display = "none";
+        btn.innerHTML = "View System Notes";
+    }
+}
     </script>
     `;
 

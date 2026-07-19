@@ -624,7 +624,7 @@ childSearch.run().each(function(res){
 
 <tr>
 
-    <td style="border:1px solid #ddd">
+    <td style="">
 
         <span id="sno_text_${recId}" class="data">
             ${sno}
@@ -638,7 +638,7 @@ childSearch.run().each(function(res){
 
     </td>
 
-    <td style="border:1px solid #ddd">
+    <td style="">
 
         <span id="mile_text_${recId}" class="data">
             ${milestone}
@@ -646,7 +646,7 @@ childSearch.run().each(function(res){
 
        </td>
 
-    <td style="border:1px solid #ddd;
+    <td style=";
 text-align:center;">
 
 <button
@@ -948,6 +948,11 @@ button{
     display:flex;
     margin-left:60px;
     margin-right:60px;
+    border-radius:18px;
+
+    
+
+    box-shadow:0 12px 35px rgba(0,0,0,.08);
     }
     #topEditBtn{
     width:42px;
@@ -963,6 +968,81 @@ button{
     box-shadow:0 5px 15px rgba(0,0,0,.15);
 
     }
+    .modern-table{
+
+    width:100%;
+
+    border-collapse:separate;
+
+    border-spacing:0;
+    border-radius:10px;
+
+    min-width:800px;
+
+}
+    .modern-table thead th{
+
+    position:sticky;
+
+    top:0;
+
+    background:#E6E6E6;
+
+    color:darkblue;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    letter-spacing:.5px;
+
+    text-transform:uppercase;
+    
+
+    padding:16px;
+
+    border:none;
+
+    white-space:nowrap;
+
+}
+    .modern-table tbody td{
+
+    padding:14px 18px;
+
+    border-bottom:1px solid #edf2f7;
+
+    background:#fff;
+
+    color:#374151;
+
+    font-size:14px;
+
+    transition:.25s;
+
+}
+    .modern-table tbody tr:nth-child(odd) td{
+
+    background:#ffffff;
+
+}
+
+.modern-table tbody tr:nth-child(even) td{
+
+    background:#f8fafc;
+
+}
+    .modern-table thead th:first-child{
+
+    border-top-left-radius:18px;
+
+}
+
+.modern-table thead th:last-child{
+
+    border-top-right-radius:18px;
+
+}
         </style>
             <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -1055,13 +1135,15 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         <h3 style="
             margin-top:0;
             color:#8f50df;
+            font-size:14px;
+            font-weight:bold;
         ">
             Add New Milestone
         </h3>
 
         <div style="margin-bottom:15px;">
 
-            <label>
+            <label style="font-size:13px;font-weight:bold;">
                 Milestone
             </label>
 
@@ -1070,7 +1152,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     id="dialog_mile"
     class="input"
     placeholder="Enter Milestone Name"
-    style="margin-top:8px;" />
+    style="margin-top:8px;padding:8px;" />
 
         </div>
 
@@ -1106,25 +1188,21 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 </div>
   
 <div class="tab">
-            <table>
+            <table class="modern-table">
 
                 <thead>
 
                    <tr>
 
-    <th style="border:1px solid #ddd">
+    <th style="">
         S.NO
     </th>
 
-    <th style="border:1px solid #ddd">
+    <th style="">
         Milestone
     </th>
-<th style="border:1px solid #ddd;font-family:Arial, sans-serif;font-size:12px;
-background:linear-gradient(
-135deg,
-#E6E6FA,
-#E6E6FA
-); width:120px;">
+<th style=";font-family:Arial, sans-serif;font-size:12px;
+background:#E6E6E6; width:120px;">
     Action
 </th>
     
@@ -1203,13 +1281,13 @@ function addNewRow(){
 
     row.innerHTML =
 
-        '<td style="border:1px solid #ddd;display:flex;justify-content:center;">' +
+        '<td style=";display:flex;justify-content:center;">' +
 
             nextSno +
 
         '</td>' +
 
-        '<td style="border:1px solid #ddd">' +
+        '<td style="">' +
 
             '<select id="new_mile"' +
                     ' class="input">' +
@@ -1220,7 +1298,7 @@ function addNewRow(){
 
         '</td>' +
 
-        '<td style="border:1px solid #ddd">' +
+        '<td style="">' +
 
             '<button type="button"' +
                     ' onclick="saveNewMilestone()">' +

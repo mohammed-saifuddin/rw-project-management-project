@@ -11,7 +11,50 @@ define(['N/ui/serverWidget', 'N/record', 'N/search','N/url','N/runtime'],
     function onRequest(context) {
 
      var request = context.request;
+function createNotification(empId, message, type, refId){
 
+    if (!empId) return;
+
+    var notifRec = record.create({
+        type: 'customrecord2517'
+    });
+
+    notifRec.setValue({
+        fieldId: 'name',
+        value: message
+    });
+
+    notifRec.setValue({
+        fieldId: 'custrecord_rw_notif_employee',
+        value: empId
+    });
+
+    notifRec.setValue({
+        fieldId: 'custrecord_rw_notif_message',
+        value: message
+    });
+
+    notifRec.setValue({
+        fieldId: 'custrecord_rw_notif_type',
+        value: type
+    });
+
+    if (refId) {
+        notifRec.setValue({
+            fieldId: 'custrecord_rw_notif_refid',
+            value: refId
+        });
+    }
+
+    notifRec.setValue({
+        fieldId: 'custrecord_rw_notif_read',
+        value: false
+    });
+
+    notifRec.save({
+        ignoreMandatoryFields: true
+    });
+}
     if (context.request.method === "POST") {
 
     const action = context.request.parameters.action;
@@ -51,7 +94,14 @@ var rec = record.create({
         });
 
         var id = rec.save();
+var revenueName = request.parameters.name;
 
+createNotification(
+    request.parameters.empid,
+    'Revenue Stream "' + revenueName + '" has been created.',
+    'REVENUE_STREAM_CREATED',
+    id
+);
         context.response.setHeader({
             name: "Content-Type",
             value: "application/json"
@@ -80,6 +130,7 @@ context.response.write('success');
     context.response.write("deleted");
     return;
 }
+
 }
 
 
@@ -115,9 +166,9 @@ revenueSearch.run().each(function(result){
 
     tableRows += `
         <tr id="row_${id}">
-            <td style="border:1px solid #ddd;text-align:center;">${sno++}</td>
-            <td style="border:1px solid #ddd;">${result.getValue('name')}</td>
-            <td style="border:1px solid #ddd;text-align:center;">
+            <td style="text-align:center;">${sno++}</td>
+            <td style="">${result.getValue('name')}</td>
+            <td style="text-align:center;">
                 <button
                     type="button"
                     class="deleteBtn"
@@ -138,14 +189,51 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
 
 <style>
 
+html,
 body{
-    font-family:Arial,Helvetica,sans-serif;
-    background:#f5f7fb;
+    margin:0 !important;
+    padding:0 !important;
+    overflow:hidden !important;
+    background:#f8fafc;
+}
+
+#main_form{
+    border:none !important;
+    box-shadow:none !important;
+    background:transparent !important;
+    padding:0 !important;
+}
+
+#main_form_div,
+#custpage_html_fs,
+#custpage_html_val{
+    border:none !important;
+    margin:0 !important;
+    padding:0 !important;
+    overflow:visible !important;
+    height:auto !important;
+    max-height:none !important;
+}
+
+.uir-page-title{
+    display:none !important;
+}
+
+.uir-page-body{
+    margin:0 !important;
+    padding:0 !important;
+    border:none !important;
+}
+
+.uir-outside-fields-table,
+.uir-outside-fields-table td{
+    border:none !important;
 }
 
 .toolbar{
     display:flex;
     justify-content:flex-end;
+    
     margin-bottom:20px;
 }
 
@@ -172,7 +260,7 @@ table{
     border-collapse:collapse;
     background:#fff;
     
-    overflow:hidden;
+    overflow-y:hidden;
 }
 
 th{
@@ -341,6 +429,93 @@ font-weight:bold;
 font-size:24px;
 font-family:calibri;
 }
+.table-wrapper{
+    width:100%;
+    background:#fff;
+    border-radius:18px;
+    overflow:auto;
+    border:1px solid #ececec;
+    box-shadow:0 12px 35px rgba(0,0,0,.08);
+}
+
+.modern-table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0;
+}
+    .modern-table thead th{
+
+    position:sticky;
+    top:0;
+
+      background:linear-gradient(
+    135deg,
+    #E6E6FA,
+    #E6E6FA
+);;
+
+    color:darkblue;
+
+    
+
+    font-size:14px;
+
+    text-transform:uppercase;
+
+    letter-spacing:.5px;
+
+    font-weight:700;
+    
+
+    border:none;
+
+    white-space:nowrap;
+
+    z-index:20;
+}
+    .modern-table tbody td{
+
+    
+
+    border-bottom:1px solid #f2f2f2;
+
+    background:#fff;
+
+    color:#444;
+
+    font-size:14px;
+
+    transition:.25s;
+}
+    .modern-table tbody tr:nth-child(even) td{
+
+    background:#fafafa;
+}
+    .modern-table tbody tr{
+
+    transition:.25s;
+}
+
+.modern-table tbody tr:hover td{
+
+    background:#5b2d8e,
+
+    color:white;
+
+    
+
+    transform:translateY(-1px);
+}
+    .modern-table thead th:first-child{
+
+    border-top-left-radius:16px;
+}
+
+.modern-table thead th:last-child{
+
+    border-top-right-radius:16px;
+}
+    
 </style>
 
 
@@ -352,17 +527,17 @@ font-family:calibri;
 </button>
 
 </div>
-
-<table>
+<div class="table-wrapper">
+<table class="modern-table">
 
 <thead>
 
 <tr>
 
 
-<th style="border:1px solid #ddd;">S.NO</th>
-<th style="border:1px solid #ddd;">Revenue Stream</th>
-<th style="border:1px solid #ddd;">Action</th>
+<th style="">S.NO</th>
+<th style="">Revenue Stream</th>
+<th style="">Action</th>
 </tr>
 
 </thead>
@@ -396,7 +571,7 @@ ${tableRows}
 <input
 type="text"
 id="name"
-placeholder="Enter Revenue Stream">
+placeholder="Enter Revenue Stream" style="padding:8px;">
 
 </div>
 
@@ -613,6 +788,7 @@ if(text==="exists"){
     );
 
 }
+    document.title="Revenue Stream"
 </script>
 
 

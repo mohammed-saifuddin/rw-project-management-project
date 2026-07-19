@@ -86,7 +86,28 @@ var projectId =
 
 var empId =
     reqBody.empid || '';
-    
+  function getDefaultProductStatus(){
+
+    var statusId = '';
+
+    search.create({
+        type: 'customlist_rw_portal_statuslist_line',
+        filters: [
+            ['name','is','Not Started']
+        ],
+        columns: ['internalid']
+    })
+    .run()
+    .each(function(r){
+
+        statusId = r.getValue('internalid');
+        return false;
+    });
+
+    return statusId;
+}
+
+var defaultProductStatus = getDefaultProductStatus();  
 function getEmployeeDMSRole(empId){
 
     if(!empId) return '';
@@ -367,14 +388,10 @@ log.debug(
         // STATUS
         if(line.status){
 
-            newLine.setValue({
-
-                fieldId:
-                'custrecord_rw_portal_projstat',
-
-                value:
-                Number(line.status)
-            });
+           newLine.setValue({
+    fieldId: 'custrecord_rw_portal_projstat',
+    value: Number(line.status || defaultProductStatus)
+});
         }
 
         // START DATE
@@ -1234,23 +1251,23 @@ lineSearchSync.run().each(function(lineRes){
 // PRODUCT STATUS AUTO SYNC
 // =====================================
 
-if(
+var currentStatus = record.load({
+    type: 'customrecord_rw_portal_access2',
+    id: lineId
+}).getValue('custrecord_rw_portal_projstat');
+
+// Auto-complete only if it isn't already Completed
+if (
     totalMilestones > 0 &&
-    totalMilestones === completedMilestones
-){
+    totalMilestones === completedMilestones &&
+    String(currentStatus) !== String(completedProductStatusId)
+) {
 
-    // AUTO COMPLETE
     record.submitFields({
-
-        type:
-        'customrecord_rw_portal_access2',
-
+        type: 'customrecord_rw_portal_access2',
         id: lineId,
-
         values: {
-
-            custrecord_rw_portal_projstat:
-                completedProductStatusId
+            custrecord_rw_portal_projstat: completedProductStatusId
         }
     });
 
@@ -1319,19 +1336,21 @@ else{
 // PROJECT STATUS UPDATE
 // ============================================
 
-if(allProductsCompleted){
+var currentProjectStatus = record.load({
+    type: 'customrecord_rw_portal_access',
+    id: projectId
+}).getValue('custrecord_rw_portal_status');
+
+if (
+    allProductsCompleted &&
+    String(currentProjectStatus) !== String(completedProjectStatusId)
+) {
 
     record.submitFields({
-
-        type:
-        'customrecord_rw_portal_access',
-
+        type: 'customrecord_rw_portal_access',
         id: projectId,
-
         values: {
-
-            custrecord_rw_portal_status:
-                completedProjectStatusId
+            custrecord_rw_portal_status: completedProjectStatusId
         }
     });
 
@@ -1704,9 +1723,12 @@ linear-gradient(
             <th style="border:1px solid #ccc;padding:8px;">End Date</th>
             <th style="border:1px solid #ccc;padding:8px;">Updated Deadline</th>
            <th style="border:1px solid #ccc;padding:8px;">Duration</th>
-           <th class="edit-action-col" style="display:none;border:1px solid #ccc;padding:8px;">
+      ${canAddProduct ? `
+<th class="edit-action-col"
+    style="border:1px solid #ccc;padding:8px;">
     Action
 </th>
+` : ''}
        
         </tr>
     `;
@@ -2308,7 +2330,20 @@ function formatDate(date){
 
 
 lineSearch.run().each(function(result){
+    var linestatus = result.getText('custrecord_rw_portal_projstat'); // for display
+var linestatusId = result.getValue('custrecord_rw_portal_projstat'); // for dropdown
+var statOptions ='<option value="">--Select--</option>';
+statSearch.run().each(function(res){
 
+    var id = res.getValue('internalid');
+    var name = res.getValue('name');
+
+    var selected = (id == linestatusId) ? 'selected' : '';
+
+    statOptions += '<option value="'+id+'" '+selected+'>'+name+'</option>';
+
+    return true;
+});
     var product = result.getText('custrecord_rw_portal_rwproduct') || '';
     var productId =
     result.getValue(
@@ -3085,17 +3120,6 @@ var linestatusId = result.getValue('custrecord_rw_portal_projstat'); // for drop
 
 
 
-statSearch.run().each(function(res){
-
-    var id = res.getValue('internalid');
-    var name = res.getValue('name');
-
-    var selected = (id == linestatusId) ? 'selected' : '';
-
-    statOptions += '<option value="'+id+'" '+selected+'>'+name+'</option>';
-
-    return true;
-});
 var employeeList = [];
 var uniqueEmployees = {};
 
@@ -3610,7 +3634,7 @@ var empRoleMap = {};
                 cursor:pointer;
             "
         >
-            Remove
+            <i class="fa fa-trash"></i>
         </button>`
         :
         ''
@@ -4156,7 +4180,7 @@ else if (roleType === 'PM') {
                 cursor:pointer;
             "
         >
-            Remove
+            <i class="fa fa-trash"></i>
         </button>`
         :
         ''
@@ -5268,7 +5292,8 @@ table thead th{
 }
 
 .success-dialog{
-    width:420px;
+    width:500px;
+    height:330px;
     background:#fff;
     border-radius:18px;
     padding:35px;
@@ -5348,6 +5373,59 @@ table thead th{
     font-size:15px;
     line-height:1.6;
     margin:15px 0 25px;
+}
+    #saveLoader{
+    display:none;
+    position:fixed;
+    left:0;
+    top:0;
+    width:100%;
+    height:100%;
+    z-index:999999;
+}
+
+.loader-backdrop{
+    position:absolute;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,.35);
+}
+
+.loader-box{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    background:#fff;
+    padding:30px 40px;
+    border-radius:10px;
+    text-align:center;
+    box-shadow:0 0 20px rgba(0,0,0,.25);
+}
+
+.spinner{
+    width:50px;
+    height:50px;
+    border:6px solid #ddd;
+    border-top:6px solid #4CAF50;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+    margin:auto;
+}
+
+.loader-text{
+    margin-top:15px;
+    font-size:18px;
+    font-weight:bold;
+}
+
+@keyframes spin{
+    from{
+        transform:rotate(0deg);
+    }
+    to{
+        transform:rotate(360deg);
+    }
 }
     </style>
 <input type="hidden" id="originalComment">
@@ -5558,6 +5636,16 @@ ${canEdit ? `
         </button>
     </div>
 </div>
+<div id="saveLoader" style="display:none;">
+    <div class="loader-backdrop"></div>
+
+    <div class="loader-box">
+        <div class="spinner"></div>
+        <div class="loader-text">
+            Saving Project...
+        </div>
+    </div>
+</div>
     <script>
     var roleType = "${roleType}";
     
@@ -5618,6 +5706,13 @@ var statOptions =` +JSON.stringify(statOptions)+`;
         rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
         rowHtml += '<input type="text" class="duration" readonly style="width:80px;background:#f5f5f5;" />';
         rowHtml += '</td>';
+    rowHtml += '<td style="border:1px solid #ccc;padding:8px;text-align:center;">';
+rowHtml += '<button type="button" ';
+rowHtml += 'onclick="removeNewProductRow(this)" ';
+rowHtml += 'style="background:#dc3545;color:#fff;border:none;padding:6px 12px;border-radius:5px;cursor:pointer;" >';
+rowHtml += '<i class="fa fa-trash"></i>';
+rowHtml += '</button>';
+rowHtml += '</td>';
 
         rowHtml += '</tr>';
     }
@@ -5684,7 +5779,13 @@ var statOptions =` +JSON.stringify(statOptions)+`;
         rowHtml += '<input type="date" class="updateddeadline" />';
         rowHtml += '</td>';
 
-        rowHtml += '</tr>';
+      rowHtml += '<td style="border:1px solid #ccc;padding:8px;text-align:center;">';
+rowHtml += '<button type="button" ';
+rowHtml += 'onclick="removeNewProductRow(this)" ';
+rowHtml += 'style="background:#dc3545;color:#fff;border:none;padding:6px 12px;border-radius:5px;cursor:pointer;">';
+rowHtml += '<i class="fa fa-trash"></i>';
+rowHtml += '</button>';
+rowHtml += '</td>';
     }
 
     tbody.insertAdjacentHTML(
@@ -6112,7 +6213,7 @@ function syncTechnical(currentSelect){
         });
 }
   function saveData(){
-
+document.getElementById("saveLoader").style.display = "block";
   var rows =
 document.querySelectorAll(
     "#projectTableBody tr[data-id], #projectTableBody tr.newRow"
@@ -6392,6 +6493,7 @@ empid: "${empId}"
     console.log("SERVER RESPONSE:", res);
 
     if(res === "success"){
+    document.getElementById("saveLoader").style.display="none";
 showToast("Project Saved Successfully ");
 // alert("Project Saved Succesfully");
   showSuccessDialog();
@@ -6819,6 +6921,32 @@ function closeSuccessDialog(){
 
     // Refresh page after user clicks OK
     location.reload();
+}
+
+function toggleActionColumn(statusText){
+
+    var hide =
+        statusText.toLowerCase() !== 'not started';
+
+    document.querySelectorAll('.edit-action-col').forEach(function(el){
+        el.style.display = hide ? 'none' : '';
+    });
+
+}
+    var statusDropdown =
+    document.getElementById("projectStatus");
+
+statusDropdown.addEventListener("change", function () {
+    toggleActionColumn(this.options[this.selectedIndex].text);
+});
+function removeNewProductRow(btn) {
+
+    var row = btn.closest('tr');
+
+    if (row) {
+        row.remove();
+    }
+
 }
     </script>
     `;

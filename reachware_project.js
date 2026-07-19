@@ -819,32 +819,32 @@ log.debug("ROLE TYPE", roleType);
 
 if(roleType === 'PM'){   
     ticketCols = `
-        <td style="border:1px solid black;">${ticketData.total}</td>
-        <td style="border:1px solid black;">${ticketData.open}</td>
-        <td style="border:1px solid black;">${ticketData.closed}</td>
+        <td style="">${ticketData.total}</td>
+        <td style="">${ticketData.open}</td>
+        <td style="">${ticketData.closed}</td>
     `;
 }
     //var products = data.products.join(", ");
 var productList = `
-<table style="width:100%; border-collapse:collapse; margin-top:10px;">
+<table  style="width:100%; border-collapse:collapse; margin-top:10px;border-radius:8px;background:#ccc;">
 
     <tr style="background:#eee;">
-        <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Project Status</th>
-        <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Product</th>
-        <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Product Status</th>
-        <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">PMO Comments</th>
-        <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Start Date</th>
-        <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">End Date</th>
+        <th style="font-family:Arial, sans-serif;font-size:10px;">Project Status</th>
+        <th style="font-family:Arial, sans-serif;font-size:10px;">Product</th>
+        <th style="font-family:Arial, sans-serif;font-size:10px;">Product Status</th>
+        <th style="font-family:Arial, sans-serif;font-size:10px;">PMO Comments</th>
+        <th style="font-family:Arial, sans-serif;font-size:10px;">Start Date</th>
+        <th style="font-family:Arial, sans-serif;font-size:10px;">End Date</th>
        
-        <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Updated End Date</th>
-        <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Duration</th>
+        <th style="font-family:Arial, sans-serif;font-size:10px;">Updated End Date</th>
+        <th style="font-family:Arial, sans-serif;font-size:10px;">Duration</th>
       
 ${roleType === 'PM' ? `
- <th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Total Tickets</th>
-<th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Open</th>
-<th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Closed</th>
-<th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Functional Consultant</th>
-<th style="border:1px solid black;font-family:Arial, sans-serif;font-size:10px;">Technical Consultant</th>
+ <th style="font-family:Arial, sans-serif;font-size:10px;" class="ticket-total">Total Tickets</th>
+<th style="font-family:Arial, sans-serif;font-size:10px;" class="ticket-open">Open</th>
+<th style="font-family:Arial, sans-serif;font-size:10px;" class="ticket-close">Closed</th>
+<th style="font-family:Arial, sans-serif;font-size:10px;">Functional Consultant</th>
+<th style="font-family:Arial, sans-serif;font-size:10px;">Technical Consultant</th>
 ` : ``}
     </tr>
 
@@ -852,57 +852,57 @@ ${roleType === 'PM' ? `
   var ticketDetails = getProductTicketDetails(data.customerId, obj.productId)
         return `
         <tr>
-            <td style="border:1px solid black;">
+            <td style="">
 
 <span class="status ${getStatusClass(data.status)}">
     ${data.status}
 </span>
 
 </td>
-            <td style="border:1px solid black; font-family:Arial, sans-serif;">${name}</td>
-            <td style="border:1px solid black; font-family:Arial, sans-serif;">
+            <td style=" font-family:Arial, sans-serif;">${name}</td>
+            <td style=" font-family:Arial, sans-serif;">
 
 <span class="status ${getStatusClass(obj.status)}">
     ${obj.status || ''}
 </span>
 
 </td>
-            <td style="border:1px solid black; font-family:Arial, sans-serif;">${obj.comments || ''}</td>
-            <td style="border:1px solid black; font-family:Arial, sans-serif;">${obj.startDate || ''}</td>
-            <td style="border:1px solid black; font-family:Arial, sans-serif;">${obj.endDate || ''}</td>
+            <td style=" font-family:Arial, sans-serif;">${obj.comments || ''}</td>
+            <td style=" font-family:Arial, sans-serif;">${obj.startDate || ''}</td>
+            <td style=" font-family:Arial, sans-serif;">${obj.endDate || ''}</td>
         
-            <td style="border:1px solid black; font-family:Arial, sans-serif;">${obj.updatedEndDate || ''}</td>
-            <td style="border:1px solid black; font-family:Arial, sans-serif;">
+            <td style=" font-family:Arial, sans-serif;">${obj.updatedEndDate || ''}</td>
+            <td style=" font-family:Arial, sans-serif;">
 ${obj.duration ? obj.duration + ' days' : ''}
 </td>
 
         ${roleType === 'PM' ? `
 <td 
-style="border:1px solid black;cursor:pointer;color:blue;"
-onclick="openTicketDetails('${data.customerId}','${obj.productId}','total')">
+style="cursor:pointer;color:blue;"
+onclick="openTicketDetails('${data.customerId}','${obj.productId}','total')" class="ticket-total">
 
 ${ticketDetails.total}
 
 </td>
 
 <td 
-style="border:1px solid black;cursor:pointer;color:green;"
-onclick="openTicketDetails('${data.customerId}','${obj.productId}','open')">
+style="cursor:pointer;color:green;"
+onclick="openTicketDetails('${data.customerId}','${obj.productId}','open')" class="ticket-open">
 
 ${ticketDetails.open}
 
 </td>
 
 <td 
-style="border:1px solid black;cursor:pointer;color:red;"
-onclick="openTicketDetails('${data.customerId}','${obj.productId}','closed')">
+style="cursor:pointer;color:red;"
+onclick="openTicketDetails('${data.customerId}','${obj.productId}','closed')" class="ticket-close">
 
 ${ticketDetails.closed}
 
 </td>
 
-        <td style="border:1px solid black;">${obj.functionalConsultant || ''}</td>
-        <td style="border:1px solid black;">${obj.technicalConsultant || ''}</td>
+        <td style="">${obj.functionalConsultant || ''}</td>
+        <td style="">${obj.technicalConsultant || ''}</td>
 ` : ``}
         </tr>
         `;
@@ -913,33 +913,33 @@ ${ticketDetails.closed}
     tableRows += `
 <tr class="project-row" >
 
-    <td style="border:1px solid black;font-family:Arial, sans-serif;">
+    <td style="font-family:Arial, sans-serif;">
         
         <span class="arrow" id="arrow-${projectId}" onclick="toggleProducts('${projectId}')">▶</span>
         ${projectId}
     </td>
 
-    <td style="border:1px solid black;" onclick="openProject('${projectId}')" class="cust"><u>${data.customer}</u></td>
-    ${!isFromHome ? `<td style="border:1px solid black;font-family:Arial, sans-serif;">
+    <td style="" onclick="openProject('${projectId}')" class="cust"><u>${data.customer}</u></td>
+    ${!isFromHome ? `<td style="font-family:Arial, sans-serif;">
         <span class="status ${getStatusClass(data.status)}">
     ${data.status}
 </span>
 </td>` : ``}
    
-   <td style="border:1px solid black; font-family:Arial, sans-serif;">${data.startDate}</td>
-<td style="border:1px solid black; font-family:Arial, sans-serif;">${data.endDate}</td>
-<td style="border:1px solid black; font-family:Arial, sans-serif;">${data.duration + ' days'}</td>
-<td style="border:1px solid black; font-family:Arial, sans-serif;">${data.golive}</td>
+   <td style=" font-family:Arial, sans-serif;">${data.startDate}</td>
+<td style=" font-family:Arial, sans-serif;">${data.endDate}</td>
+<td style=" font-family:Arial, sans-serif;">${data.duration + ' days'}</td>
+<td style=" font-family:Arial, sans-serif;">${data.golive}</td>
 
-<td style="border:1px solid black; font-family:Arial, sans-serif;">${data.pm}</td>
-<td style="border:1px solid black; font-family:Arial, sans-serif;">${data.pmocomments}</td>
+<td style=" font-family:Arial, sans-serif;">${data.pm}</td>
+<td style=" font-family:Arial, sans-serif;">${data.pmocomments}</td>
 
 
-<td style="border:1px solid black; font-family:Arial, sans-serif;">${Object.keys(data.products).length}</td>
+<td style=" font-family:Arial, sans-serif;">${Object.keys(data.products).length}</td>
     ${ticketCols}
 </tr>
 
-<tr id="products-${projectId}" style="display:none; background:#f9f9f9;border:1px solid black; font-family:Arial, sans-serif;">
+<tr id="products-${projectId}" style="display:none; background:#f9f9f9; font-family:Arial, sans-serif;">
     <td colspan="100" style="padding:0;">
         <div style="padding:10px;">
             ${productList}
@@ -1020,9 +1020,9 @@ var ticketHeaderCols = '';
 
 if(roleType === 'PM'){
     ticketHeaderCols = `
-        <th style="border:1px solid black;">Total Tickets</th>
-        <th style="border:1px solid black;">Open</th>
-        <th style="border:1px solid black;">Closed</th>
+        <th style="">Total Tickets</th>
+        <th style="">Open</th>
+        <th style="">Closed</th>
     `;
 }
 
@@ -1292,6 +1292,7 @@ overflow-y:hidden;
 table{
 width:100%;
 border-collapse:collapse;
+
 }
 
 th{
@@ -1305,7 +1306,7 @@ border:0px solid #ccc;
 td{
 padding:10px;
 font-size:12px;
-
+background:transparent;
 text-align:center;
 }
 #loader {
@@ -1350,16 +1351,7 @@ td{
     transition:0.2s;
 }
 
-.project-row:hover{
-    background:linear-gradient(
-    #61348b,
-    #002855
-    
-    
-);
-color:white;
-    font-weight:bold;
-}
+
 @keyframes slideDown{
     from{
         opacity:0;
@@ -1625,16 +1617,7 @@ text-decoration: none;
     }
 }
 
-    .project-row:hover{
-    background:linear-gradient(
-    #61348b,
-    #002855
-    
-    
-);
-    color:white;
-    font-weight:bold;
-}
+   
     .cust:hover{
     cursor:pointer;
     }
@@ -1643,6 +1626,213 @@ text-decoration: none;
     flex:1;
     overflow-y:auto;   /*  only this scrolls */
     /*  REMOVE height:100% */
+}
+    .table-wrapper{
+    width:100%;
+    overflow:hidden;
+    border-radius:12px;
+    background:#fff;
+    
+    box-shadow:0 8px 30px rgba(0,0,0,.08);
+    border:1px solid #ececec;
+}
+
+.modern-table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0;
+    
+    min-width:1300px;
+}
+    .modern-table thead th{
+
+    position:sticky;
+    top:0;
+
+    background:#5b2d8e;
+    color:#fff;
+
+    font-size:13px;
+    font-weight:600;
+
+    text-transform:uppercase;
+    letter-spacing:.5px;
+
+    
+
+    border:none;
+    white-space:nowrap;
+
+    z-index:10;
+}
+    .modern-table tbody td{
+
+    
+
+    border-bottom:1px solid #f0f0f0;
+
+    color:#444;
+
+    font-size:13px;
+
+    background:#fff;
+}
+    .modern-table tbody tr{
+
+    transition:.25s;
+}
+
+.modern-table tbody tr:hover{
+
+     background:linear-gradient(
+    #61348b,
+    #002855
+    
+    
+);
+
+    transform:scale(1.002);
+}
+    .modern-table tbody tr:nth-child(even){
+
+    background:#fafafa;
+}
+    .modern-table thead th:first-child{
+
+    border-top-left-radius:18px;
+}
+
+.modern-table thead th:last-child{
+
+    border-top-right-radius:18px;
+}
+    .status{
+
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+
+    padding:6px 14px;
+
+    border-radius:30px;
+
+    font-size:11px;
+    font-weight:600;
+
+    min-width:90px;
+}
+    .status.todo{
+    background:#f4f4f4;
+    color:#555;
+}
+
+.status.inprogress{
+    background:#fff4db;
+    color:#c77c00;
+}
+
+.status.uat{
+    background:#dcefff;
+    color:#0b66c3;
+}
+
+.status.golive{
+    background:#dff8e6;
+    color:#0f8d4d;
+}
+
+.status.done{
+    background:#dff7df;
+    color:#2e7d32;
+}
+
+.status.coc{
+    background:#ffe1e1;
+    color:#c62828;
+}
+    
+    .ticket-chip{
+
+    display:inline-block;
+
+    padding:5px 10px;
+
+    border-radius:20px;
+
+    font-size:11px;
+
+    font-weight:600;
+}
+
+.ticket-total{
+
+    background:#eef2ff;
+    color:#5b2d8e;
+}
+
+.ticket-open{
+
+    background:#fff4d6;
+    color:#cc8800;
+}
+
+.ticket-close{
+
+    background:#e7f9ed;
+    color:#198754;
+}
+    .product-detail{
+
+    background:#fafbff;
+
+    border-left:4px solid #5b2d8e;
+
+    padding:20px;
+
+    animation:fadeIn .3s;
+}
+    .arrow{
+
+    width:28px;
+    height:28px;
+
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:50%;
+
+    background:#f4f4f4;
+
+    transition:.3s;
+}
+
+.arrow:hover{
+
+    background:#5b2d8e;
+    color:white;
+}
+    .cust{
+
+    color:#5b2d8e;
+    text-decoration:none;
+    font-weight:600;
+}
+
+.cust:hover{
+
+    color:#8f50df;
+    text-decoration:underline;
+}
+    .project-row{
+    transition:all .3s ease;
+}
+
+.project-row:hover td{
+    background:#5b2d8e;
+    color:#fff;
+    font-weight:600;
+    transition:all .3s ease;
 }
 </style>
 <form method="GET" id="filterForm">
@@ -1691,7 +1881,7 @@ text-decoration: none;
             id="customerFilter"
             style="
                 padding:8px 10px;
-                border:1px solid #ccc;
+                
                 border-radius:8px;
                 font-size:14px;
                 min-width:220px;
@@ -1714,7 +1904,7 @@ text-decoration: none;
             id="statusFilter"
             style="
                 padding:8px 10px;
-                border:1px solid #ccc;
+                
                 border-radius:8px;
                 min-width:220px;
                 font-size:14px;
@@ -1761,30 +1951,47 @@ text-decoration: none;
     </div>
 
 </div>
-<table>
+<div class="table-wrapper">
+<table class="modern-table">
 
 <tr>
-<th style="border:1px solid black;">Project ID</th>
-<th style="border:1px solid black;">Customer</th>
-${!isFromHome ? `<th style="border:1px solid black;">Status</th>` : ``}
-<th style="border:1px solid black;">Start Date</th>
-<th style="border:1px solid black;">End Date</th>
-<th style="border:1px solid black;">Duration</th>
-<th style="border:1px solid black;">Golive Date</th>
+<th style="">Project ID</th>
+<th style="">Customer</th>
+${!isFromHome ? `<th style="">Status</th>` : ``}
+<th style="">Start Date</th>
+<th style="">End Date</th>
+<th style="">Duration</th>
+<th style="">Golive Date</th>
 
-<th style="border:1px solid black;">PM</th>
-<th style="border:1px solid black;">PMO Comments</th>
+<th style="">PM</th>
+<th style="">PMO Comments</th>
 
 
-<th style="border:1px solid black;">Total Products</th>
+<th style="">Total Products</th>
 ${ticketHeaderCols}
 </tr>
 
 
 
-${tableRows}
+${tableRows || `
+<tr>
+    <td colspan="${roleType === 'PM' ? '13' : '10'}"
+        style="
+            text-align:center;
+            padding:40px;
+            font-size:18px;
+            color:#777;
+            font-weight:bold;
+            background:#fff;
+        ">
+        No Records Found
+    </td>
+</tr>
+`}
 
 </table>
+</div>
+
 
 ${paginationHtml}
 </div>

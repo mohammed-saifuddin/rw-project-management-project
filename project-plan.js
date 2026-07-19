@@ -634,24 +634,24 @@ data.push({
 
         <tr>
 
-            <td style="border:1px solid #ddd">${index + 1}</td>
+            <td style="" class="sno">${index + 1}</td>
 
             <td class="clickable" onclick="openDetail(
     '${d.projectPlanTemplateId}',
     '${d.projectPlanTemplate}',
     '${d.productName}',
     '${d.revenueStream}'
-)" style="border:1px solid #ddd">
+)" style="">
 
                 ${d.projectPlanTemplate || '-'}
 
             </td>
 
-            <td style="border:1px solid #ddd">
+            <td style="">
                 ${d.productName || '-'}
             </td>
 
-            <td style="border:1px solid #ddd">
+            <td style="" class="revenue">
                 ${d.revenueStream || '-'}
             </td>
 
@@ -686,13 +686,13 @@ data.push({
                 
             }
 
-            // .container{
-            //     background:white;
-            //     border-radius:10px;
-            //     padding:20px;
-            //     box-shadow:0 4px 10px rgba(0,0,0,0.1);
-            //     overflow:hidden;
-            // }
+            .container{
+                background:white;
+                border-radius:10px;
+                padding:20px;
+            
+                overflow:hidden;
+            }
 
             .title{
                 font-size:22px;
@@ -884,12 +884,7 @@ data.push({
     overflow:visible !important;
 }
     .new-plan-btn{
-    background:linear-gradient(
-        135deg,
-        #002855 0%,
-        #5b2d8e 50%,
-        #8f50df 100%
-    );
+    background:#002855;
     color:white;
     border:none;
     padding:10px 18px;
@@ -1078,6 +1073,94 @@ body::-webkit-scrollbar,
     height:0 !important;
     display:none !important;
 }
+    .table-wrapper{
+    width:100%;
+    background:#fff;
+    border-radius:18px;
+    overflow:auto;
+    border:1px solid #ececec;
+    box-shadow:0 12px 35px rgba(0,0,0,.08);
+}
+
+.modern-table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0;
+}
+    .modern-table thead th{
+
+    position:sticky;
+    top:0;
+
+      background:linear-gradient(
+    135deg,
+    #E6E6FA,
+    #E6E6FA
+);;
+
+    color:darkblue;
+
+    padding:16px;
+
+    font-size:14px;
+
+    text-transform:uppercase;
+
+    letter-spacing:.5px;
+
+    font-weight:700;
+    
+
+    border:none;
+
+    white-space:nowrap;
+
+    z-index:20;
+}
+    .modern-table tbody td{
+
+    padding:15px;
+
+    border-bottom:1px solid #f2f2f2;
+
+    background:#fff;
+
+    color:#444;
+
+    font-size:14px;
+
+    transition:.25s;
+}
+    .modern-table tbody tr:nth-child(even) td{
+
+    background:#fafafa;
+}
+    .modern-table tbody tr{
+
+    transition:.25s;
+}
+
+.modern-table tbody tr:hover td{
+
+    background:#5b2d8e,
+
+    color:white;
+
+    
+
+    transform:translateY(-1px);
+}
+    .modern-table thead th:first-child{
+
+    border-top-left-radius:16px;
+}
+
+.modern-table thead th:last-child{
+
+    border-top-right-radius:16px;
+}
+    
+    
         </style>
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -1112,17 +1195,17 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     </div>
 
 </div>
-
-            <table>
+<div class="table-wrapper">
+            <table class="modern-table">
 
                 <thead>
 
                     <tr>
 
-                        <th style="border:1px solid #ddd">S.NO</th>
-<th style="border:1px solid #ddd">Project Plan Template</th>
-                        <th style="border:1px solid #ddd">Products/Services</th>
-                        <th style="border:1px solid #ddd">Revenue Stream</th>
+                        <th style="">S.NO</th>
+<th style="">Project Plan Template</th>
+                        <th style="">Products/Services</th>
+                        <th style="">Revenue Stream</th>
 
                         
 
@@ -1137,7 +1220,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
                 </tbody>
 
             </table>
-
+<div>
         </div>
         <div class="modal" id="productModal">
 
@@ -1240,7 +1323,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
                 type="button"
                 class="save-btn"
                 onclick="addMilestoneRow()"
-                style="margin-bottom:15px;font-size:14px;">
+                style="margin-bottom:15px;font-size:14px;border-radius:20px;">
 
                 + 
 
@@ -1578,7 +1661,7 @@ location.reload();
 
             '<td>' +
 
-                '<select class="snoSelect" style="width:100%;">' +
+                '<select class="snoSelect" style="width:100%;border-radius:8px;padding:6px;">' +
 
                     '${snoOptions}' +
 
@@ -1588,7 +1671,7 @@ location.reload();
 
             '<td>' +
 
-                '<select class="mileSelect" style="width:100%;">' +
+                '<select class="mileSelect" style="width:100%;border-radius:8px;padding:6px;">' +
 
                     '${milestoneOptions}' +
 
