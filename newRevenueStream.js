@@ -172,6 +172,7 @@ revenueSearch.run().each(function(result){
                 <button
                     type="button"
                     class="deleteBtn"
+                    title="Remove the revenue stream"
                     onclick="deleteRevenue(${id})">
                     <i class="fa fa-trash"></i>
                 </button>
@@ -522,7 +523,7 @@ font-family:calibri;
 <div class="heading">New Revenue Stream</div>
 <div class="toolbar">
 
-<button class="add-btn" type="button" onclick="openModal()">
+<button class="add-btn" type="button" title="Add New Revenue Stream" onclick="openModal()">
 <i class="fa-solid fa-plus"></i>
 </button>
 

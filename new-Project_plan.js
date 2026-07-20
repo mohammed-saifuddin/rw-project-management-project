@@ -652,6 +652,7 @@ text-align:center;">
 <button
 type="button"
 class="delete-btn"
+title="Remove the milestone"
 onclick="deleteMilestone('${recId}')">
 
 <i class="fa-solid fa-xmark"></i>
@@ -770,7 +771,7 @@ body{
 
             td{
                 padding:14px;
-                font-size:14px;
+                font-size:16px;
                 color: black;
 
                 
@@ -1016,7 +1017,7 @@ button{
 
     color:#374151;
 
-    font-size:14px;
+    font-size:16px;
 
     transition:.25s;
 
@@ -1092,6 +1093,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     <button
     type="button"
     id="topEditBtn"
+    title="Create a new milestone"
     onclick="openMilestoneDialog()">
 
     <i class="fa fa-plus"  aria-hidden="true"></i>
@@ -1103,6 +1105,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 <button
     type="button"
     id="topSaveBtn"
+    title="save milestone"
     style="display:none;"
     onclick="saveAllRows()">
 
@@ -1164,6 +1167,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 
             <button
                 type="button"
+                title="cancel"
                 onclick="closeMilestoneDialog()"
                 style="
                     background:#999;
@@ -1175,6 +1179,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 
             <button
                 type="button"
+                title="save the milestone"
                 onclick="saveNewMilestone()">
 
                 Save
@@ -1236,11 +1241,12 @@ background:#E6E6E6; width:120px;">
         <div id="dialogButtons" class="dialog-buttons">
             <button id="dialogCancel"
                 class="dialog-btn cancel"
+                title="Cancel"
                 style="display:none;">
                 Cancel
             </button>
 
-            <button id="dialogOk"
+            <button id="dialogOk" title="ok"
                 class="dialog-btn ok">
                 OK
             </button>

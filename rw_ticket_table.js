@@ -159,8 +159,8 @@ var baseUrl = url.resolveScript({
     deploymentId: runtime.getCurrentScript().deploymentId,
     returnExternalUrl: true
 });
-var customerOptions = '<option value="">All</option>';
-var empOptions = '<option value="">All</option>';
+var customerOptions = '<option value="">--SELECT--</option>';
+var empOptions = '<option value="">--SELECT--</option>';
 
 var uniqueEmployees = {};
 var employeeData = [];
@@ -239,7 +239,7 @@ employeeData.forEach(function(emp){
     
 //      return true;
 // });
-var customerOptions = '<option value="">--Select--</option>';
+var customerOptions = '<option value="">--SELECT--</option>';
 
 var customerData = [];
 
@@ -299,8 +299,41 @@ customerData.forEach(function(customer){
         </option>
     `;
 });
-var productOptions = '<option value="">All Products</option>';
+var productOptions = '<option value="">--SELECT--</option>';
+if (clientName) {
 
+    var mappingSearch = search.create({
+        type: 'customrecord_rw_crm_support_hierarhy_map',
+        filters: [
+            ['isinactive', 'is', 'F'],
+            'AND',
+            ['custrecord_rw_crm_support_hier_parent', 'anyof', clientName]
+        ],
+        columns: [
+            'custrecord_rw_support_producr'
+        ]
+    });
+
+    var unique = {};
+
+    mappingSearch.run().each(function(result){
+
+        var id = result.getValue('custrecord_rw_support_producr');
+        var name = result.getText('custrecord_rw_support_producr');
+
+        if (!unique[id]) {
+
+            unique[id] = true;
+
+            productOptions +=
+                '<option value="' + id + '"' +
+                (rwProduct == id ? ' selected' : '') +
+                '>' + name + '</option>';
+        }
+
+        return true;
+    });
+}
 // var productSearch = search.create({
 //     type: 'customrecord_rw_support_', 
 //     columns:['internalid','custrecord_rw_support_product','name']
@@ -752,8 +785,8 @@ if (!(mode === 'form' || request.parameters.hidefilters === 'true')){
     <div class="filter-group">
         <label>Status</label>
         
-          <select name="status" class="inp">
-    <option value="">All</option>
+          <select name="status" class="inp" id="statusFilter">
+    <option value="">--SELECT--</option>
     <option value="1" ${request.parameters.status=='1'?'selected':''}>To Do</option>
     <option value="2" ${request.parameters.status=='2'?'selected':''}>In Progress</option>
     <option value="3" ${request.parameters.status=='3'?'selected':''}>Code Review</option>
@@ -764,7 +797,7 @@ if (!(mode === 'form' || request.parameters.hidefilters === 'true')){
     <div class="filter-group">
         <label>Requester Name</label>
         
-                <select name="requesterName"  class="inp">
+                <select name="requesterName"  class="inp" id="requesterFilter">
                ${empOptions}
                </select>
     </div>
@@ -773,8 +806,7 @@ if (!(mode === 'form' || request.parameters.hidefilters === 'true')){
     
 
     <div class="filter-actions">
-        <button type="submit" class="btn-primary" onclick="applyFilters()">Apply</button>
-        
+    
     </div>
 
 </div>
@@ -1124,12 +1156,13 @@ text-decoration: none;
 }
 .inp{
 border-radius:8px;
-padding:8px;
+padding:20px;
 }
 .filter-group input{
-    padding:8px 10px;
+    padding:12px 14px;
     border:1px solid #ccc;
     border-radius:8px;
+    height:20px;
     
     font-size:16px;
     outline:none;
@@ -1343,7 +1376,7 @@ ${filterHtml}
     
     <div class="header-left">
         <div class="top-bar">
-    <button class="addBtn" type="button" onclick="listProjects()">+</button>
+    <button class="addBtn" type="button" onclick="listProjects()" title="Create New Ticket">+</button>
 </div>
     </div>
 
@@ -1433,15 +1466,27 @@ function openTicket(ticketId){
     frame.src = urlWithParam;
 }
     var ticketUrl = '${ticketUrl}';
+    function applyFilters(){
+
+    var loader = document.getElementById("loader");
+
+    loader.style.display = "block";
+
+    document.getElementById("homeContent").style.display = "none";
+
+    document.forms[0].submit();
+}
 document.getElementById('projectName').addEventListener('change', function () {
 
     var customerId = this.value;
 
     console.log("Selected Customer:", customerId);
+    console.log("CHANGE EVENT FIRED");
 
     if (!customerId) {
         document.getElementById('rwProduct').innerHTML =
             '<option value="">Select Product</option>';
+             
         return;
     }
 
@@ -1486,6 +1531,7 @@ document.getElementById('projectName').addEventListener('change', function () {
         document.getElementById('rwProduct').innerHTML =
             '<option value="">Error loading products</option>';
     });
+    
 });
 function toggleProducts(projectId){
 
@@ -1608,16 +1654,31 @@ var homeUrl = '${homeUrl}';
         loader.style.display = "none";  //  hide loader after returning
     }, 300); // small delay for smooth UX
 }
-    function applyFilters(){
+    
+    function applyFilters() {
 
-    var loader = document.getElementById("loader");
-
-    loader.style.display = "block";
-
+    document.getElementById("loader").style.display = "block";
     document.getElementById("homeContent").style.display = "none";
+
+    document.getElementById("pageInput").value = 0;
 
     document.forms[0].submit();
 }
+    document.addEventListener("DOMContentLoaded", function () {
+
+    // document.getElementById("projectName")
+    //     .addEventListener("change", applyFilters);
+
+    document.getElementById("rwProduct")
+        .addEventListener("change", applyFilters);
+
+    document.getElementById("statusFilter")
+        .addEventListener("change", applyFilters);
+
+    document.getElementById("requesterFilter")
+        .addEventListener("change", applyFilters);
+
+});
 </script>
 `;
 

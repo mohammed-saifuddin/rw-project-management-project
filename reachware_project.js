@@ -21,11 +21,11 @@ var isFromHome = (from === 'home');
          || '';
          var dynamicTitle = context.request.parameters.title || 'Projects';
 var pageParam = request.parameters.page;
-var page = parseInt(pageParam, 10) || 0;
+var page = parseInt(pageParam, 6) || 0;
 var filterType = context.request.parameters.filter;
 log.debug("Filter Type", filterType);
 if (isNaN(page) || page < 0) page = 0;
-var pageSize = 10;
+var pageSize = 6;
 // total → no filter
 // ---------------- FILTER VALUES ----------------
 
@@ -873,7 +873,7 @@ ${roleType === 'PM' ? `
         
             <td style=" font-family:Arial, sans-serif;">${obj.updatedEndDate || ''}</td>
             <td style=" font-family:Arial, sans-serif;">
-${obj.duration ? obj.duration + ' days' : ''}
+${obj.duration ? obj.duration + '' : ''}
 </td>
 
         ${roleType === 'PM' ? `
@@ -913,22 +913,22 @@ ${ticketDetails.closed}
     tableRows += `
 <tr class="project-row" >
 
-    <td style="font-family:Arial, sans-serif;">
+    <td style="font-family:Arial, sans-serif;" title="project Id">
         
-        <span class="arrow" id="arrow-${projectId}" onclick="toggleProducts('${projectId}')">▶</span>
+        <span class="arrow" id="arrow-${projectId}" onclick="toggleProducts('${projectId}')" >▶</span>
         ${projectId}
     </td>
 
-    <td style="" onclick="openProject('${projectId}')" class="cust"><u>${data.customer}</u></td>
+    <td style="" onclick="openProject('${projectId}')" class="cust" title="customer"><u>${data.customer}</u></td>
     ${!isFromHome ? `<td style="font-family:Arial, sans-serif;">
         <span class="status ${getStatusClass(data.status)}">
     ${data.status}
 </span>
 </td>` : ``}
    
-   <td style=" font-family:Arial, sans-serif;">${data.startDate}</td>
-<td style=" font-family:Arial, sans-serif;">${data.endDate}</td>
-<td style=" font-family:Arial, sans-serif;">${data.duration + ' days'}</td>
+   <td style=" font-family:Arial, sans-serif;" title="start date">${data.startDate}</td>
+<td style=" font-family:Arial, sans-serif;" title="end date">${data.endDate}</td>
+<td style=" font-family:Arial, sans-serif;" >${data.duration + ' days'}</td>
 <td style=" font-family:Arial, sans-serif;">${data.golive}</td>
 
 <td style=" font-family:Arial, sans-serif;">${data.pm}</td>
@@ -1031,7 +1031,7 @@ if(roleType === 'PM'){
 var addButton = '';
 
 if(roleType === 'PMO' || roleType === 'PM'){
-    addButton = `<button class="addBtn" type="button" onclick="listProjects()">+</button>`;
+    addButton = `<button class="addBtn" type="button" title="Create a new project" onclick="listProjects()">+</button>`;
 } else {
     
     addButton = `<div style="height:55px;width:35px;"></div>`;
@@ -1459,11 +1459,7 @@ text-decoration: none;
     padding:10px 14px;
     margin:12px 5px 18px 5px;
 
-    background:linear-gradient(
-        135deg,
-        #ffffff,
-        #f8f5ff
-    );
+   
 
     border-radius:14px;
 
@@ -1834,6 +1830,286 @@ text-decoration: none;
     font-weight:600;
     transition:all .3s ease;
 }
+    .filter-card{
+
+
+    border:1px solid #e6e6e6;
+    border-radius:14px;
+    box-shadow:0 4px 16px rgba(0,0,0,.08);
+    overflow:hidden;
+    margin-bottom:18px;
+}
+
+.filter-header{
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    padding:14px 18px;
+
+    cursor:pointer;
+
+    background:#fafafa;
+
+    font-weight:600;
+    color:#5b2d8e;
+}
+
+.filter-title{
+
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.filter-content{
+
+    display:none;
+
+    padding:18px;
+
+    border-top:1px solid #eee;
+
+    display:none;
+
+    gap:20px;
+
+    flex-wrap:wrap;
+}
+
+.filter-group{
+
+    min-width:240px;
+}
+
+.filter-group select{
+
+    width:100%;
+    height:42px;
+
+    border:1px solid #ddd;
+    border-radius:10px;
+
+    padding:0 12px;
+
+    font-size:14px;
+}
+    .filter-header{
+
+    display:flex;
+    justify-content:flex-end;
+    padding:8px 0;
+}
+
+.filter-btn-modern{
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    background:#ffffff;
+
+    border:1px solid #E4E7EC;
+
+    border-radius:14px;
+
+    padding:10px 18px;
+
+    cursor:pointer;
+
+    font-size:14px;
+    font-weight:600;
+
+    color:#344054;
+
+    transition:.25s;
+
+    box-shadow:
+        0 4px 18px rgba(0,0,0,.06);
+}
+
+.filter-btn-modern:hover{
+
+    transform:translateY(-2px);
+
+    border-color:#6F2DA8;
+
+    color:#6F2DA8;
+
+    box-shadow:
+        0 10px 28px rgba(111,45,168,.18);
+}
+
+.filter-btn-modern.active{
+
+    background:linear-gradient(
+        135deg,
+        #6F2DA8,
+        #8F50DF
+    );
+
+    color:white;
+
+    border-color:transparent;
+}
+
+.filter-icon{
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    width:34px;
+    height:34px;
+
+    border-radius:10px;
+
+    background:#F5F3FF;
+}
+
+.filter-btn-modern.active .filter-icon{
+
+    background:rgba(255,255,255,.18);
+}
+
+.filter-text{
+
+    letter-spacing:.4px;
+}
+
+.filter-count{
+
+    min-width:24px;
+    height:24px;
+
+    border-radius:50%;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:#EEF2FF;
+
+    color:#6F2DA8;
+
+    font-size:12px;
+
+    font-weight:700;
+}
+
+.filter-btn-modern.active .filter-count{
+
+    background:white;
+
+    color:#6F2DA8;
+}
+
+.filter-arrow{
+
+    font-size:18px;
+
+    transition:.3s;
+}
+
+.filter-arrow.rotate{
+
+    transform:rotate(180deg);
+}
+    .filter-container{
+
+    margin-bottom:10px;
+    margin-top:10px;
+}
+
+.filter-toggle-btn{
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    padding:8px 8px;
+
+    border:none;
+
+    border-radius:14px;
+
+    cursor:pointer;
+
+    background:linear-gradient(
+        135deg,
+        #5B2D8E,
+        #8F50DF
+    );
+
+    color:white;
+
+    font-size:14px;
+
+    font-weight:600;
+
+    transition:.3s;
+
+    box-shadow:0 10px 25px rgba(111,45,168,.25);
+}
+
+.filter-toggle-btn:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:0 15px 35px rgba(111,45,168,.35);
+}
+
+#filterArrow{
+
+    margin-left:auto;
+
+    font-size:22px;
+
+    transition:.3s;
+}
+
+.filter-card{
+
+    display:none;
+
+    margin-top:16px;
+
+    padding:22px;
+
+    background:white;
+
+    border-radius:18px;
+
+    box-shadow:0 15px 40px rgba(0,0,0,.08);
+
+    border:1px solid #ececec;
+
+    animation:slideDown .3s ease;
+
+    display:none;
+
+    gap:20px;
+
+    flex-wrap:wrap;
+}
+
+@keyframes slideDown{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(-15px);
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+    }
+}
 </style>
 <form method="GET" id="filterForm">
 <input type="hidden" id="pageInput" name="page" value="${page}">
@@ -1869,67 +2145,60 @@ text-decoration: none;
 </iframe>
 <div id="homeContent">
 
-<div class="filter-card">
+<div class="filter-container">
 
-    <!-- CUSTOMER -->
-    <div class="filter-group">
+    <button
+        type="button"
+        id="filterBtn"
+        class="filter-toggle-btn"
+        onclick="toggleFilters()">
 
-        
+        <svg xmlns="http://www.w3.org/2000/svg"
+             width="18"
+             height="18"
+             fill="none"
+             stroke="currentColor"
+             stroke-width="2"
+             stroke-linecap="round"
+             stroke-linejoin="round"
+             viewBox="0 0 24 24">
 
-        <select
-            name="customer"
-            id="customerFilter"
-            style="
-                padding:8px 10px;
-                
-                border-radius:8px;
-                font-size:14px;
-                min-width:220px;
-            "
-        >
+            <polygon points="22 3 2 3 10 12 10 19 14 21 14 12 22 3"/>
 
-        ${customerOptions}
+        </svg>
 
-        </select>
+        <span>Filters</span>
 
-    </div>
+        <span id="filterArrow">+</span>
 
-    <!-- STATUS -->
-    <div class="filter-group">
+    </button>
 
-        
+    <div class="filter-card" id="filterCard">
 
-        <select
-            name="projectstatus"
-            id="statusFilter"
-            style="
-                padding:8px 10px;
-                
-                border-radius:8px;
-                min-width:220px;
-                font-size:14px;
-            "
-        >
+        <div class="filter-group">
 
-            
+            <select
+                name="customer"
+                id="customerFilter">
 
-            ${statOptions1}
+                ${customerOptions}
 
-        </select>
+            </select>
 
-    </div>
+        </div>
 
-    <!-- BUTTON -->
-    <div class="filter-actions">
+        <div class="filter-group">
 
-       
-<button
-    type="button"
-    class="btn-primary"
-    id="applyBtn"
-    onclick="applyFilters()">
-    Apply
-</button>
+            <select
+                name="projectstatus"
+                id="statusFilter">
+
+                ${statOptions1}
+
+            </select>
+
+        </div>
+
     </div>
 
 </div>
@@ -2143,7 +2412,43 @@ ticketUrl += "&fromproject=T";
     
     frame.src = ticketUrl;
 }
+function applyFilters() {
 
+    document.getElementById("loader").style.display = "block";
+    document.getElementById("homeContent").style.display = "none";
+
+    document.getElementById("pageInput").value = 0;
+
+    document.forms[0].submit();   // <-- Use this
+}
+    document.addEventListener("DOMContentLoaded", function () {
+
+    document.getElementById("customerFilter")
+        .addEventListener("change", applyFilters);
+
+    document.getElementById("statusFilter")
+        .addEventListener("change", applyFilters);
+
+});
+function toggleFilters(){
+
+    const card = document.getElementById("filterCard");
+    const arrow = document.getElementById("filterArrow");
+
+    if(card.style.display === "flex"){
+
+        card.style.display = "none";
+
+        arrow.innerHTML = "+";
+
+    }else{
+
+        card.style.display = "flex";
+
+        arrow.innerHTML = "−";
+
+    }
+}
 </script>
 `;
 

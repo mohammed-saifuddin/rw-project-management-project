@@ -1174,20 +1174,20 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 
     <div style="display:flex;gap:10px;align-items:center;">
 
-       <button class="new-plan-btn" type="button"
+       <button class="new-plan-btn" type="button" title="Create a new project plan"
         onclick="openCreatePlanModal()">
     <i class="fa fa-plus"></i>
     New Project Plan
 </button>
 <button class="new-plan-btn"
-        type="button"
+        type="button" title="Create a new product"
         onclick="openCreateProductModal()">
 
     <i class="fa fa-plus"></i>
     New Product
 
 </button>
-        <div class="count-box">
+        <div class="count-box" title="Total records">
             <i class="fa-solid fa-database"></i>
             Total Records : ${data.length}
         </div>

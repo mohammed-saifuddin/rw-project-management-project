@@ -699,7 +699,7 @@ log.debug(isEdit)
 
         ` : ``}
 
-        <td style="text-align:center;width:20px;"><button type="button" class="revBtn" onclick="removeRow(this)">❌</button></td>
+        <td style="text-align:center;width:20px;"><button type="button" title="Click to remove the row" class="revBtn" onclick="removeRow(this)">❌</button></td>
     </tr>
     `;
 
@@ -718,7 +718,7 @@ else if(roleType === 'PM'){
          <td> <input type="date" id="stdate" name="stdate[]"></td>
 <td><input type="date" id="eddate" name="eddate[]"></td>
 <td><input type="date" id="updateddeadline" name="updateddeadline[]"></td>
-        <td style="text-align:center;width:20px;"><button type="button" class="revBtn" onclick="removeRow(this)">❌</button></td>
+        <td style="text-align:center;width:20px;"><button type="button" title="Click to remove the row" class="revBtn" onclick="removeRow(this)">❌</button></td>
 
         
        
@@ -741,7 +741,7 @@ else {
         <td><input type="date" name="expgolive[]"></td>
         <td><select name="linestatus[]">${statOptions}</select></td>
         
-        <td style="text-align:center;width:20px;"><button type="button" class="revBtn" onclick="removeRow(this)">❌</button></td>
+        <td style="text-align:center;width:20px;"><button type="button" title="Click to remove the row" class="revBtn" onclick="removeRow(this)">❌</button></td>
     </tr>
     `;
 }
@@ -1563,7 +1563,7 @@ ${projectOptions}
         ${customerOptions}
     </select>
 
-    <button type="button" class="add-customer-btn" onclick="createCustomer()">➕</button>
+    <button type="button" class="add-customer-btn" title="create new customer" onclick="createCustomer()">➕</button>
 
 </div>
 
@@ -1672,7 +1672,7 @@ ${statOptions1}
 
 </div>
 </div>
-<button type="button" onclick="addRow()" class="addBtn" style="margin-top:10px;">
+<button type="button" onclick="addRow()" title="Add new row" class="addBtn" style="margin-top:10px;">
 ➕ 
 </button>
 
@@ -1690,7 +1690,7 @@ ${rowHtml}
 <input type="hidden"
        name="customertext"
        id="customertext">
-<button type="submit" class="savebtn" >Save</button>
+<button type="submit" title="Click to save the project" class="savebtn" >Save</button>
 
 <div id="loader">
     <div class="loader-box">

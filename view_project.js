@@ -386,13 +386,18 @@ log.debug(
         }
 
         // STATUS
-        if(line.status){
-
-           newLine.setValue({
-    fieldId: 'custrecord_rw_portal_projstat',
-    value: Number(line.status || defaultProductStatus)
-});
-        }
+        // STATUS
+if (line.status) {
+    newLine.setValue({
+        fieldId: 'custrecord_rw_portal_projstat',
+        value: Number(line.status)
+    });
+} else {
+    newLine.setValue({
+        fieldId: 'custrecord_rw_portal_projstat',
+        value: Number(defaultProductStatus)
+    });
+}
 
         // START DATE
         if(line.startdate){
@@ -3624,6 +3629,7 @@ var empRoleMap = {};
         ?
         `<button
             type="button"
+            title="Remove product"
             onclick="removeProduct('${lineId}')"
             style="
                 background:#dc3545;
@@ -4170,6 +4176,7 @@ else if (roleType === 'PM') {
         ?
         `<button
             type="button"
+            title="Remove the product"
             onclick="removeProduct('${lineId}')"
             style="
                 background:#dc3545;
@@ -5567,6 +5574,7 @@ ${canAddProduct ? `
 <button
     type="button"
     onclick="addNewProductRow()"
+    title="Add new product"
     style="
         background:linear-gradient(135deg,#5b2d8e,#8f50df);
         border:none;
@@ -5597,12 +5605,12 @@ ${canAddProduct ? `
     </tbody>
 </table>
 
-    <button class="backBtn" type="button" onclick="goBack()">⬅ Back</button>
+    <button class="backBtn" type="button" onclick="goBack()" title="Move back">⬅ Back</button>
   
 
 ${canEdit ? `
-<button id="editBtn" type="button">✏ Edit</button>
-<button id="saveBtn" onclick="saveData()" style="display:none;" type="button">💾 Save</button>
+<button id="editBtn" type="button" title="Click here to edit">✏ Edit</button>
+<button id="saveBtn" onclick="saveData()" style="display:none;" type="button" title="Save">💾 Save</button>
 ` : ''}
 
 </div>
