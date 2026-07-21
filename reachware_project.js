@@ -2093,7 +2093,130 @@ text-decoration: none;
 
     flex-wrap:wrap;
 }
+.filter-card-main{
 
+    background:white;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:16px;
+
+    overflow:hidden;
+
+    box-shadow:0 8px 25px rgba(0,0,0,.08);
+
+    margin-bottom:20px;
+    margin-top:8px;
+}
+
+.filter-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:16px 20px;
+
+    cursor:pointer;
+
+    background:#fafafa;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    color:#5B2D8E;
+}
+
+.filter-header:hover{
+
+    background:#f4f0ff;
+}
+
+.filter-title{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+}
+
+#filterArrow{
+
+    font-size:20px;
+
+    transition:.3s;
+}
+
+.filter-body{
+
+    display:none;
+
+    padding:22px;
+
+    border-top:1px solid #eee;
+}
+
+.filter-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(2,1fr);
+
+    gap:20px;
+}
+
+.filter-group{
+
+    display:flex;
+
+    flex-direction:column;
+}
+
+.filter-group label{
+
+    margin-bottom:8px;
+
+    font-size:13px;
+
+    font-weight:600;
+}
+
+.filter-group select{
+
+    height:42px;
+
+    border-radius:10px;
+
+    border:1px solid #ddd;
+
+    padding:0 12px;
+}
+
+.filter-footer{
+
+    margin-top:20px;
+
+    text-align:right;
+}
+
+.apply-btn{
+
+    background:linear-gradient(135deg,#6F2DA8,#8F50DF);
+
+    color:white;
+
+    border:none;
+
+    border-radius:10px;
+
+    padding:10px 20px;
+
+    cursor:pointer;
+}
 @keyframes slideDown{
 
     from{
@@ -2145,59 +2268,43 @@ text-decoration: none;
 </iframe>
 <div id="homeContent">
 
-<div class="filter-container">
+<div class="filter-card-main">
 
-    <button
-        type="button"
-        id="filterBtn"
-        class="filter-toggle-btn"
-        onclick="toggleFilters()">
+    <div class="filter-header" onclick="toggleFilters()">
 
-        <svg xmlns="http://www.w3.org/2000/svg"
-             width="18"
-             height="18"
-             fill="none"
-             stroke="currentColor"
-             stroke-width="2"
-             stroke-linecap="round"
-             stroke-linejoin="round"
-             viewBox="0 0 24 24">
+        <div class="filter-title">
+            🔍 <span>Project Filters</span>
+        </div>
 
-            <polygon points="22 3 2 3 10 12 10 19 14 21 14 12 22 3"/>
+        <span id="filterArrow">▼</span>
 
-        </svg>
+    </div>
 
-        <span>Filters</span>
+    <div class="filter-body" id="filterBody">
 
-        <span id="filterArrow">+</span>
+        <div class="filter-grid">
 
-    </button>
+            <div class="filter-group">
+                <label>Customer</label>
+                <select name="customer" id="customerFilter">
+                    ${customerOptions}
+                </select>
+            </div>
 
-    <div class="filter-card" id="filterCard">
+            <div class="filter-group">
+                <label>Project Status</label>
+                <select
+                    name="projectstatus"
+                    id="statusFilter">
 
-        <div class="filter-group">
+                    ${statOptions1}
 
-            <select
-                name="customer"
-                id="customerFilter">
-
-                ${customerOptions}
-
-            </select>
+                </select>
+            </div>
 
         </div>
 
-        <div class="filter-group">
-
-            <select
-                name="projectstatus"
-                id="statusFilter">
-
-                ${statOptions1}
-
-            </select>
-
-        </div>
+        
 
     </div>
 
@@ -2432,21 +2539,18 @@ function applyFilters() {
 });
 function toggleFilters(){
 
-    const card = document.getElementById("filterCard");
-    const arrow = document.getElementById("filterArrow");
+    var body = document.getElementById("filterBody");
+    var arrow = document.getElementById("filterArrow");
 
-    if(card.style.display === "flex"){
+    if(body.style.display === "block"){
 
-        card.style.display = "none";
-
-        arrow.innerHTML = "+";
+        body.style.display = "none";
+        arrow.innerHTML = "▼";
 
     }else{
 
-        card.style.display = "flex";
-
-        arrow.innerHTML = "−";
-
+        body.style.display = "block";
+        arrow.innerHTML = "▲";
     }
 }
 </script>

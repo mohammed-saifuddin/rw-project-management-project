@@ -765,48 +765,57 @@ var filterHtml = '';
 
 if (!(mode === 'form' || request.parameters.hidefilters === 'true')){
     filterHtml = `
-    <div class="filter-card">
+    <div class="filter-card-main">
 
-    <div class="filter-group">
-        <label>Client Name</label>
-        
+    <div class="filter-header" onclick="toggleFilters()">
 
-               <select name="clientName" id="projectName" class="inp">
-               ${customerOptions}
-               </select>
-    </div>
-    <div class="filter-group">
-        <label>Rw Product</label>
-        
-               <select name="rwProduct" id="rwProduct" class="inp">
-               ${productOptions}
-               </select>
-    </div>
-    <div class="filter-group">
-        <label>Status</label>
-        
-          <select name="status" class="inp" id="statusFilter">
-    <option value="">--SELECT--</option>
-    <option value="1" ${request.parameters.status=='1'?'selected':''}>To Do</option>
-    <option value="2" ${request.parameters.status=='2'?'selected':''}>In Progress</option>
-    <option value="3" ${request.parameters.status=='3'?'selected':''}>Code Review</option>
-    <option value="4" ${request.parameters.status=='4'?'selected':''}>UAT</option>
-    <option value="5" ${request.parameters.status=='5'?'selected':''}>Done</option>
-</select>
-    </div>
-    <div class="filter-group">
-        <label>Requester Name</label>
-        
-                <select name="requesterName"  class="inp" id="requesterFilter">
-               ${empOptions}
-               </select>
-    </div>
-   
+        <div class="filter-title">
+            🔍 <span>Ticket Filters</span>
+        </div>
 
-    
+        <span id="filterArrow">▼</span>
 
-    <div class="filter-actions">
-    
+    </div>
+
+    <div class="filter-body" id="filterBody">
+
+        <div class="filter-grid">
+
+            <div class="filter-group">
+                <label>Client Name</label>
+                <select name="clientName" id="projectName">
+                    ${customerOptions}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>RW Product</label>
+                <select name="rwProduct" id="rwProduct">
+                    ${productOptions}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Status</label>
+                <select name="status" id="statusFilter">
+                    <option value="">--SELECT--</option>
+                    <option value="1" ${request.parameters.status=='1'?'selected':''}>To Do</option>
+                    <option value="2" ${request.parameters.status=='2'?'selected':''}>In Progress</option>
+                    <option value="3" ${request.parameters.status=='3'?'selected':''}>Code Review</option>
+                    <option value="4" ${request.parameters.status=='4'?'selected':''}>UAT</option>
+                    <option value="5" ${request.parameters.status=='5'?'selected':''}>Done</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Requester</label>
+                <select name="requesterName" id="requesterFilter">
+                    ${empOptions}
+                </select>
+            </div>
+
+        </div>
+
     </div>
 
 </div>
@@ -1332,6 +1341,131 @@ table tr.ho:hover td {
 
     font-weight:600;
 }
+    .filter-card-main{
+
+    background:#fff;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:16px;
+
+    overflow:hidden;
+
+    box-shadow:0 8px 25px rgba(0,0,0,.08);
+
+    margin-bottom:10px;
+}
+
+.filter-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:10px 10px;
+
+    cursor:pointer;
+
+    background:#fafafa;
+
+    font-size:14px;
+
+    font-weight:600;
+
+    color:#5B2D8E;
+}
+
+.filter-header:hover{
+
+    background:#f4f0ff;
+}
+
+.filter-title{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:6px;
+}
+
+#filterArrow{
+
+    font-size:20px;
+
+    transition:.3s;
+}
+
+.filter-body{
+
+    display:none;
+
+    padding:16px;
+
+    border-top:1px solid #eee;
+}
+
+.filter-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(4, minmax(220px,1fr));
+
+    gap:12px;
+
+    align-items:end;
+}
+
+.filter-group{
+
+    display:flex;
+
+    flex-direction:column;
+}
+
+.filter-group label{
+
+    margin-bottom:8px;
+
+    font-size:13px;
+
+    font-weight:600;
+}
+
+.filter-group select{
+
+    height:30px;
+
+    border-radius:10px;
+
+    border:1px solid #ddd;
+
+    padding:0 8px;
+}
+
+.filter-footer{
+
+    margin-top:8px;
+
+    text-align:right;
+}
+
+.apply-btn{
+
+    background:linear-gradient(135deg,#6F2DA8,#8F50DF);
+
+    color:white;
+
+    border:none;
+
+    border-radius:10px;
+
+    padding:10px 20px;
+
+    cursor:pointer;
+}
 </style>
 <form method="GET">
 <div class="main-container">
@@ -1679,6 +1813,22 @@ var homeUrl = '${homeUrl}';
         .addEventListener("change", applyFilters);
 
 });
+function toggleFilters(){
+
+    var body = document.getElementById("filterBody");
+    var arrow = document.getElementById("filterArrow");
+
+    if(body.style.display === "block"){
+
+        body.style.display = "none";
+        arrow.innerHTML = "▼";
+
+    }else{
+
+        body.style.display = "block";
+        arrow.innerHTML = "▲";
+    }
+}
 </script>
 `;
 
