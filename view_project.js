@@ -2532,10 +2532,10 @@ var customerPlanId = '';
     'AND',
 
     [
-        'formulatext: {custrecord_rw_cust_proj_plan_prod_serv}',
-        'is',
-        product
-    ]
+    'custrecord_rw_cust_proj_plan_prod_serv',
+    'anyof',
+    productId
+]
 ],
 
         columns: [

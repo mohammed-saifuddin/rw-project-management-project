@@ -1466,6 +1466,41 @@ table tr.ho:hover td {
 
     cursor:pointer;
 }
+    .dots-loader{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    padding:15px;
+}
+
+.dots-loader span{
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    background:#6f3ba2;
+    animation:bounce .6s infinite alternate;
+}
+
+.dots-loader span:nth-child(2){
+    animation-delay:.2s;
+}
+
+.dots-loader span:nth-child(3){
+    animation-delay:.4s;
+}
+
+@keyframes bounce{
+
+    from{
+        transform:translateY(0);
+        opacity:.5;
+    }
+
+    to{
+        transform:translateY(-10px);
+        opacity:1;
+    }
+}
 </style>
 <form method="GET">
 <div class="main-container">
@@ -1556,8 +1591,13 @@ ${tableRows}
 </div>
 
 <div id="loader">
-    <div class="spinner"></div>
+    
     <p>Opening........</p>
+    <div class="dots-loader">
+    <span></span>
+    <span></span>
+    <span></span>
+    </div>
 </div>
 </form>
 <script>

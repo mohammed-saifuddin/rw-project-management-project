@@ -18,6 +18,8 @@ log.debug(
         runtime.getCurrentScript().getRemainingUsage()
     );
 
+
+
 if (
     context.request.parameters.action ===
     'updateTicketStatus'
@@ -646,33 +648,33 @@ params: {
         email: email
     }
 });
-function getHighPriorityTicketList(){
+// function getHighPriorityTicketList(){
 
-    var tickets = [];
+//     var tickets = [];
 
-    var ticketSearch = search.create({
-        type: 'customrecord_rw_ticket',
-        filters: [
-            ['custrecord_rw_ticket_priority','anyof','1'] 
-        ],
-        columns: [
-            'custrecord_rw_ticket_ticketno', // Ticket Number
-            'custrecord_rw_ticket_deadline'
-        ]
-    });
+//     var ticketSearch = search.create({
+//         type: 'customrecord_rw_ticket',
+//         filters: [
+//             ['custrecord_rw_ticket_priority','anyof','1'] 
+//         ],
+//         columns: [
+//             'custrecord_rw_ticket_ticketno', // Ticket Number
+//             'custrecord_rw_ticket_deadline'
+//         ]
+//     });
 
-    ticketSearch.run().each(function(result){
+//     ticketSearch.run().each(function(result){
 
-        tickets.push({
-            number: result.getValue('custrecord_rw_ticket_ticketno'),
-            deadline: result.getValue('custrecord_rw_ticket_deadline')
-        });
+//         tickets.push({
+//             number: result.getValue('custrecord_rw_ticket_ticketno'),
+//             deadline: result.getValue('custrecord_rw_ticket_deadline')
+//         });
 
-        return true;
-    });
+//         return true;
+//     });
 
-    return tickets;
-}
+//     return tickets;
+// }
 // var projectCount=getTotalCount();
 // var inProgressCount=getInProgressCount();
 
@@ -697,7 +699,7 @@ var myClosedTickets   = ticketStats.myClosed;
 var empInternalId = getEmployeeInternalId(email);
 var empRole = getEmployeeRole(empInternalId);
 log.debug("Employee Role", empRole);
-var highPriorityTickets = getHighPriorityTicketList();
+//var highPriorityTickets = getHighPriorityTicketList();
 // var assignedTickets = getAssignedTicketCount(empId);
 // var kickOffCount=getKickOffCount();
 // var bussinesCount=getBussinessCount();
@@ -1024,130 +1026,258 @@ function getCurrentMonthDates(){
     return { firstDay, lastDay };
 }
 
-function getProjectProgress(){
+// function getProjectProgress(){
+
+//     var data = [];
+
+//     var projectSearch = search.create({
+
+//         type:'customrecord_rw_portal_access',
+
+//         filters:[
+//             ['isinactive','is','F']
+//         ],
+
+//         columns:[
+//             'internalid',
+//             'custrecord_rw_portal_customername',
+//             'custrecord_rw_portal_status'
+//         ]
+//     });
+
+//     projectSearch.run().each(function(project){
+
+//         var projectId =
+//             project.getValue('internalid');
+
+//         var projectName =
+//             project.getText(
+//                 'custrecord_rw_portal_customername'
+//             ) || 'Project';
+
+//         var totalMilestones = 0;
+// var completedMilestones = 0;
+//         var totalProgress = 0;
+
+//         var milestoneSearch = search.create({
+
+//             type:'customrecord_rw_portal_access2',
+
+//             filters:[
+//                 ['custrecord1513','anyof',projectId]
+//             ],
+
+//             columns:[
+//                 'custrecord_rw_portal_projstat'
+//             ]
+//         });
+
+//         milestoneSearch.run().each(function(ms){
+
+//             totalMilestones++;
+
+//             var status =
+//                 ms.getValue(
+//                     'custrecord_rw_portal_projstat'
+//                 );
+
+//             var progressValue = 0;
+
+            
+//             if(status == '8'){ // use your actual Not Started status ID
+//     progressValue = 0;
+// }
+// // KICKOFF
+//             else if(status == '1'){
+//                 progressValue = 10;
+//             }
+
+//             // IN PROGRESS
+//             else if(status == '2'){
+//                 progressValue = 50;
+//             }
+
+//             // UAT
+//             else if(status == '4'){
+//                 progressValue = 75;
+//             }
+
+//             // GOLIVE
+//             else if(status == '4'){
+//                 progressValue = 90;
+//             }
+
+//             // COC / DONE / COMPLETED
+//             else if(
+//                 status == '6' ||
+//                 status == '5'
+            
+//             ){
+//                 progressValue = 100;
+//                 completedMilestones++;
+//             }
+            
+//             totalProgress += progressValue;
+            
+
+//             return true;
+//         });
+
+//         var finalProgress = 0;
+
+//         if(totalMilestones > 0){
+
+//             finalProgress = Math.round(
+//                 totalProgress / totalMilestones
+//             );
+//         }
+
+//         if(finalProgress > 100){
+//             finalProgress = 100;
+//         }
+
+//        data.push({
+
+//     projectId: projectId,
+
+//     projectName: projectName,
+
+//     progress: finalProgress,
+
+//     completed: completedMilestones,
+
+//     total: totalMilestones
+// });
+
+//         return true;
+//     });
+
+//     return data;
+// }
+function getProjectProgress() {
 
     var data = [];
 
-    var projectSearch = search.create({
+    // Store all projects
+    var projectMap = {};
 
-        type:'customrecord_rw_portal_access',
-
-        filters:[
-            ['isinactive','is','F']
+    search.create({
+        type: 'customrecord_rw_portal_access',
+        filters: [
+            ['isinactive', 'is', 'F']
         ],
-
-        columns:[
+        columns: [
             'internalid',
-            'custrecord_rw_portal_customername',
-            'custrecord_rw_portal_status'
+            'custrecord_rw_portal_customername'
         ]
+    }).run().each(function(project) {
+
+        var projectId = project.getValue('internalid');
+
+        projectMap[projectId] = {
+            projectId: projectId,
+            projectName: project.getText('custrecord_rw_portal_customername') || 'Project',
+            totalMilestones: 0,
+            completedMilestones: 0,
+            totalProgress: 0
+        };
+
+        return true;
     });
 
-    projectSearch.run().each(function(project){
+    // Single milestone search
+    search.create({
+        type: 'customrecord_rw_portal_access2',
+        filters: [
+            ['isinactive', 'is', 'F']
+        ],
+        columns: [
+            'custrecord1513',
+            'custrecord_rw_portal_projstat'
+        ]
+    }).run().each(function(ms) {
 
-        var projectId =
-            project.getValue('internalid');
+        var projectId = ms.getValue('custrecord1513');
 
-        var projectName =
-            project.getText(
-                'custrecord_rw_portal_customername'
-            ) || 'Project';
-
-        var totalMilestones = 0;
-var completedMilestones = 0;
-        var totalProgress = 0;
-
-        var milestoneSearch = search.create({
-
-            type:'customrecord_rw_portal_access2',
-
-            filters:[
-                ['custrecord1513','anyof',projectId]
-            ],
-
-            columns:[
-                'custrecord_rw_portal_projstat'
-            ]
-        });
-
-        milestoneSearch.run().each(function(ms){
-
-            totalMilestones++;
-
-            var status =
-                ms.getValue(
-                    'custrecord_rw_portal_projstat'
-                );
-
-            var progressValue = 0;
-
-            
-            if(status == '8'){ // use your actual Not Started status ID
-    progressValue = 0;
-}
-// KICKOFF
-            else if(status == '1'){
-                progressValue = 10;
-            }
-
-            // IN PROGRESS
-            else if(status == '2'){
-                progressValue = 50;
-            }
-
-            // UAT
-            else if(status == '4'){
-                progressValue = 75;
-            }
-
-            // GOLIVE
-            else if(status == '4'){
-                progressValue = 90;
-            }
-
-            // COC / DONE / COMPLETED
-            else if(
-                status == '6' ||
-                status == '5'
-            
-            ){
-                progressValue = 100;
-                completedMilestones++;
-            }
-            
-            totalProgress += progressValue;
-            
-
+        if (!projectMap[projectId]) {
             return true;
-        });
+        }
+
+        var project = projectMap[projectId];
+
+        project.totalMilestones++;
+
+        var status = ms.getValue('custrecord_rw_portal_projstat');
+
+        var progress = 0;
+
+        switch (status) {
+
+            case '8': // Not Started
+                progress = 0;
+                break;
+
+            case '1': // Kickoff
+                progress = 10;
+                break;
+
+            case '2': // In Progress
+                progress = 50;
+                break;
+
+            case '4': // UAT
+                progress = 75;
+                break;
+
+            case '5': // Go Live
+                progress = 90;
+                break;
+
+            case '6': // Completed
+                progress = 100;
+                project.completedMilestones++;
+                break;
+
+            default:
+                progress = 0;
+        }
+
+        project.totalProgress += progress;
+
+        return true;
+    });
+
+    // Build result
+    Object.keys(projectMap).forEach(function(projectId) {
+
+        var p = projectMap[projectId];
 
         var finalProgress = 0;
 
-        if(totalMilestones > 0){
-
+        if (p.totalMilestones > 0) {
             finalProgress = Math.round(
-                totalProgress / totalMilestones
+                p.totalProgress / p.totalMilestones
             );
         }
 
-        if(finalProgress > 100){
+        if (finalProgress > 100) {
             finalProgress = 100;
         }
 
-       data.push({
+        data.push({
 
-    projectId: projectId,
+            projectId: p.projectId,
 
-    projectName: projectName,
+            projectName: p.projectName,
 
-    progress: finalProgress,
+            progress: finalProgress,
 
-    completed: completedMilestones,
+            completed: p.completedMilestones,
 
-    total: totalMilestones
-});
+            total: p.totalMilestones
 
-        return true;
+        });
+
     });
 
     return data;
@@ -1173,7 +1303,7 @@ function getCustomersByStatus(statusId){
                 'AND',
                  ['custrecord_rw_portal_customername.custentity_rw_emp_port_access','is','T'],
                  'AND',
-                ['created','within', startDate, endDate]   // ✅ string format
+                ['created','within', startDate, endDate]   //  string format
             ],
             columns: [
                 'custrecord_rw_portal_customername',
@@ -1365,7 +1495,7 @@ function formatDateForNS(date){
 
     return day + '/' + month + '/' + year;
 }
-var goLiveProducts = getCurrentGoLiveProducts();
+//var goLiveProducts = getCurrentGoLiveProducts();
 function getCustomersByDate(fieldId, type, statusId){
 
     var customers = [];
@@ -1615,35 +1745,35 @@ function getOverdueTickets(empId){
 //     return tickets;
 // }
 var overdueTicketsOfLoggedInUser = getOverdueTickets(empId);
-function buildCard(title, currentList, upcomingList){
+// function buildCard(title, currentList, upcomingList){
 
-    currentList = currentList || [];   
-    upcomingList = upcomingList || []; 
+//     currentList = currentList || [];   
+//     upcomingList = upcomingList || []; 
 
-    var currentHtml = currentList.length 
-        ? currentList.map(c => `<li>${c}</li>`).join('')
-        : '<li>No data</li>';
+//     var currentHtml = currentList.length 
+//         ? currentList.map(c => `<li>${c}</li>`).join('')
+//         : '<li>No data</li>';
 
-    var upcomingHtml = upcomingList.length 
-        ? upcomingList.map(c => `<li>${c}</li>`).join('')
-        : '<li>No data</li>';
+//     var upcomingHtml = upcomingList.length 
+//         ? upcomingList.map(c => `<li>${c}</li>`).join('')
+//         : '<li>No data</li>';
 
-    return `
-        <div class="card">
-            <h3>${title}</h3>
+//     return `
+//         <div class="card">
+//             <h3>${title}</h3>
 
-            <h4 style="color:linear-gradient(
-    135deg,
-    #E6E6FA,
-    #E6E6FA
-);;">Current Month</h4>
-            <ul>${currentHtml}</ul>
+//             <h4 style="color:linear-gradient(
+//     135deg,
+//     #E6E6FA,
+//     #E6E6FA
+// );;">Current Month</h4>
+//             <ul>${currentHtml}</ul>
 
-            <h4 style="color:#999;">Upcoming</h4>
-            <ul>${upcomingHtml}</ul>
-        </div>
-    `;
-}
+//             <h4 style="color:#999;">Upcoming</h4>
+//             <ul>${upcomingHtml}</ul>
+//         </div>
+//     `;
+// }
 function buildSingleCard(title, list){
 
     list = list || [];
@@ -1733,67 +1863,7 @@ var pieChartCard =`
 
 `
 var chartHtml = (roleType === 'PMO') ? chartCard : '';
-var goLiveCard = `
-<div style="display:flex; gap:15px; margin:10px;">
 
-    <div style="
-        width:320px;
-        background:#fff;
-        border-radius:10px;
-        box-shadow:0 4px 10px rgba(0,0,0,0.1);
-        overflow:hidden;
-    ">
-
-        <!-- HEADER -->
-        <div style="
-            background:#6f3ba2;
-            color:white;
-            padding:10px;
-            font-weight:bold;
-            font-size:14px;
-        ">
-             Current Go-Lives
-        </div>
-
-        <div style="padding:10px;">
-
-            <!-- COLUMN NAME -->
-            <div style="
-                display:flex;
-                justify-content:space-between;
-                font-weight:bold;
-                border-bottom:2px solid #ddd;
-                padding-bottom:5px;
-                font-size:13px;
-            ">
-                <span>Project Name</span>
-                <span>Product Name</span>
-            </div>
-
-            <!-- DATA -->
-            <div style="max-height:200px; overflow-y:auto;">
-
-                ${goLiveProducts.map(p => `
-    <div style="
-        display:flex;
-        justify-content:space-between;
-        padding:6px 0;
-        border-bottom:1px solid #eee;
-        font-size:12px;
-    ">
-        <span>${p.project}</span>
-        <span>${p.product}</span>
-    </div>
-`).join('')}
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-`;
 var goLiveCardUser = `
 <div style="display:flex; gap:15px; margin:10px;">
 
@@ -2196,64 +2266,66 @@ function getOverdueProjects(empId, roleType){
 
     return projects;
 }
-var overdueProjects =getOverdueProjects();
-function getNotifications(empId){
+//var overdueProjects =getOverdueProjects();
+function getNotifications(empId) {
 
     var notifications = [];
 
-    var notifSearch = search.create({
+    if (!empId) {
+        return notifications;
+    }
 
-        type: 'customrecord2517',
+    try {
 
-        filters: [
+        var results = search.create({
+            type: 'customrecord2517',
+            filters: [
+                ['custrecord_rw_notif_employee', 'anyof', empId],
+                'AND',
+                ['isinactive', 'is', 'F']
+            ],
+            columns: [
+                search.createColumn({
+                    name: 'custrecord1518',
+                    sort: search.Sort.DESC
+                }),
+                'internalid',
+                'custrecord_rw_notif_message',
+                'custrecord_rw_notif_read',
+                'custrecord_rw_notif_type',
+                'custrecord_rw_notif_refid'
+            ]
+        })
+        .run()
+        .getRange({
+            start: 0,
+            end: 20
+        });
 
-            ['custrecord_rw_notif_employee','anyof',empId],
-            'AND',
-            ['isinactive','is','F']
+        results.forEach(function(r){
 
-        ],
-
-        columns: [
-
-            search.createColumn({
-                name:'custrecord1518',
-                sort:search.Sort.DESC
-            }),
-
-            'internalid',
-            'custrecord_rw_notif_message',
-            'custrecord_rw_notif_read',
-            'custrecord_rw_notif_type',
-            'custrecord_rw_notif_refid'
-
-        ]
-
-    });
-
-    notifSearch.run().each(function(r){
-
-        notifications.push({
-
-            id: r.getValue('internalid'),
-
-            message: r.getValue('custrecord_rw_notif_message'),
-
-            created: r.getValue('custrecord1518'),
-
-            read: r.getValue('custrecord_rw_notif_read'),
-
-            type: r.getValue('custrecord_rw_notif_type'),
-
-            refId: r.getValue('custrecord_rw_notif_refid')
+            notifications.push({
+                id: r.getValue('internalid'),
+                message: r.getValue('custrecord_rw_notif_message'),
+                read: r.getValue('custrecord_rw_notif_read'),
+                type: r.getValue('custrecord_rw_notif_type'),
+                refId: r.getValue('custrecord_rw_notif_refid'),
+                created: r.getValue('custrecord1518')
+            });
 
         });
 
-        return true;
+    } catch (e) {
 
-    });
+        log.debug({
+            title: "Notification Error",
+            details: e
+        });
+
+        return [];
+    }
 
     return notifications;
-
 }
 // function getOverdueProjects(empId, roleType){
 
@@ -2329,77 +2401,7 @@ function getNotifications(empId){
 //     return projects;
 // }
 var overdueProjectsUsers = getOverdueProjects(empId, roleType);
-var overdueProjectCardInner = `
-<div style="display:flex;gap:15px;margin:10px;">
-<div style="
-    width:320px;
-    background:#fff;
-    border-radius:10px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.1);
-    overflow:hidden;
-">
 
-    <!-- HEADER -->
-    <div style="
-        background:linear-gradient(
-    135deg,
-    #E6E6FA,
-    #E6E6FA
-);;
-        color:black;
-        padding:10px;
-        font-weight:bold;
-        font-size:14px;
-        font-family:Arial, sans-serif;
-    ">
-         Overdue Products
-    </div>
-
-    <div style="padding:10px;">
-
-        <!-- COLUMN -->
-        <div style="
-            display:flex;
-            justify-content:space-between;
-            font-weight:bold;
-            border-bottom:2px solid #ddd;
-            padding-bottom:5px;
-            font-size:12px;
-            font-family:Arial, sans-serif;
-        ">
-        <span>Project</span>
-            <span>Product</span>
-            <span>Duration</span>
-        </div>
-
-        <!-- DATA -->
-        <div style="max-height:200px; overflow-y:auto;">
-
-            ${overdueProjects.map(p => `
-                <div style="
-                    display:flex;
-                    justify-content:space-between;
-                    padding:6px 0;
-                    border-bottom:1px solid #eee;
-                    font-size:12px;
-                    font-family:Arial, sans-serif;
-                ">
-                <span>${p.project || '-'}</span>
-                    <span>${p.product}</span>
-                    
-                    <span style="color:red; font-weight:bold;font-size:11px;">
-                        ${p.duration ? p.duration + ' days' : '-'}
-                    </span>
-                </div>
-            `).join('')}
-
-        </div>
-
-    </div>
-
-</div>
-</div>
-`;
 var overdueProjectCardInneruser = `
 <div style="display:flex;gap:15px;margin:10px;">
 <div style="
@@ -2691,72 +2693,7 @@ var timelineProgressCard = `
 
 </div>
 `;
-var highPriorityCard = `
-<div style="display:flex; gap:15px; margin:10px;">
 
-    <div style="
-        width:320px;
-        
-        background:#fff;
-        border-radius:10px;
-        box-shadow:0 4px 10px rgba(0,0,0,0.1);
-        overflow:hidden;
-    ">
-
-        <!-- HEADER (same as table header) -->
-        <div style="
-            background:linear-gradient(
-    135deg,
-    #E6E6FA,
-    #E6E6FA
-);;
-            color:black;
-            padding:10px;
-            font-weight:bold;
-            font-size:14px;
-        ">
-             High Priority
-        </div>
-
-        <div style="padding:10px;">
-
-            <!-- COLUMN NAMES -->
-            <div style="
-                display:flex;
-                justify-content:space-between;
-                font-weight:bold;
-                border-bottom:2px solid #ddd;
-                padding-bottom:5px;
-                font-size:13px;
-            ">
-                <span>Ticket No</span>
-                <span>Deadline</span>
-            </div>
-
-            <!-- DATA -->
-            <div style="max-height:400px; overflow-y:auto;">
-
-                ${highPriorityTickets.map(t => `
-                    <div style="
-                        display:flex;
-                        justify-content:space-between;
-                        padding:6px 0;
-                        border-bottom:1px solid #eee;
-                        font-size:12px;
-                    ">
-                        <span>${t.number}</span>
-                        <span>${t.deadline || '-'}</span>
-                    </div>
-                `).join('')}
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-`;
 
 function getUnreadNotificationCount(empId){
 
@@ -3010,25 +2947,35 @@ log.debug(
     context.response.write('success');
     return;
 }
-if(
-context.request.parameters.action
-=== 'getNotifications'
-){
+if (context.request.parameters.action === 'getNotifications') {
 
+    try {
 
-var data = getNotifications(empId);
+        var data = getNotifications(empId);
 
-context.response.setHeader({
-    name:'Content-Type',
-    value:'application/json'
-});
+        context.response.setHeader({
+            name: 'Content-Type',
+            value: 'application/json'
+        });
 
-context.response.write(
-    JSON.stringify(data)
-);
+        context.response.write(JSON.stringify(data));
 
-return;
+    } catch (e) {
 
+        log.error({
+            title: 'Notification AJAX Error',
+            details: e
+        });
+
+        context.response.setHeader({
+            name: 'Content-Type',
+            value: 'application/json'
+        });
+
+        context.response.write(JSON.stringify([]));
+    }
+
+    return;
 }
 var todoCount = sprintData.todo.length;
 var progressCount = sprintData.progress.length;
@@ -3053,6 +3000,7 @@ var workloadChartHtml = `
 `;
 let html = `
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 
 * {
@@ -3276,6 +3224,8 @@ border:1px solid #ddd;
     display: flex;
     flex-direction: row;      /*  sidebar + content side-by-side */
     min-height: calc(100vh - 60px);
+    padding:0px;
+    margin:0px;
     
 }
 
@@ -5508,7 +5458,41 @@ color:black;
     background:#f3f4f6;
     border:2px dashed #6f3ba2;
 }
+.dots-loader{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    padding:15px;
+}
 
+.dots-loader span{
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    background:#6f3ba2;
+    animation:bounce .6s infinite alternate;
+}
+
+.dots-loader span:nth-child(2){
+    animation-delay:.2s;
+}
+
+.dots-loader span:nth-child(3){
+    animation-delay:.4s;
+}
+
+@keyframes bounce{
+
+    from{
+        transform:translateY(0);
+        opacity:.5;
+    }
+
+    to{
+        transform:translateY(-10px);
+        opacity:1;
+    }
+}
 .ticket-card{
     cursor:grab;
 }
@@ -5568,6 +5552,8 @@ button{
 }
 
 }
+
+   
 </style>
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -5575,7 +5561,14 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<div class="container-fluid px-0">
 <div class="con" sytle="width:100%;margin:0;padding:0;background:pink;">
+
 <div class="header">
 
     <div class="left-section">
@@ -5697,7 +5690,7 @@ ${notifHtml}
 
 </div>
 
-<div class="container" style="display: flex; flex-direction: row;">
+<div class="container-fluid px-0" style="display: flex; flex-direction: row;">
 
 <div class="sidebar" id="sidebar" onmouseleave="closeMenu()">
 
@@ -5757,7 +5750,7 @@ ${roleType === 'PM' ? `
                 ${projectStatsHeader}
             </div>
 
-            <div class="stats-values">
+           <div class="stats-values">
                 ${projectStatsValues}
             </div>
 
@@ -5888,8 +5881,14 @@ ${roleType === 'OTHER' ? `
 </div>
 
 <div id="loader">
-    <div class="spinner"></div>
+    
     <p>Opening...</p>
+    <div class="dots-loader">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
 </div>
 <audio id="notifSound">
 
@@ -7142,11 +7141,7 @@ window.addEventListener(
 );
 
 // AUTO REFRESH NOTIFICATIONS
-setInterval(function(){
 
-    refreshNotifications();
-
-}, 3000);
 // ============================
 // REALTIME NOTIFICATION SYSTEM
 // ============================
@@ -7154,11 +7149,7 @@ setInterval(function(){
 var lastNotificationCount = 0;
 
 // START POLLING
-setInterval(function(){
 
-    refreshNotifications();
-
-}, 2000);
 
 
 // LOAD IMMEDIATELY
@@ -7569,6 +7560,11 @@ function drop(ev,statusId){
     });
 
 }
+    setInterval(function(){
+
+    refreshNotifications();
+
+},15000);
    window.addEventListener('storage', function(e){
 
     if(e.key === 'notification_refresh'){
