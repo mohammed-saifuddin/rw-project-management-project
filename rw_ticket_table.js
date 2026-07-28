@@ -734,7 +734,29 @@ var nextPage = pageIndex + 1;
 var prevPage = pageIndex - 1;
 log.debug("current page is ",pageIndex)
 
+var statOptions ='<option value="">--Select--</option>';
 
+var statSearch1 = search.create({
+    type: 'customlist_rw_ticket_ticketstatuslist',
+    columns: ['internalid','name']
+});
+
+statSearch1.run().each(function(result){
+
+    var id = result.getValue('internalid');
+    var name = result.getValue('name');
+
+   
+
+
+
+
+statOptions += '<option value="'+id+'">'+name+'</option>';
+
+    
+
+    return true;
+});
 
 
 if (pageIndex < 0) pageIndex = 0;
@@ -779,42 +801,52 @@ if (!(mode === 'form' || request.parameters.hidefilters === 'true')){
 
     <div class="filter-body" id="filterBody">
 
-        <div class="filter-grid">
+    <div class="filter-grid">
 
-            <div class="filter-group">
-                <label>Client Name</label>
-                <select name="clientName" id="projectName">
-                    ${customerOptions}
-                </select>
-            </div>
+        <div class="filter-group">
+            <label>Client Name</label>
+            <select name="clientName" id="projectName">
+                ${customerOptions}
+            </select>
+        </div>
 
-            <div class="filter-group">
-                <label>RW Product</label>
-                <select name="rwProduct" id="rwProduct">
-                    ${productOptions}
-                </select>
-            </div>
+        <div class="filter-group">
+            <label>RW Product</label>
+            <select name="rwProduct" id="rwProduct">
+                ${productOptions}
+            </select>
+        </div>
 
-            <div class="filter-group">
-                <label>Status</label>
-                <select name="status" id="statusFilter">
-                    <option value="">--SELECT--</option>
-                    <option value="1" ${request.parameters.status=='1'?'selected':''}>To Do</option>
-                    <option value="2" ${request.parameters.status=='2'?'selected':''}>In Progress</option>
-                    <option value="3" ${request.parameters.status=='3'?'selected':''}>Code Review</option>
-                    <option value="4" ${request.parameters.status=='4'?'selected':''}>UAT</option>
-                    <option value="5" ${request.parameters.status=='5'?'selected':''}>Done</option>
-                </select>
-            </div>
+        <div class="filter-group">
+            <label>Status</label>
+            <select name="status" id="statusFilter">
+                ${statOptions}
+            </select>
+        </div>
 
-            <div class="filter-group">
-                <label>Requester</label>
-                <select name="requesterName" id="requesterFilter">
-                    ${empOptions}
-                </select>
-            </div>
+        <div class="filter-group">
+            <label>Requester</label>
+            <select name="requesterName" id="requesterFilter">
+                ${empOptions}
+            </select>
+        </div>
+
+        <div class="filter-group button-group">
+
+            
+
+            <button
+                type="button"
+                class="reset-btn"
+                onclick="resetFilters()">
+                Reset
+            </button>
 
         </div>
+
+    </div>
+
+
 
     </div>
 
@@ -1155,6 +1187,7 @@ text-decoration: none;
     flex-direction:column;
     font-size:14px;
     border-radius:8px;
+
     gap:5px;
 }
 
@@ -1171,7 +1204,7 @@ padding:20px;
     padding:12px 14px;
     border:1px solid #ccc;
     border-radius:8px;
-    height:20px;
+    height:30px;
     
     font-size:16px;
     outline:none;
@@ -1348,6 +1381,7 @@ table tr.ho:hover td {
     border:1px solid #e5e7eb;
 
     border-radius:16px;
+    padding:10px;
 
     overflow:hidden;
 
@@ -1368,7 +1402,7 @@ table tr.ho:hover td {
 
     cursor:pointer;
 
-    background:#fafafa;
+    
 
     font-size:14px;
 
@@ -1389,6 +1423,7 @@ table tr.ho:hover td {
     align-items:center;
 
     gap:6px;
+    font-size:20px;
 }
 
 #filterArrow{
@@ -1474,8 +1509,8 @@ table tr.ho:hover td {
 }
 
 .dots-loader span{
-    width:12px;
-    height:12px;
+    width:18px;
+    height:18px;
     border-radius:50%;
     background:#6f3ba2;
     animation:bounce .6s infinite alternate;
@@ -1501,6 +1536,99 @@ table tr.ho:hover td {
         opacity:1;
     }
 }
+    .reset-btn{
+
+    background:#f3f4f6;
+
+    color:#374151;
+
+    border:1px solid #d1d5db;
+
+    border-radius:10px;
+
+    padding:10px 20px;
+
+    cursor:pointer;
+
+    transition:.3s;
+}
+
+.reset-btn:hover{
+
+    background:#e5e7eb;
+}
+    .filter-grid{
+
+    display:flex;
+
+    align-items:flex-end;
+
+    gap:12px;
+
+    flex-wrap:nowrap;
+
+    width:100%;
+}
+
+.filter-group{
+
+    display:flex;
+
+    flex-direction:column;
+
+    flex:1;
+
+    min-width:180px;
+}
+
+.button-group{
+
+    flex:none;
+
+    display:flex;
+
+    flex-direction:row;
+
+    align-items:flex-end;
+
+    gap:10px;
+
+    min-width:auto;
+}
+    .apply-btn,
+.reset-btn{
+
+    height:38px;
+
+    padding:0 18px;
+
+    white-space:nowrap;
+}
+
+.apply-btn{
+
+    background:linear-gradient(135deg,#6F2DA8,#8F50DF);
+
+    color:#fff;
+
+    border:none;
+
+    border-radius:10px;
+}
+
+.reset-btn{
+
+    background:#f3f4f6;
+
+    color:#374151;
+
+    border:1px solid #d1d5db;
+
+    border-radius:10px;
+}
+    #opening{
+    font-size:20px;
+    }
 </style>
 <form method="GET">
 <div class="main-container">
@@ -1526,7 +1654,7 @@ table tr.ho:hover td {
         border:none;
         display:none;
         position:absolute;
-        margin-top:10px;
+        margin-top:20px;
         margin-left:14px;
         top:0;
         left:0;
@@ -1592,7 +1720,7 @@ ${tableRows}
 
 <div id="loader">
     
-    <p>Opening........</p>
+    <p id="opening">Opening........</p>
     <div class="dots-loader">
     <span></span>
     <span></span>
@@ -1601,6 +1729,17 @@ ${tableRows}
 </div>
 </form>
 <script>
+function resetFilters(){
+
+    document.getElementById("projectName").value = "";
+    document.getElementById("rwProduct").value = "";
+    document.getElementById("statusFilter").value = "";
+    document.getElementById("requesterFilter").value = "";
+
+    document.getElementById("pageInput").value = 0;
+
+    document.forms[0].submit();
+}
 function hideLoader(){
 
     var loader = document.getElementById("loader");

@@ -2142,6 +2142,7 @@ text-decoration: none;
     align-items:center;
 
     gap:10px;
+    font-size:20px;
 }
 
 #filterArrow{
@@ -2241,8 +2242,8 @@ text-decoration: none;
 }
 
 .dots-loader span{
-    width:12px;
-    height:12px;
+    width:18px;
+    height:18px;
     border-radius:50%;
     background:#6f3ba2;
     animation:bounce .6s infinite alternate;
@@ -2268,6 +2269,9 @@ text-decoration: none;
         opacity:1;
     }
 }
+    #loading{
+    font-size:20px;
+    }
 </style>
 <form method="GET" id="filterForm">
 <input type="hidden" id="pageInput" name="page" value="${page}">
@@ -2409,7 +2413,7 @@ ${paginationHtml}
 </div>
 <div id="loader">
      
-    <p>Loading........</p>
+    <p id="loading">Loading........</p>
     <div class="dots-loader">
         <span></span>
         <span></span>

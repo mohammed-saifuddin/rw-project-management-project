@@ -641,7 +641,7 @@ data.push({
     '${d.projectPlanTemplate}',
     '${d.productName}',
     '${d.revenueStream}'
-)" style="">
+)" style="color:purple;">
 
                 ${d.projectPlanTemplate || '-'}
 

@@ -606,6 +606,15 @@ const projectPlanUrl = url.resolveScript({
         email: email
     }
 });
+const projectCalen =url.resolveScript({
+    scriptId:'customscript3214',
+    deploymentId:'customdeploy1',
+    returnExternalUrl:true,
+    params:{
+        empid:empId,
+        email:email
+    }
+})
  const newProjectPlanUrl = url.resolveScript({
     scriptId: 'customscript3146',
     deploymentId: 'customdeploy1',
@@ -1016,6 +1025,10 @@ if(roleType === 'PM'){
 var projectMenu = '';
 if(roleType !== 'OTHER'){
     projectMenu = '<div class="menu" onclick="setActiveMenu(this);openProjects(); closeMenu()"> <i class="fa-solid fa-list"></i>  Projects</div>';
+}
+var projectCalendar="";
+if(roleType === 'PMO' || roleType === 'PM'){
+    projectCalendar ='<div class="menu" onclick="setActiveMenu(this);openCalendar();"> <i class="fa fa-calendar" aria-hidden="true"></i>  Project Calendar</div>';
 }
 function getCurrentMonthDates(){
     var today = new Date();
@@ -5466,8 +5479,8 @@ color:black;
 }
 
 .dots-loader span{
-    width:12px;
-    height:12px;
+    width:18px;
+    height:20px;
     border-radius:50%;
     background:#6f3ba2;
     animation:bounce .6s infinite alternate;
@@ -5552,7 +5565,9 @@ button{
 }
 
 }
-
+#opening{
+font-size:18px;
+}
    
 </style>
 <link rel="stylesheet"
@@ -5584,6 +5599,7 @@ rel="stylesheet">
 
  <div class="right-section">
 ${notifHtml}
+
     <!-- PROFILE SECTION -->
 
 <div class="profile-wrapper">
@@ -5701,7 +5717,7 @@ ${ticketMenu}
 ${projectPlan}
 ${newProjectPlan}
 ${newRevenueStream}
-
+${projectCalendar}
 </div>
 
 <div class="content">
@@ -5882,7 +5898,7 @@ ${roleType === 'OTHER' ? `
 
 <div id="loader">
     
-    <p>Opening...</p>
+    <p id="opening">Opening...</p>
     <div class="dots-loader">
         <span></span>
         <span></span>
@@ -7603,6 +7619,22 @@ document.addEventListener("visibilitychange", function () {
         location.reload();
     }
 });
+function openCalendar(){
+ document.getElementById('homeContent').style.display = 'none';
+    document.getElementById('projectContent').style.display = 'block';
+
+    var frame = document.getElementById('mainFrame');
+
+    frame.style.display = 'block';
+
+    document.getElementById('loader').style.display = 'block';
+
+    frame.src = '${projectCalen}';
+
+    
+
+    closeMenu();
+}
 </script>
 
 `;

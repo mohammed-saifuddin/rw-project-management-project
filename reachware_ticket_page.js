@@ -601,7 +601,7 @@ label.required::after {
 );;
     // background:#5d8db8;
     color:white;
-    padding:8px;
+    padding:10px;
     font-weight:bold;
     text-transform:uppercase;
     
@@ -693,6 +693,7 @@ padding:10px 20px;
 );;
 color:white;
 border:none;
+border-radius:12px;
 cursor:pointer;
 }
 label{
@@ -700,6 +701,52 @@ text-transform:uppercase;
 font-size:12px;
 font-family:Arial, sans-serif;
 
+}
+input{
+border-radius:8px;
+}
+select{
+border-radius:8px;
+}
+textarea{
+border-radius:8px;
+}
+
+    .submit-loader{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(255,255,255,.9);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:999999;
+}
+
+.loader-card{
+    background:#fff;
+    padding:30px 40px;
+    border-radius:15px;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,.15);
+}
+
+.spinner{
+    width:55px;
+    height:55px;
+    border:5px solid #ddd;
+    border-top:5px solid #8f50df;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+    margin:auto;
+}
+
+@keyframes spin{
+    100%{
+        transform:rotate(360deg);
+    }
 }
 </style>
 
@@ -885,7 +932,14 @@ ${statOptions}
 <button type="submit">Submit Ticket</button>
 
 </form>
-
+<div id="submitLoader" class="submit-loader" style="display:none;">
+    <div class="loader-card">
+        <div class="spinner"></div>
+        <h3>Creating Ticket...</h3>
+        <p>Please wait while your ticket is being created.</p>
+       
+    </div>
+</div>
 </div>
 
 <script>
@@ -1193,7 +1247,23 @@ sessionStorage.setItem(
     'refreshDashboard',
     'true'
 );
+document.addEventListener("DOMContentLoaded", function () {
 
+    const form = document.querySelector("form");
+
+    form.addEventListener("submit", function (e) {
+
+        // Prevent multiple clicks
+        const btn = form.querySelector("button[type='submit']");
+
+        btn.disabled = true;
+        btn.innerText = "Creating Ticket...";
+
+        // Show loader
+        document.getElementById("submitLoader").style.display = "flex";
+    });
+
+});
 </script>
 `;
 
