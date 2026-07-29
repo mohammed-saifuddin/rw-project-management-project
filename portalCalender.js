@@ -110,7 +110,11 @@ if (eventDate) {
         title: customer,
         date: formatDate(eventDate),
         status: status,
-        type: status.replace(/\s+/g, "").toLowerCase()
+        type: status.replace(/\s+/g, "").toLowerCase(),
+        
+        startDate: kickoffDate,
+    endDate: endDate
+
 
     });
 
@@ -238,7 +242,7 @@ body{
 
     display:grid;
 
-    grid-template-columns:repeat(7,1fr);
+    grid-template-columns:repeat(7,2fr);
 
     background:#ececec;
 
@@ -250,7 +254,7 @@ body{
 
 .weekdays div{
 
-    padding:15px;
+    padding:10px;
 
 }
 
@@ -473,7 +477,7 @@ body{
 
     }
     .event:hover{
-    background:#663399;
+    
     color:white;
     }
     .completed{
@@ -494,7 +498,24 @@ body{
     cursor:pointer;
     transition:.2s;
 }
+.event-tooltip{
+    position:fixed;
+    display:none;
+    background:#2d3748;
+    color:#fff;
+    padding:10px 14px;
+    border-radius:8px;
+    font-size:13px;
+    line-height:1.5;
+    box-shadow:0 8px 20px rgba(0,0,0,.25);
+    z-index:99999;
+    pointer-events:none;
+    min-width:180px;
+}
 
+.event-tooltip b{
+    color:#ffd54f;
+}
 .event:hover{
     transform:scale(1.03);
     box-shadow:0 3px 8px rgba(0,0,0,.2);
@@ -609,7 +630,7 @@ body{
 </div>
 
 </div>
-
+<div id="tooltip" class="event-tooltip"></div>
 <script>
 
 const monthYear = document.getElementById("monthYear");
@@ -693,10 +714,14 @@ else {
 }
 
 eventHTML +=
-    "<div class='event " + ev.type + " " + borderClass + "' " +
-    "onclick='openProject(" + ev.id + ")'>" +
-    "<b>" + ev.customer + "</b><br>" +
-    "<small>" + ev.status + "</small>" +
+    "<div class='event " + ev.type + " " + borderClass + "'" +
+    " data-start='" + (ev.startDate || "") + "'" +
+    " data-end='" + (ev.endDate || "") + "'" +
+    " onmousemove='showTooltip(event,this)'" +
+    " onmouseleave='hideTooltip()'" +
+    " onclick='openProject(" + ev.id + ")'>" +
+        "<b>" + ev.customer + "</b><br>" +
+        "<small>" + ev.status + "</small>" +
     "</div>";
                     } catch (err) {
 
@@ -760,6 +785,27 @@ function openProject(projectId){
     window.location.href =
         viewProjectUrl + "&projectId=" + projectId;
 
+}
+        const tooltip = document.getElementById("tooltip");
+
+function showTooltip(e, element){
+
+    var startDate = element.dataset.start || "-";
+    var endDate = element.dataset.end || "-";
+
+    tooltip.style.display = "block";
+console.log(element.dataset.start);
+console.log(element.dataset.end);
+    tooltip.innerHTML =
+        "<b>Start Date:</b> " + startDate +
+        "<br><b>End Date:</b> " + endDate;
+
+    tooltip.style.left = (e.pageX + 15) + "px";
+    tooltip.style.top = (e.pageY + 15) + "px";
+}
+
+function hideTooltip(){
+    tooltip.style.display = "none";
 }
 </script>
 

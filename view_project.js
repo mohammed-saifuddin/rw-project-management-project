@@ -1695,6 +1695,124 @@ function getEmployeeDMSRole(empId){
 
     return '';
 }
+var pmOptions1 = '<option value="">--Select--</option>';
+
+var pmSearch = search.create({
+    type: search.Type.EMPLOYEE,
+    filters: [
+        ['isinactive','is','F']
+    ],
+    columns: [
+        'internalid',
+        'firstname',
+        'lastname',
+        'custentity_rw_dms_designation'
+    ]
+});
+
+pmSearch.run().each(function(result){
+
+    var designationId = result.getValue({
+        name: 'custentity_rw_dms_designation'
+    });
+
+    if (parseInt(designationId) !== 2) {
+        return true;
+    }
+
+    var fullName =
+        (result.getValue('firstname') || '') +
+        ' ' +
+        (result.getValue('lastname') || '');
+
+    pmOptions1 +=
+        '<option value="' +
+        result.getValue('internalid') +
+        '">' +
+        fullName.trim() +
+        '</option>';
+
+    return true;
+});
+var funcOptions = '<option value="">--Select--</option>';
+
+var funcSearch = search.create({
+    type: search.Type.EMPLOYEE,
+    filters: [
+        ['isinactive','is','F']
+    ],
+    columns: [
+        'internalid',
+        'firstname',
+        'lastname',
+        'custentity_rw_dms_designation'
+    ]
+});
+
+funcSearch.run().each(function(result){
+
+    var designationId = result.getValue({
+        name: 'custentity_rw_dms_designation'
+    });
+
+    if (parseInt(designationId) !== 4) {
+        return true;
+    }
+
+    var fullName =
+        (result.getValue('firstname') || '') +
+        ' ' +
+        (result.getValue('lastname') || '');
+
+    funcOptions +=
+        '<option value="' +
+        result.getValue('internalid') +
+        '">' +
+        fullName.trim() +
+        '</option>';
+
+    return true;
+});
+
+var techOptions = '<option value="">--Select--</option>';
+
+var techSearch = search.create({
+    type: search.Type.EMPLOYEE,
+    filters: [
+        ['isinactive','is','F']
+    ],
+    columns: [
+        'internalid',
+        'firstname',
+        'lastname',
+        'custentity_rw_dms_designation'
+    ]
+});
+
+techSearch.run().each(function(result){
+
+    var designationId = result.getValue({
+        name: 'custentity_rw_dms_designation'
+    });
+
+    if (parseInt(designationId) !== 5) {
+        return true;
+    }
+
+    var fullName =
+        (result.getValue('firstname') || '') +
+        ' ' +
+        (result.getValue('lastname') || '');
+
+    techOptions +=
+        '<option value="' +
+        result.getValue('internalid') +
+        '">' +
+        fullName.trim() +
+        '</option>';
+
+    return true;
+});
 function getRoleTypeFromDMS(roleName){
 
     if(!roleName) return 'OTHER';
@@ -1811,7 +1929,7 @@ var empSearch = search.create({
 
 var funcDropdown = '<option value="">--Select--</option>';
 var techDropdown = '<option value="">--Select--</option>';
-var pmDropdown = '<option value="">--Select--</option>';
+
 
 
 const projectUrl = url.resolveScript({
@@ -2703,19 +2821,33 @@ log.debug("ROWLOCKED RESULT", rowLocked);
 
 milestoneRows += `
 
+
 <tr
-    class="milestoneRow"
-    data-planid="${customerPlanId}"
-    data-milestoneid="${milestoneId}"
-    data-locked="${rowLocked}"
-    data-productid="${productId}"
-    data-sno="${sno}"
-     style="
+class="milestoneRow"
+
+data-planid="${customerPlanId}"
+
+data-milestoneid="${milestoneId}"
+
+data-productid="${productId}"
+
+data-start="${getDateValues(startDate || startdate).input}"
+
+data-end="${getDateValues(milestoneenddate || enddate).input}"
+
+data-actual="${getDateValues(actualCompleted).input}"
+
+data-status="${milestoneStatusId}"
+
+data-comments="${milestoneComments}"
+data-sno="${sno}"
+
+ style="
         background:${milestoneRowColor};
         transition:0.3s;
     "
->
 
+>
 <td style="border:1px solid #ddd;padding:8px;">
     ${sno}
 </td>
@@ -3177,14 +3309,7 @@ employeeList.forEach(function(emp){
         '>' +
         emp.name +
         '</option>';
-pmDropdown +=
-    '<option value="' + emp.id + '" ' +
-    (emp.id == pmId
-    ? 'selected'
-    : '') +
-    '>' +
-    emp.name +
-    '</option>';
+
     techDropdown +=
         '<option value="' + emp.id + '" ' +
         (emp.id == technicalId ? 'selected' : '') +
@@ -3517,7 +3642,23 @@ var empRoleMap = {};
 
 // historyHtml += `</div>`;
     lineItemsHtml += `
-<tr data-id="${lineId}">
+<tr
+
+data-id="${lineId}"
+
+data-functional="${functionalId}"
+
+data-technical="${technicalId}"
+
+data-status="${linestatusId}"
+
+data-startdate="${startLineObj.input}"
+
+data-enddate="${endLineObj.input}"
+
+data-updateddeadline="${updatedLineObj.input}"
+
+>
     <td style="border:1px solid #ccc;padding:8px;font-size:14px;">
     <span
     onclick="togglePlan('${lineId}')"
@@ -4042,7 +4183,23 @@ else if (roleType === 'PM') {
 
 // historyHtml += `</div>`;
     lineItemsHtml += `
-<tr data-id="${lineId}">
+<tr
+
+data-id="${lineId}"
+
+data-functional="${functionalId}"
+
+data-technical="${technicalId}"
+
+data-status="${linestatusId}"
+
+data-startdate="${startLineObj.input}"
+
+data-enddate="${endLineObj.input}"
+
+data-updateddeadline="${updatedLineObj.input}"
+
+>
 <td style="border:1px solid #ccc;padding:8px;">
 <span
     onclick="togglePlan('${lineId}')"
@@ -4069,7 +4226,7 @@ else if (roleType === 'PM') {
     style="display:none;"
     onchange="syncProjectManager(this)"
 >
-    ${pmDropdown}
+    ${pmOptions1}
 </select>
 </td>
 
@@ -4080,14 +4237,14 @@ else if (roleType === 'PM') {
     style="display:none;"
     
 >
-   ${funcDropdown}
+   ${funcOptions}
 </select>
 </td>
 
 <td style="border:1px solid #ccc; padding:8px;">
     <span class="view-mode">${technical}</span>
     <select class="edit-mode technical" style="display:none;">
-       ${techDropdown}
+       ${techOptions}
     </select>
 </td>
 
@@ -4324,7 +4481,23 @@ else if (roleType === 'PM') {
 }
 else {
     lineItemsHtml += `
-<tr data-id="${lineId}">
+<tr
+
+data-id="${lineId}"
+
+data-functional="${functionalId}"
+
+data-technical="${technicalId}"
+
+data-status="${linestatusId}"
+
+data-startdate="${startLineObj.input}"
+
+data-enddate="${endLineObj.input}"
+
+data-updateddeadline="${updatedLineObj.input}"
+
+>
 <td style="border:1px solid #ccc;padding:8px;">
  <span
     onclick="togglePlan('${lineId}')"
@@ -5657,7 +5830,7 @@ ${canEdit ? `
     <script>
     var roleType = "${roleType}";
     
-    var pmDropdown = ` + JSON.stringify(pmDropdown) + `;
+    var pmOptions = ` + JSON.stringify(pmOptions1) + `;
     var rwOptions = ` + JSON.stringify(rwOptions) + `;
 var funcDropdown = ` + JSON.stringify(funcDropdown) + `;
 var techDropdown = ` + JSON.stringify(techDropdown) + `;
@@ -5745,7 +5918,7 @@ rowHtml += '</td>';
 
         rowHtml += '<td style="border:1px solid #ccc;padding:8px;">';
         rowHtml += '<select class="rwpm">';
-        rowHtml += pmDropdown;
+        rowHtml += pmOptions;
         rowHtml += '</select>';
         rowHtml += '</td>';
 
@@ -6221,6 +6394,7 @@ function syncTechnical(currentSelect){
         });
 }
   function saveData(){
+  hasChanges=false;
 document.getElementById("saveLoader").style.display = "block";
   var rows =
 document.querySelectorAll(
@@ -6231,13 +6405,71 @@ document.querySelectorAll(
     document.getElementById("updatedEndDate")?.value || '';
 var pmoComments =
     document.getElementById("pmoComments")?.value || '';
+    var currentProjectStatus =
+document.getElementById("projectStatus")
+?.getAttribute("data-currenttext") || "";
+
+if(
+    projectStatus &&
+    projectStatus !== currentProjectStatus
+){
+    hasChanges = true;
+}
+    console.log("changes are made at project status level",hasChanges);
     var data = [];
 
     var milestoneData = [];
 
 document.querySelectorAll('.milestoneRow')
 .forEach(function(row){
+var oldStart =
+row.dataset.start || '';
 
+var oldEnd =
+row.dataset.end || '';
+
+var oldActual =
+row.dataset.actual || '';
+
+var oldStatus =
+row.dataset.status || '';
+
+var oldComments =
+row.dataset.comments || '';
+
+var newStart =
+row.querySelector('.ms-startdate')?.value || '';
+
+var newEnd =
+row.querySelector('.ms-enddate')?.value || '';
+
+var newActual =
+row.querySelector('.ms-actual')?.value || '';
+
+var newStatus =
+row.querySelector('.ms-status')?.value || '';
+
+var newComments =
+row.querySelector('.ms-comments')?.value || '';
+
+if(
+
+oldStart != newStart ||
+
+oldEnd != newEnd ||
+
+oldActual != newActual ||
+
+oldStatus != newStatus ||
+
+oldComments != newComments
+
+){
+
+hasChanges = true;
+
+}
+console.log("changes are made at project fields level",hasChanges);
     milestoneData.push({
 
         id:
@@ -6391,6 +6623,57 @@ if(startdate && projectStartDate){
         return;
     }
 }
+    var oldFunctional =
+row.dataset.functional || '';
+
+var oldTechnical =
+row.dataset.technical || '';
+
+var oldStatus =
+row.dataset.status || '';
+
+var oldStart =
+row.dataset.startdate || '';
+
+var oldEnd =
+row.dataset.enddate || '';
+
+var oldUpdated =
+row.dataset.updateddeadline || '';
+if(
+
+oldFunctional != functional ||
+
+oldTechnical != technical ||
+
+oldStatus != status ||
+
+oldStart != startdate ||
+
+oldEnd != enddate ||
+
+oldUpdated != updateddeadline
+
+){
+
+hasChanges = true;
+
+}
+console.log("changea are made in line level items",hasChanges);
+console.log({
+    oldFunctional,
+    functional,
+    oldTechnical,
+    technical,
+    oldStatus,
+    status,
+    oldStart,
+    startdate,
+    oldEnd,
+    enddate,
+    oldUpdated,
+    updateddeadline
+});
 document.getElementById(
     'addProductBtn'
 ).style.display = 'none';
@@ -6426,6 +6709,12 @@ if(updateddeadline && projectUpdatedEndDate){
         return;
     }
 }
+    if(!id){
+
+hasChanges = true;
+
+}
+console.log("changes made at product level",hasChanges)
      data.push({
 
     id: id,
@@ -6465,11 +6754,15 @@ if(updateddeadline && projectUpdatedEndDate){
 
     console.log("FINAL DATA SENT:", data); //  DEBUG
 
-    if(data.length === 0){
-        alert("No valid data to update");
-        return;
-    }
+ console.log("Final hasChanges =", hasChanges);   
+if (hasChanges) {
 
+    showToast(
+        "No changes made. Saving project...",
+        "#f39c12"
+    );
+
+}
  fetch(window.location.href, {
 
     method: 'POST',
@@ -6492,7 +6785,8 @@ if(updateddeadline && projectUpdatedEndDate){
 
         projectId: "${projectId}",
 
-empid: "${empId}"
+empid: "${empId}",
+hasChanges: hasChanges
     })
 })
 .then(res => res.text())
@@ -6502,7 +6796,21 @@ empid: "${empId}"
 
     if(res === "success"){
     document.getElementById("saveLoader").style.display="none";
-showToast("Project Saved Successfully ");
+if (hasChanges) {
+
+    showToast(
+        "Project Saved Successfully",
+        "#28a745"
+    );
+
+} else {
+
+    showToast(
+        "No changes made.",
+        "#f39c12"
+    );
+
+}
 // alert("Project Saved Succesfully");
   showSuccessDialog();
   
@@ -6844,13 +7152,13 @@ document
     'refreshDashboard',
     'true'
 );
-document.addEventListener('change', function(){
+// document.addEventListener('change', function(){
 
-    if(isEditMode){
-        hasChanges = true;
-    }
+//     if(isEditMode){
+//         hasChanges = true;
+//     }
 
-});
+// });
 if(window.opener){
 
     window.opener.refreshNotifications();
@@ -6865,13 +7173,13 @@ if(window.parent){
         'notificationUpdated'
     )
 );
-document.addEventListener('change', function(){
+// document.addEventListener('change', function(){
 
-    if(isEditMode){
-        hasChanges = true;
-    }
+//     if(isEditMode){
+//         hasChanges = true;
+//     }
 
-});
+// });
 function removeProduct(lineId){
 
     if(!confirm('Remove this product?')){

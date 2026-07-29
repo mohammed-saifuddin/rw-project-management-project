@@ -5568,7 +5568,17 @@ button{
 #opening{
 font-size:18px;
 }
-   
+  body{
+    background:linear-gradient(-45deg,#eef2ff,#f8fafc,#f3e8ff,#ffffff);
+    background-size:400% 400%;
+    animation:bgMove 15s ease infinite;
+}
+
+@keyframes bgMove{
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
+} 
 </style>
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">

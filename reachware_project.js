@@ -2413,7 +2413,7 @@ ${paginationHtml}
 </div>
 <div id="loader">
      
-    <p id="loading">Loading........</p>
+    <p id="loading">Loading...</p>
     <div class="dots-loader">
         <span></span>
         <span></span>
