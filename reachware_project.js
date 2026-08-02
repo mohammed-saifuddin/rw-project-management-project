@@ -3,7 +3,7 @@
  * @NScriptType Suitelet
  */
 
-define(['N/ui/serverWidget','N/url','N/search','N/record','N/runtime'], (serverWidget,url,search,record,runtime) => {
+define(['N/ui/serverWidget','N/url','N/search','N/record','N/runtime','N/https'], (serverWidget,url,search,record,runtime,https) => {
 
 const onRequest = (context) => {
 
@@ -111,6 +111,19 @@ scriptId: 'customscript2894',
 deploymentId: 'customdeploy1',
 returnExternalUrl: true,
 
+});
+var jsonUrl = url.resolveScript({
+    scriptId: 'customscript3217',
+    deploymentId: 'customdeploy1',
+    returnExternalUrl: true,
+    params:{
+        empid: empId,
+        email: email,
+        customer: customerFilter,
+        projectstatus: statusFilter,
+        page: page,
+        filter: filterType
+    }
 });
 var filters = [];
 
@@ -284,72 +297,76 @@ filters.push([
     'is',
     'F'
 ]);
-
-
 var projectSearch = search.create({
-    type: 'customrecord_rw_portal_access2',
-     filters:filters,
-    columns: [
-    search.createColumn({
-        name: 'internalid',
-        sort: search.Sort.DESC 
-    }),
-
-    // 🔥 ADD THESE 2 LINES
-    search.createColumn({
-        name: 'custrecord_rw_portal_customername',
-        join: 'custrecord1513'
-    }),
-    search.createColumn({
-        name: 'custrecord_rw_portal_status',
-        join: 'custrecord1513'
-    }),
-
-    search.createColumn({
-        name: 'custrecord_rw_portal_status',
-        join: 'custrecord1513'
-    }),
-    search.createColumn({
-    name: 'custrecord_rw_portal_start_date',
-    join: 'custrecord1513'
-}),
-search.createColumn({
-    name: 'custrecord_rw_portal_end_date',
-    join: 'custrecord1513'
-}),
-search.createColumn({
-    name: 'custrecord_rw_portal_updatedenddate',
-    join: 'custrecord1513'
-}),
-search.createColumn({
-    name: 'custrecord_rw_portal_scheduledgolivedate',
-    join: 'custrecord1513'
-}),
-search.createColumn({
-    name: 'custrecord_rw_portal_duration',
-    join: 'custrecord1513'
-}),
-search.createColumn({
-    name: 'custrecord_rw_portal_projectmanager',
-    join: 'custrecord1513'
-}),
-search.createColumn({
-    name: 'custrecord_rw_portal_pmocommnts',
-    join: 'custrecord1513'
-}),
-    'custrecord_rw_portal_rwproduct', 
-    'custrecord_rw_portal_additionalcomments',
-    'custrecord1513',
-    'custrecord_rw_portal_projstat',
-    'custrecord_rw_portal_startdateline', 
-'custrecord_rw_portal_enddateline' ,
-'custrecord_rw_portal_updateddeadline',
-'custrecord_rw_portal_durationline',
-'custrecord_rw_portal_funcconsultant',
-'custrecord_rw_portal_techconsultant'
-
-]
+    type: 'customrecord_rw_portal_access',
+    filters: filters,
+    
 });
+
+// var projectSearch = search.create({
+//     type: 'customrecord_rw_portal_access2',
+//      filters:filters,
+//     columns: [
+//     search.createColumn({
+//         name: 'internalid',
+//         sort: search.Sort.DESC 
+//     }),
+
+//     // 🔥 ADD THESE 2 LINES
+//     search.createColumn({
+//         name: 'custrecord_rw_portal_customername',
+//         join: 'custrecord1513'
+//     }),
+//     search.createColumn({
+//         name: 'custrecord_rw_portal_status',
+//         join: 'custrecord1513'
+//     }),
+
+//     search.createColumn({
+//         name: 'custrecord_rw_portal_status',
+//         join: 'custrecord1513'
+//     }),
+//     search.createColumn({
+//     name: 'custrecord_rw_portal_start_date',
+//     join: 'custrecord1513'
+// }),
+// search.createColumn({
+//     name: 'custrecord_rw_portal_end_date',
+//     join: 'custrecord1513'
+// }),
+// search.createColumn({
+//     name: 'custrecord_rw_portal_updatedenddate',
+//     join: 'custrecord1513'
+// }),
+// search.createColumn({
+//     name: 'custrecord_rw_portal_scheduledgolivedate',
+//     join: 'custrecord1513'
+// }),
+// search.createColumn({
+//     name: 'custrecord_rw_portal_duration',
+//     join: 'custrecord1513'
+// }),
+// search.createColumn({
+//     name: 'custrecord_rw_portal_projectmanager',
+//     join: 'custrecord1513'
+// }),
+// search.createColumn({
+//     name: 'custrecord_rw_portal_pmocommnts',
+//     join: 'custrecord1513'
+// }),
+//     'custrecord_rw_portal_rwproduct', 
+//     'custrecord_rw_portal_additionalcomments',
+//     'custrecord1513',
+//     'custrecord_rw_portal_projstat',
+//     'custrecord_rw_portal_startdateline', 
+// 'custrecord_rw_portal_enddateline' ,
+// 'custrecord_rw_portal_updateddeadline',
+// 'custrecord_rw_portal_durationline',
+// 'custrecord_rw_portal_funcconsultant',
+// 'custrecord_rw_portal_techconsultant'
+
+// ]
+// });
 
 var tableRows = '';
 var projectCounts = {};
@@ -373,74 +390,236 @@ var end = start + pageSize;
 // var totalCount = pagedData.count;
 
 //  FETCH ONLY REQUIRED DATA (BUT KEEP LOGIC SAME)
-var pagedData = projectSearch.runPaged({ pageSize: 1000 });
+//var pagedData = projectSearch.runPaged({ pageSize: 1000 });
 
-var totalCount = pagedData.count;
+//var totalCount = pagedData.count;
 
 // load ALL but WITHOUT nested loops
-var results = [];
-for (var i = 0; i < pagedData.pageRanges.length; i++) {
-    var pageData = pagedData.fetch({ index: i });
-    results = results.concat(pageData.data);
-}
-results.forEach(function(result){
+// var results = [];
+// for (var i = 0; i < pagedData.pageRanges.length; i++) {
+//     var pageData = pagedData.fetch({ index: i });
+//     results = results.concat(pageData.data);
+// }
+// results.forEach(function(result){
 
-    var parentId = result.getValue('custrecord1513');
-    var product = result.getText('custrecord_rw_portal_rwproduct');
-    var productId = result.getValue('custrecord_rw_portal_rwproduct');
-var additionalComments=result.getValue('custrecord_rw_portal_additionalcomments') || '';
-var lineStartDate = result.getValue('custrecord_rw_portal_startdateline') || 'NIL';
-var lineEndDate = result.getValue('custrecord_rw_portal_enddateline') || 'NIL';
-var lineUpdatedDate = result.getValue('custrecord_rw_portal_updateddeadline') || 'NIL';
-var lineDuration =result.getValue('custrecord_rw_portal_durationline');
-var functionalConsultant = result.getText({ name: 'custrecord_rw_portal_funcconsultant' }) || '';
-var technicalConsultant = result.getText({ name: 'custrecord_rw_portal_techconsultant' }) || '';
-log.debug(additionalComments)
-    var status = result.getText('custrecord_rw_portal_projstat');
-    log.debug(status) 
-    if(!parentId) return;
+//     var parentId = result.getValue('custrecord1513');
+//     var product = result.getText('custrecord_rw_portal_rwproduct');
+//     var productId = result.getValue('custrecord_rw_portal_rwproduct');
+// var additionalComments=result.getValue('custrecord_rw_portal_additionalcomments') || '';
+// var lineStartDate = result.getValue('custrecord_rw_portal_startdateline') || 'NIL';
+// var lineEndDate = result.getValue('custrecord_rw_portal_enddateline') || 'NIL';
+// var lineUpdatedDate = result.getValue('custrecord_rw_portal_updateddeadline') || 'NIL';
+// var lineDuration =result.getValue('custrecord_rw_portal_durationline');
+// var functionalConsultant = result.getText({ name: 'custrecord_rw_portal_funcconsultant' }) || '';
+// var technicalConsultant = result.getText({ name: 'custrecord_rw_portal_techconsultant' }) || '';
+// log.debug(additionalComments)
+//     var status = result.getText('custrecord_rw_portal_projstat');
+//     log.debug(status) 
+//     if(!parentId) return;
 
- if (!projectMap[parentId]) {
-    projectMap[parentId] = {
-        customer: result.getText({ name: 'custrecord_rw_portal_customername', join: 'custrecord1513' }) || '',
-        status: result.getText({ name: 'custrecord_rw_portal_status', join: 'custrecord1513' }) || '',
-        customerId: result.getValue({ name: 'custrecord_rw_portal_customername', join: 'custrecord1513' }),
-         golive:result.getValue({name:'custrecord_rw_portal_scheduledgolivedate',join:'custrecord1513'}),
-        startDate: result.getValue({ name: 'custrecord_rw_portal_start_date', join: 'custrecord1513' }) || '',
-        endDate: result.getValue({ name: 'custrecord_rw_portal_end_date', join: 'custrecord1513' }) || '',
-        updatedEndDate: result.getValue({ name: 'custrecord_rw_portal_updatedenddate', join: 'custrecord1513' }) || '',
-        duration: result.getValue({ name: 'custrecord_rw_portal_duration', join: 'custrecord1513' }) || '',
-        pm: result.getText({ name: 'custrecord_rw_portal_projectmanager', join: 'custrecord1513' }) || '',
-        pmocomments: result.getValue({ name: 'custrecord_rw_portal_pmocommnts', join: 'custrecord1513' }) || '',
-        additionalComments: result.getValue('custrecord_rw_portal_additionalcomments') || '',
-        durationline: result.getValue('custrecord_rw_portal_durationline') || '',
+//  if (!projectMap[parentId]) {
+//     projectMap[parentId] = {
+//         customer: result.getText({ name: 'custrecord_rw_portal_customername', join: 'custrecord1513' }) || '',
+//         status: result.getText({ name: 'custrecord_rw_portal_status', join: 'custrecord1513' }) || '',
+//         customerId: result.getValue({ name: 'custrecord_rw_portal_customername', join: 'custrecord1513' }),
+//          golive:result.getValue({name:'custrecord_rw_portal_scheduledgolivedate',join:'custrecord1513'}),
+//         startDate: result.getValue({ name: 'custrecord_rw_portal_start_date', join: 'custrecord1513' }) || '',
+//         endDate: result.getValue({ name: 'custrecord_rw_portal_end_date', join: 'custrecord1513' }) || '',
+//         updatedEndDate: result.getValue({ name: 'custrecord_rw_portal_updatedenddate', join: 'custrecord1513' }) || '',
+//         duration: result.getValue({ name: 'custrecord_rw_portal_duration', join: 'custrecord1513' }) || '',
+//         pm: result.getText({ name: 'custrecord_rw_portal_projectmanager', join: 'custrecord1513' }) || '',
+//         pmocomments: result.getValue({ name: 'custrecord_rw_portal_pmocommnts', join: 'custrecord1513' }) || '',
+//         additionalComments: result.getValue('custrecord_rw_portal_additionalcomments') || '',
+//         durationline: result.getValue('custrecord_rw_portal_durationline') || '',
         
+//         products: {}
+//     };
+// }
+
+// if(!projectMap[parentId].products[product]){
+//     projectMap[parentId].products[product] = {
+//         count: 0,
+//         status: status || 'NA',
+//         productId: productId,
+//         comments: additionalComments,
+//         startDate: lineStartDate,
+//     endDate: lineEndDate,
+//     updatedEndDate: lineUpdatedDate,
+//     duration: lineDuration,
+//     functionalConsultant:functionalConsultant,
+//     technicalConsultant:technicalConsultant
+        
+//     };
+// }
+
+
+
+// projectMap[parentId].products[product].count++;
+// });
+
+var response = https.get({
+    url: jsonUrl
+});
+
+var jsonData = JSON.parse(response.body);
+
+log.debug("JSON", JSON.stringify(jsonData));
+log.debug("First Project", jsonData.data[78]);
+var results = jsonData.data || [];
+
+if (filterType) {
+
+    results = results.filter(function(project) {
+var status = (project.status || "")
+        .toLowerCase()
+        .replace(/\s+/g, "");
+        switch (filterType) {
+
+             case "kickof":
+        case "kickoff":
+            return status === "kickoff";
+
+            case "uat":
+                return project.status === "UAT";
+
+            case "golive":
+                return project.status === "Go Live";
+
+           case "inprogress":
+            return status === "inprogress";
+
+            case "coc":
+                return project.status === 'COC';
+
+            case "open":
+                return project.status !== "Done" && project.status !== "Go Live"  && 
+                project.status !== "Not Started" && project.status !=="COC";
+
+            case "done":
+                return project.status === "Done";
+
+            default:
+                return true;
+        }
+
+    });
+
+}
+if (filterType === "myprojects") {
+
+    results = results.filter(function(project){
+
+        if (String(project.pmId) === String(empId) || String(project.funcId) === String(empId) || String(project.techId) === String(empId)) {
+            return true;
+        }
+
+        return project.products.some(function(product){
+
+            return String(product.functionalId) === String(empId) ||
+                   String(product.technicalId) === String(empId);
+
+        });
+
+    });
+
+}
+if (filterType === "myclosedprojects") {
+
+    results = results.filter(function(project) {
+
+        var isMyProject =
+            String(project.pmId) === String(empId) ||
+            String(project.funcId) === String(empId) ||
+            String(project.techId) === String(empId) ||
+            String(project.accountManagerId) === String(empId) ||
+
+            project.products.some(function(product) {
+
+                return String(product.functionalId) === String(empId) ||
+                       String(product.technicalId) === String(empId);
+
+            });
+
+        var isClosed =
+            ["6", "7", "8"].includes(String(project.statusId));
+
+        return isMyProject && isClosed;
+    });
+}
+// Filter in UI
+if (customerFilter || statusFilter) {
+
+    results = results.filter(function(item) {
+
+        var customerMatch = true;
+        var statusMatch = true;
+
+        if (customerFilter) {
+            customerMatch = String(item.customerId) === String(customerFilter);
+        }
+
+        if (statusFilter) {
+            statusMatch = String(item.statusId) === String(statusFilter);
+        }
+
+        return customerMatch && statusMatch;
+    });
+}
+
+var totalCount = jsonData.count || 0;
+
+log.debug("Customer Filter", customerFilter);
+log.debug("Status Filter", statusFilter);
+log.debug("JSON Records", results.length);
+
+results.forEach(function(item){
+
+    projectMap[item.id] = {
+
+        customer: item.customer,
+        status: item.status,
+        customerId: item.customerId,
+        startDate: item.startDate,
+        endDate: item.endDate,
+        duration: item.duration,
+        golive: item.goLive,
+        pm: item.pm,
+        pmocomments: item.pmoComments,
+        totalTickets: item.totalTickets,
+    openTickets: item.openTickets,
+    closedTickets: item.closedTickets,
+
         products: {}
+
     };
-}
 
-if(!projectMap[parentId].products[product]){
-    projectMap[parentId].products[product] = {
-        count: 0,
-        status: status || 'NA',
-        productId: productId,
-        comments: additionalComments,
-        startDate: lineStartDate,
-    endDate: lineEndDate,
-    updatedEndDate: lineUpdatedDate,
-    duration: lineDuration,
-    functionalConsultant:functionalConsultant,
-    technicalConsultant:technicalConsultant
-        
-    };
-}
+    item.products.forEach(function(product){
 
+        projectMap[item.id].products[product.product] = {
 
+            count:1,
 
-projectMap[parentId].products[product].count++;
+            status:product.status,
+            productId:product.productId,
+            comments:product.comments,
+
+            startDate:product.startDate,
+            endDate:product.endDate,
+            updatedEndDate:product.updatedEndDate,
+            duration:product.duration,
+
+            functionalConsultant:product.functionalConsultant,
+            technicalConsultant:product.technicalConsultant,
+            totalTickets: product.totalTickets,
+    openTickets: product.openTickets,
+    closedTickets: product.closedTickets
+
+        };
+
+    });
+
 });
 var projectIds = Object.keys(projectMap);
-
 //  IMPORTANT: sort before pagination
 projectIds.sort(function(a, b){
     return Number(b) - Number(a); // DESC order
@@ -448,7 +627,7 @@ projectIds.sort(function(a, b){
 
 var totalCount = projectIds.length;
 var totalPages = Math.ceil(totalCount / pageSize);
-
+var totalCount = results.length;
 // Fix invalid page
 if (page >= totalPages) page = 0;
 
@@ -486,56 +665,56 @@ function getOpenTicketCount(){
     log.debug("Total open tickets",count);
     return count;
 }
-function getTicketCounts(customerId){
+// function getTicketCounts(customerId){
 
-    var total = 0;
-    var open = 0;
-    var closed = 0;
+//     var total = 0;
+//     var open = 0;
+//     var closed = 0;
 
-    var ticketSearch = search.create({
-        type: 'customrecord_rw_ticket',
-        columns: [
-            'custrecord_rw_ticket_projectname',
-            'custrecord_rw_ticket_ticketstatus'
-        ]
-    });
+//     var ticketSearch = search.create({
+//         type: 'customrecord_rw_ticket',
+//         columns: [
+//             'custrecord_rw_ticket_projectname',
+//             'custrecord_rw_ticket_ticketstatus'
+//         ]
+//     });
 
-    ticketSearch.run().each(function(result){
+//     ticketSearch.run().each(function(result){
 
-        var ticketCustomer = result.getValue('custrecord_rw_ticket_projectname');
+//         var ticketCustomer = result.getValue('custrecord_rw_ticket_projectname');
 
         
-        if(ticketCustomer == customerId){
+//         if(ticketCustomer == customerId){
 
-            total++;
+//             total++;
 
-            var status = result.getValue('custrecord_rw_ticket_ticketstatus');
+//             var status = result.getValue('custrecord_rw_ticket_ticketstatus');
 
-            if (status == '5') closed++;
-            else open++;
-        }
+//             if (status == '5') closed++;
+//             else open++;
+//         }
 
-        return true;
-    });
+//         return true;
+//     });
 
-    return { total, open, closed };
-}
-function getProductTicketCount(projectId, productId){
+//     return { total, open, closed };
+// }
+// function getProductTicketCount(projectId, productId){
 
-    if (!projectId || !productId) return 0;
+//     if (!projectId || !productId) return 0;
 
-    var ticketSearch = search.create({
-        type: 'customrecord_rw_ticket',
-        filters: [
-            ['custrecord_rw_ticket_projectname','anyof',[projectId]],
-            'AND',
-            ['custrecord_rw_ticket_rwsuiteapp','anyof',[productId]] 
-        ],
-        columns: ['internalid']
-    });
+//     var ticketSearch = search.create({
+//         type: 'customrecord_rw_ticket',
+//         filters: [
+//             ['custrecord_rw_ticket_projectname','anyof',[projectId]],
+//             'AND',
+//             ['custrecord_rw_ticket_rwsuiteapp','anyof',[productId]] 
+//         ],
+//         columns: ['internalid']
+//     });
 
-    return ticketSearch.runPaged().count;
-}
+//     return ticketSearch.runPaged().count;
+// }
 var totalOpenTickets=getOpenTicketCount();
 function getClosedTicketCount(){
     var ticketSearch=search.create({
@@ -744,7 +923,11 @@ paginatedProjectIds.forEach(function(projectId){
     var data = projectMap[projectId];
 
     if(!data) return;
-var ticketData = getTicketCounts(data.customerId);
+var ticketData = {
+    total: data.totalTickets || 0,
+    open: data.openTickets || 0,
+    closed: data.closedTickets || 0
+};
 
 var ticketCols = '';
 function getEmployeeInternalId(email){
@@ -849,7 +1032,11 @@ ${roleType === 'PM' ? `
     </tr>
 
     ${Object.entries(data.products).map(([name, obj]) => {
-  var ticketDetails = getProductTicketDetails(data.customerId, obj.productId)
+ var ticketDetails = {
+    total: obj.totalTickets || 0,
+    open: obj.openTickets || 0,
+    closed: obj.closedTickets || 0
+};
         return `
         <tr>
             <td style="">
@@ -2422,6 +2609,7 @@ ${paginationHtml}
 </div>
 </form>
 <script>
+const JSON_URL='${jsonUrl}';
 document.title="Projects"
 var projectUrl = '${projectUrl}';
 var viewProjectUrl='${viewProjectUrl}';
@@ -2508,7 +2696,7 @@ function goToPage(page){
 
     document.getElementById("homeContent").style.display = "none";
 
-    document.forms[0].submit();
+    document.getElementById("filterForm").submit();
 }
     window.addEventListener('storage', function(event) {
 
@@ -2597,6 +2785,7 @@ function toggleFilters(){
         arrow.innerHTML = "▲";
     }
 }
+    
 </script>
 `;
 

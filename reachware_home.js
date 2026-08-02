@@ -3,7 +3,8 @@
  * @NScriptType Suitelet
  */
 
-define(['N/ui/serverWidget','N/url','N/search','N/runtime','N/redirect','N/record'], (serverWidget,url,search,runtime,redirect,record) => {
+define(['N/ui/serverWidget','N/url','N/search','N/runtime','N/redirect','N/record','N/https'],
+     (serverWidget,url,search,runtime,redirect,record,https) => {
 
 const onRequest = (context) => {
 
@@ -53,7 +54,7 @@ function getProjectStats() {
     var stats = {
         total: 0,
         open: 0,
-        closed: 0,
+        done: 0,
         kickoff: 0,
         progress: 0,
         uat: 0,
@@ -85,12 +86,12 @@ function getProjectStats() {
             case '5': stats.golive++; break;
             case '6': stats.coc++; stats.closed++; break;
             case '7': stats.business++; stats.closed++; break;
-            case '8': stats.closed++; break;
+            case '8': stats.done++; break;
             case '9': stats.training++; break;
             case '11': stats.support++; break;
         }
 
-        if (['6', '7', '8'].indexOf(status) === -1) {
+        if (['6', '7', '8','9','3',"5"].indexOf(status) === -1) {
             stats.open++;
         }
 
@@ -165,6 +166,7 @@ function getTicketStats(empId) {
 //     log.debug("Total project",count);
 //     return count;
 // }
+
 function getMyProjectCount(empId){
 
     if(!empId) return 0;
@@ -395,24 +397,46 @@ var empRoleMap = {};
 
 //     return count;
 // }
-function getMyClosedProjectCount(empId){
+var jsonUrl = url.resolveScript({
+    scriptId: 'customscript3217',
+    deploymentId: 'customdeploy1',
+    returnExternalUrl: true,
+    params: {
+        empid: empId,
+        email: email
+    }
+});
+var response = https.get({
+    url: jsonUrl
+});
 
-    if(!empId) return 0;
+var jsonData = JSON.parse(response.body);
 
-    var projectSearch = search.create({
+var results = jsonData.data || [];
+function getMyClosedProjectCountFromJson(results, empId) {
 
-        type:'customrecord_rw_portal_access',
+    return results.filter(function(project) {
 
-        filters:[
-            ['isinactive','is','F'],
-            'AND',
-            ['custrecord_rw_portal_projectmanager','anyof',empId],
-            'AND',
-            ['custrecord_rw_portal_status','anyof',['6','7','8']]
-        ]
-    });
+        // Check whether the logged-in user belongs to the project
+        var isMyProject =
+            String(project.pmId) === String(empId) ||
+            String(project.accountManagerId) === String(empId) ||
+            String(project.funcId) === String(empId) ||
+            String(project.techId) === String(empId) ||
 
-    return projectSearch.runPaged().count;
+            (project.products || []).some(function(product) {
+                return (
+                    String(product.functionalId) === String(empId) ||
+                    String(product.technicalId) === String(empId)
+                );
+            });
+
+        // Closed statuses
+        var isClosed = ["6", "7", "8"].includes(String(project.statusId));
+
+        return isMyProject && isClosed;
+
+    }).length;
 }
 
 // function getOpenTicketsCount(){
@@ -714,7 +738,8 @@ log.debug("Employee Role", empRole);
 // var bussinesCount=getBussinessCount();
 // var training=getTrainingCount();
 // var uatCount=getUATCount();
-var myClosedProjects = getMyClosedProjectCount(empId);
+// var myClosedProjects = getMyClosedProjectCountFromJson(empId);
+var myClosedProjects = getMyClosedProjectCountFromJson(results, empId);
 // var golive=getGoliveCount();
 // var coc=getCOCCount();
 var pmProjectCount = getMyProjectCount(empId);
@@ -724,7 +749,7 @@ var stats = getProjectStats();
 
 var projectCount    = stats.total;
 var openProjects    = stats.open;
-var closedProjects  = stats.closed;
+var closedProjects  = stats.done;
 var kickOffCount    = stats.kickoff;
 var inProgressCount = stats.progress;
 var uatCount        = stats.uat;
@@ -878,7 +903,7 @@ projectStatsValues = `
         <div class="data-val" id="tit" onclick="openProjects('open')">${openProjects}</div>
         <div class="data-val" id="tit" onclick="openProjects('inprogress')">${inProgressCount}</div>
         <div class="data-val" id="tit" onclick="openProjects('myprojects')">${pmProjectCount}</div>
-         <div class="data-val" id="tit" onclick="openProjects('close')">${myClosedProjects}</div>
+         <div class="data-val" id="tit" onclick="openProjects('myclosedprojects')">${myClosedProjects}</div>
          
 `;
 

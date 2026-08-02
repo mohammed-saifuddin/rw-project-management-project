@@ -1114,6 +1114,7 @@ padding:10px 20px;
 );;
 color:white;
 border:none;
+border-radius:10px;
 cursor:pointer;
 }
 #loader {
